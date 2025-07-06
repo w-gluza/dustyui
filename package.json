@@ -1,0 +1,37 @@
+{
+  "name": "dustyui",
+  "version": "1.0.0",
+  "description": "A minimalist, neutral-toned React UI component library styled with CSS Modules.",
+  "keywords": ["react", "ui", "component-library", "design-system", "css-modules", "dustyui"],
+  "author": "Wioletta Gluza <wiolagluza@gmail.com> (https://wiola.dev)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/w-gluza/dustyui"
+  },
+  "homepage": "https://dustyui.com",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0",
+    "tsup": "^7.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
