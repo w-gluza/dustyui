@@ -7,9 +7,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
-    "declaration": true,
-    "emitDeclarationOnly": false,
-    "outDir": "dist"
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
 }

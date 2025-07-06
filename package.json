@@ -11,11 +11,11 @@
   },
   "homepage": "https://dustyui.com",
   "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsup"
+    "build": "rm -rf dist && tsup && rm -f dist/index.d.mts"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
@@ -29,7 +29,7 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
