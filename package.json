@@ -2,7 +2,14 @@
   "name": "dustyui",
   "version": "1.0.0",
   "description": "A minimalist, neutral-toned React UI component library styled with CSS Modules.",
-  "keywords": ["react", "ui", "component-library", "design-system", "css-modules", "dustyui"],
+  "keywords": [
+    "react",
+    "ui",
+    "component-library",
+    "design-system",
+    "css-modules",
+    "dustyui"
+  ],
   "author": "Wioletta Gluza <wiolagluza@gmail.com> (https://wiola.dev)",
   "license": "MIT",
   "repository": {
@@ -13,9 +20,16 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "rm -rf dist && tsup && rm -f dist/index.d.mts"
+    "build": "rm -rf dist && tsup && rm -f dist/index.d.mts",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "lint": "eslint .",
+    "lint:css": "stylelint 'src/**/*.css'"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
@@ -24,8 +38,18 @@
   "devDependencies": {
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "typescript": "^5.0.0",
-    "tsup": "^7.0.0"
+    "@typescript-eslint/eslint-plugin": "^8.35.1",
+    "@typescript-eslint/parser": "^8.35.1",
+    "eslint": "^9.30.1",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-config-turbo": "^2.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "prettier": "^3.6.2",
+    "stylelint": "^16.21.1",
+    "stylelint-config-css-modules": "^4.5.1",
+    "stylelint-config-standard": "^38.0.0",
+    "tsup": "^7.0.0",
+    "typescript": "^5.0.0"
   },
   "exports": {
     ".": {
