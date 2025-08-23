@@ -18,10 +18,5 @@
   },
 
   "eslint.validate": ["typescript", "typescriptreact", "javascript"],
-  "stylelint.validate": ["css", "scss"],
-
-  "files.exclude": {
-    "**/dist": true,
-    "**/node_modules": true
-  }
+  "stylelint.validate": ["css", "scss"]
 }
