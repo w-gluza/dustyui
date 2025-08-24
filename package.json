@@ -24,7 +24,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsup && tsc -p tsconfig.build.json && cpy \"src/**/*.module.css\" dist --parents",
+    "build": "rm -rf dist && tsup && tsc -p tsconfig.build.json && cpy \"src/**/*.css\" dist --parents",
     "typecheck": "tsc --noEmit",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
@@ -61,5 +61,8 @@
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
+  },
+  "dependencies": {
+    "clsx": "^2.1.1"
   }
 }

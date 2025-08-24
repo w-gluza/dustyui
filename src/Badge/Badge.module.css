@@ -1,4 +1,26 @@
 .badge {
-  background-color: red;
-  color: blue;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  padding: 0.125rem 0.625rem;
+  font-weight: 600;
+  border: 1px solid var(--color-gray-300);
+  width: max-content;
+  border-radius: 12px;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.label {
+  white-space: nowrap;
 }

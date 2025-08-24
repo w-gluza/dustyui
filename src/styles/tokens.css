@@ -1,0 +1,15 @@
+:root {
+  /* Color Variables */
+  --color-black: #222222;
+  --color-black-800: #2a2a2a;
+  --color-black-700: #2f2f2f;
+  --color-gray-700: #444444;
+  --color-gray-600: #666666;
+  --color-gray-500: #999999;
+  --color-gray-400: #bbbbbb;
+  --color-gray-300: #dddddd;
+  --color-gray-200: #eeeeee;
+  --color-gray-100: #f5f5f5;
+  --color-gray-50: #fcfcfc;
+  --color-white: #fafafa;
+}
