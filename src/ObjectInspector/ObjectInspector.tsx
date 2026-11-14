@@ -9,10 +9,14 @@ import {
 } from "react";
 import clsx from "clsx";
 import { announce, readyAnnouncer } from "../announcer/announcer.js";
-import { Tree, type TreeProps } from "../Tree/Tree.js";
+import {
+  Tree,
+  type TreeBaseProps,
+  type TreeExpansionProps,
+} from "../Tree/Tree.js";
 import type { TreeRow } from "../Tree/treeModel.js";
 import {
-  describe,
+  describeValue,
   type InspectorNode,
   type NodeLabel,
 } from "./describe/describe.js";
@@ -28,14 +32,16 @@ import { getSearchStatus } from "./search/getSearchStatus.js";
 import { Highlighted } from "./search/Highlighted.js";
 import styles from "./ObjectInspector.module.css";
 
-export interface ObjectInspectorProps extends Omit<
-  TreeProps<InspectorNode>,
+interface InspectorOwnProps extends Omit<
+  TreeBaseProps<InspectorNode>,
   "root" | "renderRow" | "getRowText"
 > {
   value: unknown;
   searchable?: boolean | undefined;
   showDetails?: boolean | undefined;
 }
+
+export type ObjectInspectorProps = InspectorOwnProps & TreeExpansionProps;
 
 const ROOT_OPEN = [ROOT_ID];
 const SEARCH_LIMIT = 500_000;
@@ -64,7 +70,7 @@ export function ObjectInspector({
   className,
   ...props
 }: ObjectInspectorProps) {
-  const root = useMemo(() => describe(value), [value]);
+  const root = useMemo(() => describeValue(value), [value]);
   const [ownExpanded, setOwnExpanded] = useState<ReadonlySet<string>>(
     () => new Set(defaultExpanded),
   );

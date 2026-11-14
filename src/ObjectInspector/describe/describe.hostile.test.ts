@@ -1,5 +1,5 @@
 import { describe as suite, expect, it } from "vitest";
-import { describe, type InspectorNode } from "./describe.js";
+import { describeValue, type InspectorNode } from "./describe.js";
 
 function readEverything(node: InspectorNode): void {
   void node.kind;
@@ -16,7 +16,7 @@ function refuse(): never {
 suite("describe with hostile values", () => {
   it("marks a proxy that refuses to list its keys and still shows its siblings", () => {
     const hostile = new Proxy({}, { ownKeys: refuse });
-    const root = describe({ before: 1, hostile, after: 2 });
+    const root = describeValue({ before: 1, hostile, after: 2 });
     const [before, broken, after] = root.children();
 
     expect(broken?.kind).toBe("uninspectable");
@@ -37,7 +37,7 @@ suite("describe with hostile values", () => {
         },
       },
     );
-    const kinds = describe(hostile)
+    const kinds = describeValue(hostile)
       .children()
       .map((child) => child.kind);
 
@@ -47,16 +47,16 @@ suite("describe with hostile values", () => {
   it("marks a proxy that refuses to reveal its prototype", () => {
     const hostile = new Proxy({}, { getPrototypeOf: refuse });
 
-    expect(describe(hostile).kind).toBe("uninspectable");
+    expect(describeValue(hostile).kind).toBe("uninspectable");
   });
 
   it("marks a revoked proxy", () => {
     const { proxy, revoke } = Proxy.revocable({}, {});
     revoke();
-    const node = describe({ proxy }).children()[0];
+    const node = describeValue({ proxy }).children()[0];
 
     expect(node?.kind).toBe("uninspectable");
-    expect(() => readEverything(describe({ proxy }))).not.toThrow();
+    expect(() => readEverything(describeValue({ proxy }))).not.toThrow();
   });
 
   it("copes with a thrown value that cannot be turned into text", () => {
@@ -75,7 +75,9 @@ suite("describe with hostile values", () => {
       },
     );
 
-    expect(describe(hostile).preview).toBe("Could not be read: unknown error");
+    expect(describeValue(hostile).preview).toBe(
+      "Could not be read: unknown error",
+    );
   });
 
   it("never runs a getter that would throw", () => {
@@ -85,8 +87,8 @@ suite("describe with hostile values", () => {
       },
     };
 
-    expect(() => readEverything(describe(value))).not.toThrow();
-    expect(describe(value).children()[0]?.kind).toBe("getter");
+    expect(() => readEverything(describeValue(value))).not.toThrow();
+    expect(describeValue(value).children()[0]?.kind).toBe("getter");
   });
 
   it("ignores custom text conversion on the value", () => {
@@ -99,15 +101,15 @@ suite("describe with hostile values", () => {
       },
     };
 
-    expect(() => readEverything(describe(value))).not.toThrow();
-    expect(describe(value).kind).toBe("object");
+    expect(() => readEverything(describeValue(value))).not.toThrow();
+    expect(describeValue(value).kind).toBe("object");
   });
 
   it("does not run a getter standing in for the constructor", () => {
     const prototype = Object.defineProperty({}, "constructor", { get: refuse });
     const value: object = Object.create(prototype);
 
-    expect(describe(value).typeName).toBeUndefined();
+    expect(describeValue(value).typeName).toBeUndefined();
   });
 
   it("is not fooled by an object that only inherits from a built-in", () => {
@@ -116,8 +118,8 @@ suite("describe with hostile values", () => {
     );
 
     for (const fake of fakes) {
-      expect(() => readEverything(describe(fake))).not.toThrow();
-      expect(describe(fake).kind).toBe("object");
+      expect(() => readEverything(describeValue(fake))).not.toThrow();
+      expect(describeValue(fake).kind).toBe("object");
     }
   });
 
@@ -129,7 +131,7 @@ suite("describe with hostile values", () => {
         return refuse();
       }
     }
-    const node = describe(new HostileMap([["a", 1]]));
+    const node = describeValue(new HostileMap([["a", 1]]));
 
     expect(node.kind).toBe("map");
     expect(node.preview).toBe(
@@ -141,13 +143,13 @@ suite("describe with hostile values", () => {
     const pattern = Object.defineProperty(/a/g, "flags", { get: refuse });
     Object.defineProperty(pattern, "source", { get: refuse });
 
-    expect(describe(pattern).preview).toBe("/a/g");
+    expect(describeValue(pattern).preview).toBe("/a/g");
   });
 
   it("does not trust a getter shadowing a function's name", () => {
     const fn = Object.defineProperty(() => {}, "name", { get: refuse });
 
-    expect(describe(fn).preview).toBe("ƒ ()");
+    expect(describeValue(fn).preview).toBe("ƒ ()");
   });
 
   it.each([
@@ -162,7 +164,7 @@ suite("describe with hostile values", () => {
       value: 1,
       enumerable: true,
     });
-    const root = describe(value);
+    const root = describeValue(value);
 
     expect(root.children()[0]?.label).toEqual({ type: "property", key });
     expect(root.preview).not.toContain("\n");
@@ -173,23 +175,23 @@ suite("describe with hostile values", () => {
     class Register extends Map<string, number> {}
     class Stamp extends Date {}
 
-    expect(describe(new Register([["a", 1]])).kind).toBe("map");
-    expect(describe(new Stamp(0)).kind).toBe("date");
+    expect(describeValue(new Register([["a", 1]])).kind).toBe("map");
+    expect(describeValue(new Stamp(0)).kind).toBe("date");
   });
 
   it("recognises a typed array whose prototype was replaced", () => {
     const bytes = new Uint8Array(3);
     Object.setPrototypeOf(bytes, Object.prototype);
 
-    expect(describe(bytes).kind).toBe("array");
-    expect(describe(new DataView(new ArrayBuffer(2))).kind).toBe("object");
+    expect(describeValue(bytes).kind).toBe("array");
+    expect(describeValue(new DataView(new ArrayBuffer(2))).kind).toBe("object");
   });
 
   it("shows a map as a plain object once its prototype is replaced with the plain one", () => {
     const map = new Map([[1, 2]]);
     Object.setPrototypeOf(map, Object.prototype);
 
-    expect(describe(map).kind).toBe("object");
-    expect(describe(map).childCount).toBe(0);
+    expect(describeValue(map).kind).toBe("object");
+    expect(describeValue(map).childCount).toBe(0);
   });
 });

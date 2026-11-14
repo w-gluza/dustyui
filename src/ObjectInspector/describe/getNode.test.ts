@@ -1,5 +1,5 @@
 import { describe as suite, expect, it } from "vitest";
-import { describe } from "./describe.js";
+import { describeValue } from "./describe.js";
 import { getNode } from "./getNode.js";
 import { getAncestorIds } from "./getPath.js";
 
@@ -14,7 +14,7 @@ suite("getNode and getAncestorIds", () => {
   });
 
   it("finds a node by id, including keys that contain a slash", () => {
-    const root = describe({ "a/b": { c: 1 }, a: { b: 2 } });
+    const root = describeValue({ "a/b": { c: 1 }, a: { b: 2 } });
 
     expect(getNode(root, "$/.a~1b/.c")?.path).toBe('$["a/b"].c');
     expect(getNode(root, "$/.a/.b")?.path).toBe("$.a.b");
@@ -22,7 +22,7 @@ suite("getNode and getAncestorIds", () => {
   });
 
   it("returns nothing for an id that is not in the value", () => {
-    const root = describe({ a: 1 });
+    const root = describeValue({ a: 1 });
 
     expect(getNode(root, "$/.missing")).toBeUndefined();
     expect(getNode(root, "elsewhere")).toBeUndefined();

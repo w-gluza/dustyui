@@ -1,3 +1,3 @@
-import { Button, describe, ObjectInspector, Tree } from "dustyui";
+import { Button, describeValue, ObjectInspector, Tree } from "dustyui";
 
-export const exported = [Button, describe, ObjectInspector, Tree];
+export const exported = [Button, describeValue, ObjectInspector, Tree];

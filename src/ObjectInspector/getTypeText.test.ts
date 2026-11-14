@@ -1,5 +1,5 @@
 import { describe as suite, expect, it } from "vitest";
-import { describe } from "./describe/describe.js";
+import { describeValue } from "./describe/describe.js";
 import { getTypeText } from "./getTypeText.js";
 
 suite("getTypeText", () => {
@@ -24,14 +24,14 @@ suite("getTypeText", () => {
     ];
 
     for (const [value, text] of values) {
-      expect(getTypeText(describe(value))).toBe(text);
+      expect(getTypeText(describeValue(value))).toBe(text);
     }
   });
 
   it("uses the class name when a class made the value", () => {
     class Park {}
 
-    expect(getTypeText(describe(new Park()))).toBe("Park");
+    expect(getTypeText(describeValue(new Park()))).toBe("Park");
   });
 
   it("explains rows that are not values in plain words", () => {
@@ -43,7 +43,7 @@ suite("getTypeText", () => {
     self.self = self;
     const { proxy, revoke } = Proxy.revocable({}, {});
     revoke();
-    const root = describe({
+    const root = describeValue({
       self,
       entries: new Map([[1, 2]]),
       gone: proxy,

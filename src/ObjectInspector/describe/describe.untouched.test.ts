@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe as suite, expect, it } from "vitest";
 import { getCopyText } from "../getCopyText.js";
 import { getMatches } from "../search/getMatches.js";
-import { describe, type InspectorNode } from "./describe.js";
+import { describeValue, type InspectorNode } from "./describe.js";
 
 interface Counter {
   runs: number;
@@ -32,7 +32,7 @@ function read(root: InspectorNode): string[] {
 }
 
 function inspect(value: unknown): InspectorNode {
-  const root = describe({ nested: [value], direct: value });
+  const root = describeValue({ nested: [value], direct: value });
   read(root);
   const direct = root.children()[1];
   if (!direct) {
@@ -203,14 +203,16 @@ suite("describe never runs code that belongs to the value", () => {
       },
     };
 
-    expect(describe(classes).preview).toBe("ƒ classes()");
-    expect(describe(holder.classify).preview).toBe("ƒ classify()");
-    expect(describe(class {}).preview).toBe("class");
-    expect(describe(class Park {}).preview).toBe("class Park");
+    expect(describeValue(classes).preview).toBe("ƒ classes()");
+    expect(describeValue(holder.classify).preview).toBe("ƒ classify()");
+    expect(describeValue(class {}).preview).toBe("class");
+    expect(describeValue(class Park {}).preview).toBe("class Park");
   });
 
   it("shows characters that reorder or break a line as escapes", () => {
-    const root = describe({ "evil\u202Ekey": "user\u202Enimda\nnext\u2066" });
+    const root = describeValue({
+      "evil\u202Ekey": "user\u202Enimda\nnext\u2066",
+    });
     const child = root.children()[0];
 
     expect(child?.preview).toBe('"user\\u202enimda\\nnext\\u2066"');
@@ -243,7 +245,7 @@ suite("describe never runs code that belongs to the value", () => {
     const { proxy, revoke } = Proxy.revocable({}, {});
     revoke();
 
-    const root = describe({ gone: proxy, kept: 1 });
+    const root = describeValue({ gone: proxy, kept: 1 });
 
     expect(root.preview).toMatch(/^\{gone: Could not be read: .+, kept: 1\}$/u);
   });
@@ -258,7 +260,7 @@ suite("describe never runs code that belongs to the value", () => {
       },
     });
 
-    expect(describe(guarded).preview).toBe(
+    expect(describeValue(guarded).preview).toBe(
       "Could not be read: no name for you",
     );
   });
@@ -303,7 +305,9 @@ suite("describe never runs code that belongs to the value", () => {
           }
           const proxy = new Proxy(target, handler);
 
-          expect(() => read(describe({ proxy, list: [proxy] }))).not.toThrow();
+          expect(() =>
+            read(describeValue({ proxy, list: [proxy] })),
+          ).not.toThrow();
         },
       ),
     );

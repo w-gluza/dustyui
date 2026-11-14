@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe as suite, expect, it } from "vitest";
-import { describe } from "../describe/describe.js";
+import { describeValue } from "../describe/describe.js";
 import { getNode } from "../describe/getNode.js";
 import { getMatches } from "./getMatches.js";
 
@@ -15,7 +15,7 @@ const park = {
 };
 
 function search(value: unknown, text: string, limit = 1000) {
-  return getMatches(describe(value), text, limit);
+  return getMatches(describeValue(value), text, limit);
 }
 
 suite("getMatches", () => {
@@ -46,7 +46,7 @@ suite("getMatches", () => {
   it("finds text past the point where the row cuts a long string short", () => {
     const value = { note: `${"a".repeat(500)} needle` };
 
-    expect(describe(value).children()[0]?.preview).not.toContain("needle");
+    expect(describeValue(value).children()[0]?.preview).not.toContain("needle");
     expect(search(value, "needle").ids).toEqual(["$/.note"]);
   });
 
@@ -125,7 +125,7 @@ suite("getMatches", () => {
         fc.jsonValue({ maxDepth: 4 }),
         fc.string({ minLength: 1, maxLength: 2 }),
         (value, text) => {
-          const root = describe(value);
+          const root = describeValue(value);
           const { ids, isComplete } = getMatches(root, text, 100_000);
 
           expect(isComplete).toBe(true);

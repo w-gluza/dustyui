@@ -1,8 +1,8 @@
 import { describe as suite, expect, it } from "vitest";
-import { describe, type InspectorNode } from "./describe.js";
+import { describeValue, type InspectorNode } from "./describe.js";
 
 function childrenOf(value: unknown): readonly InspectorNode[] {
-  return describe(value).children();
+  return describeValue(value).children();
 }
 
 function summary(node: InspectorNode): [string, string, string] {
@@ -24,7 +24,7 @@ suite("describe", () => {
       [undefined, "undefined", "undefined"],
       [Symbol("id"), "symbol", "Symbol(id)"],
     ])("describes %s as a %s leaf", (value, kind, preview) => {
-      const node = describe(value);
+      const node = describeValue(value);
 
       expect(node.kind).toBe(kind);
       expect(node.preview).toBe(preview);
@@ -33,19 +33,19 @@ suite("describe", () => {
     });
 
     it("cuts a long string and marks the cut", () => {
-      const node = describe("a".repeat(200));
+      const node = describeValue("a".repeat(200));
 
       expect(node.preview).toBe(`"${"a".repeat(80)}…"`);
     });
 
     it("keeps a multi-line string on one line", () => {
-      expect(describe("first\nsecond").preview).toBe('"first\\nsecond"');
+      expect(describeValue("first\nsecond").preview).toBe('"first\\nsecond"');
     });
   });
 
   suite("objects", () => {
     it("lists properties in definition order with their own previews", () => {
-      const root = describe({
+      const root = describeValue({
         name: "Yellowstone",
         animals: ["bison", "wolf"],
       });
@@ -59,7 +59,7 @@ suite("describe", () => {
     });
 
     it("gives each node a readable path", () => {
-      const root = describe({ parks: [{ "common name": "Bison" }] });
+      const root = describeValue({ parks: [{ "common name": "Bison" }] });
       const park = root.children()[0]?.children()[0];
 
       expect(park?.path).toBe("$.parks[0]");
@@ -71,14 +71,16 @@ suite("describe", () => {
         name = "Yellowstone";
       }
 
-      expect(describe(new Park()).typeName).toBe("Park");
-      expect(describe(new Park()).preview).toBe('Park {name: "Yellowstone"}');
-      expect(describe({}).preview).toBe("{}");
+      expect(describeValue(new Park()).typeName).toBe("Park");
+      expect(describeValue(new Park()).preview).toBe(
+        'Park {name: "Yellowstone"}',
+      );
+      expect(describeValue({}).preview).toBe("{}");
     });
 
     it("describes an object without a prototype", () => {
       const bare = Object.assign(Object.create(null) as object, { a: 1 });
-      const node = describe(bare);
+      const node = describeValue(bare);
 
       expect(node.kind).toBe("object");
       expect(node.typeName).toBeUndefined();
@@ -86,14 +88,14 @@ suite("describe", () => {
     });
 
     it("previews at most five members and marks the rest", () => {
-      const node = describe({ a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 });
+      const node = describeValue({ a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 });
 
       expect(node.preview).toBe("{a: 1, b: 2, c: 3, d: 4, e: 5, …}");
       expect(node.childCount).toBe(6);
     });
 
     it("quotes keys that are not identifiers", () => {
-      expect(describe({ "two words": 1, "": 2 }).preview).toBe(
+      expect(describeValue({ "two words": 1, "": 2 }).preview).toBe(
         '{"two words": 1, "": 2}',
       );
     });
@@ -132,7 +134,7 @@ suite("describe", () => {
     it("reports the full length of a sparse array and shows its holes as one row each", () => {
       const sparse: unknown[] = [];
       sparse[1_000_000] = "last";
-      const node = describe(sparse);
+      const node = describeValue(sparse);
       const [hole, last] = node.children();
 
       expect(node.preview).toBe(
@@ -154,7 +156,7 @@ suite("describe", () => {
       const tagged = Object.assign(new Array<number>(2), { note: "x" });
 
       expect(
-        describe(sparse)
+        describeValue(sparse)
           .children()
           .map((child) => child.preview),
       ).toEqual([
@@ -165,12 +167,12 @@ suite("describe", () => {
         "<1 empty item>",
       ]);
       expect(
-        describe(tagged)
+        describeValue(tagged)
           .children()
           .map((child) => child.preview),
       ).toEqual(["<2 empty items>", '"x"']);
       expect(
-        describe([1, 2])
+        describeValue([1, 2])
           .children()
           .map((child) => child.kind),
       ).toEqual(["number", "number"]);
@@ -186,7 +188,7 @@ suite("describe", () => {
     });
 
     it("describes a typed array as an array with its own name", () => {
-      const node = describe(new Uint8Array([1, 2]));
+      const node = describeValue(new Uint8Array([1, 2]));
 
       expect(node.kind).toBe("array");
       expect(node.preview).toBe("Uint8Array(2) [1, 2]");
@@ -203,7 +205,7 @@ suite("describe", () => {
 
   suite("collections and built-ins", () => {
     it("describes map entries with a key and a value each", () => {
-      const node = describe(new Map<unknown, unknown>([["a", 1]]));
+      const node = describeValue(new Map<unknown, unknown>([["a", 1]]));
       const entry = node.children()[0];
 
       expect(node.preview).toBe('Map(1) {"a" => 1}');
@@ -217,14 +219,14 @@ suite("describe", () => {
 
     it("lets a map use objects as keys", () => {
       const key = { id: 1 };
-      const entry = describe(new Map([[key, "x"]])).children()[0];
+      const entry = describeValue(new Map([[key, "x"]])).children()[0];
 
       expect(entry?.children()[0]?.value).toBe(key);
       expect(entry?.children()[0]?.childCount).toBe(1);
     });
 
     it("describes set items by position", () => {
-      const node = describe(new Set(["a", "b"]));
+      const node = describeValue(new Set(["a", "b"]));
 
       expect(node.preview).toBe('Set(2) {"a", "b"}');
       expect(node.children().map((child) => child.id)).toEqual([
@@ -244,7 +246,7 @@ suite("describe", () => {
       [new TypeError("boom"), "error", "TypeError: boom"],
       [new Error(""), "error", "Error"],
     ])("describes %s as %s", (value, kind, preview) => {
-      const node = describe(value);
+      const node = describeValue(value);
 
       expect(node.kind).toBe(kind);
       expect(node.preview).toBe(preview);
@@ -254,10 +256,10 @@ suite("describe", () => {
       function greet() {}
       class Park {}
 
-      expect(describe(greet).preview).toBe("ƒ greet()");
-      expect(describe(() => {}).preview).toBe("ƒ ()");
-      expect(describe(Park).preview).toBe("class Park");
-      expect(describe(greet).kind).toBe("function");
+      expect(describeValue(greet).preview).toBe("ƒ greet()");
+      expect(describeValue(() => {}).preview).toBe("ƒ ()");
+      expect(describeValue(Park).preview).toBe("class Park");
+      expect(describeValue(greet).kind).toBe("function");
     });
   });
 
@@ -265,7 +267,7 @@ suite("describe", () => {
     it("stops at a value that contains itself and points back to it", () => {
       const park: Record<string, unknown> = { name: "Yellowstone" };
       park.self = park;
-      const self = describe(park).children()[1];
+      const self = describeValue(park).children()[1];
 
       expect(self?.kind).toBe("circular");
       expect(self?.preview).toBe("[Circular $]");
@@ -276,7 +278,10 @@ suite("describe", () => {
       const animal: Record<string, unknown> = {};
       const park = { animals: [animal] };
       animal.park = park.animals;
-      const back = describe(park).children()[0]?.children()[0]?.children()[0];
+      const back = describeValue(park)
+        .children()[0]
+        ?.children()[0]
+        ?.children()[0];
 
       expect(back?.preview).toBe("[Circular $.animals]");
     });
@@ -293,7 +298,7 @@ suite("describe", () => {
     it("detects a map that contains itself", () => {
       const map = new Map<string, unknown>();
       map.set("self", map);
-      const value = describe(map).children()[0]?.children()[1];
+      const value = describeValue(map).children()[0]?.children()[1];
 
       expect(value?.kind).toBe("circular");
     });
@@ -308,7 +313,7 @@ suite("describe", () => {
           return 1;
         },
       };
-      const root = describe(value);
+      const root = describeValue(value);
       const getter = root.children()[0];
 
       expect(getter?.kind).toBe("getter");
@@ -325,15 +330,20 @@ suite("describe", () => {
         ids.add(node.id);
         node.children().forEach(walk);
       };
-      const root = describe({ "a/.b": 1, a: { b: 2 }, "a~1.b": 3, "~": 4 });
+      const root = describeValue({
+        "a/.b": 1,
+        a: { b: 2 },
+        "a~1.b": 3,
+        "~": 4,
+      });
       walk(root);
 
       expect(ids.size).toBe(6);
     });
 
     it("gives the same id to the same place after the data is replaced", () => {
-      const before = describe({ park: { name: "Yellowstone" } });
-      const after = describe({ park: { name: "Zion", area: 593 } });
+      const before = describeValue({ park: { name: "Yellowstone" } });
+      const after = describeValue({ park: { name: "Zion", area: 593 } });
 
       expect(after.children()[0]?.children()[0]?.id).toBe(
         before.children()[0]?.children()[0]?.id,
@@ -355,7 +365,7 @@ suite("describe", () => {
           },
         },
       );
-      const node = describe({ watched }).children()[0];
+      const node = describeValue({ watched }).children()[0];
 
       expect(reads).toBe(0);
       expect(node?.childCount).toBe(1);
@@ -363,7 +373,7 @@ suite("describe", () => {
     });
 
     it("builds children once and returns the same list afterwards", () => {
-      const root = describe({ a: { b: 1 } });
+      const root = describeValue({ a: { b: 1 } });
 
       expect(root.children()).toBe(root.children());
     });
@@ -374,7 +384,7 @@ suite("describe", () => {
         value = { child: value };
       }
 
-      let node: InspectorNode | undefined = describe(value);
+      let node: InspectorNode | undefined = describeValue(value);
       let levels = 0;
       while (node?.childCount) {
         expect(node.preview).toBe("{child: {…}}");
@@ -386,7 +396,7 @@ suite("describe", () => {
     });
 
     it("lists a hundred thousand items", () => {
-      const node = describe(Array.from({ length: 100_000 }, (_, i) => i));
+      const node = describeValue(Array.from({ length: 100_000 }, (_, i) => i));
 
       expect(node.childCount).toBe(100_000);
       expect(node.children()[99_999]?.preview).toBe("99999");

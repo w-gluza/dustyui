@@ -217,7 +217,7 @@ class ValueNode implements InspectorNode {
   }
 }
 
-export function describe(value: unknown): InspectorNode {
+export function describeValue(value: unknown): InspectorNode {
   return new ValueNode(
     ROOT_ID,
     ROOT_ID,

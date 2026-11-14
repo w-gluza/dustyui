@@ -1,13 +1,13 @@
 import { describe as suite, expect, it } from "vitest";
 import { getCopyText } from "../getCopyText.js";
 import { getMatches } from "../search/getMatches.js";
-import { describe } from "./describe.js";
+import { describeValue } from "./describe.js";
 import { CHILD_LIMIT } from "./getChildren.js";
 
 suite("describe limits", () => {
   suite("children of one value", () => {
     it("lists the first items of a huge typed array and counts the rest", () => {
-      const node = describe(new Uint8Array(3_000_000));
+      const node = describeValue(new Uint8Array(3_000_000));
       const children = node.children();
       const rest = children.at(-1);
 
@@ -24,14 +24,14 @@ suite("describe limits", () => {
     });
 
     it("does the same for a huge array without holes", () => {
-      const node = describe(new Array<number>(250_000).fill(7));
+      const node = describeValue(new Array<number>(250_000).fill(7));
 
       expect(node.childCount).toBe(CHILD_LIMIT + 1);
       expect(node.children().at(-1)?.preview).toBe("150,000 more not shown");
     });
 
     it("adds no rest row at exactly the limit", () => {
-      const node = describe(new Array<number>(CHILD_LIMIT).fill(7));
+      const node = describeValue(new Array<number>(CHILD_LIMIT).fill(7));
 
       expect(node.childCount).toBe(CHILD_LIMIT);
       expect(node.children().at(-1)?.kind).toBe("number");
@@ -41,7 +41,7 @@ suite("describe limits", () => {
       const sparse: string[] = [];
       sparse[5_000_000] = "last";
 
-      const node = describe(sparse);
+      const node = describeValue(sparse);
 
       expect(node.childCount).toBe(2);
       expect(node.children()[0]?.preview).toBe("<5,000,000 empty items>");
@@ -51,9 +51,11 @@ suite("describe limits", () => {
     it("counts the rest of a huge map, set and object", () => {
       const size = CHILD_LIMIT + 5;
       const numbers = Array.from({ length: size }, (_, index) => index);
-      const map = describe(new Map(numbers.map((number) => [number, number])));
-      const set = describe(new Set(numbers));
-      const object = describe(
+      const map = describeValue(
+        new Map(numbers.map((number) => [number, number])),
+      );
+      const set = describeValue(new Set(numbers));
+      const object = describeValue(
         Object.fromEntries(numbers.map((number) => [`k${number}`, number])),
       );
 
@@ -67,7 +69,7 @@ suite("describe limits", () => {
   suite("text that reaches the page", () => {
     it("shortens the name of a class", () => {
       const Long = { ["N".repeat(5000)]: class {} }["N".repeat(5000)];
-      const node = describe(Long ? new Long() : undefined);
+      const node = describeValue(Long ? new Long() : undefined);
 
       expect(node.typeName).toHaveLength(81);
       expect(node.preview.length).toBeLessThan(100);
@@ -78,31 +80,33 @@ suite("describe limits", () => {
       const List = { [name]: class extends Array<number> {} }[name];
       const Failure = { [name]: class extends Error {} }[name];
 
-      expect(describe(List ? new List() : []).preview.length).toBeLessThan(100);
+      expect(describeValue(List ? new List() : []).preview.length).toBeLessThan(
+        100,
+      );
       expect(
-        describe(Failure ? new Failure("no") : undefined).preview.length,
+        describeValue(Failure ? new Failure("no") : undefined).preview.length,
       ).toBeLessThan(100);
       expect(
-        describe({ inner: Failure ? new Failure("no") : undefined }).preview
-          .length,
+        describeValue({ inner: Failure ? new Failure("no") : undefined })
+          .preview.length,
       ).toBeLessThan(120);
     });
 
     it("shows a huge whole number by its first hex digits", () => {
-      const node = describe(-(16n ** 1_000_000n));
+      const node = describeValue(-(16n ** 1_000_000n));
 
       expect(node.preview).toBe("-0x1000000000000000…n (1,000,001 hex digits)");
     });
 
     it("shows a whole number of ordinary size in full", () => {
-      expect(describe(10n ** 59n).preview).toBe(`1${"0".repeat(59)}n`);
-      expect(describe(-12n).preview).toBe("-12n");
+      expect(describeValue(10n ** 59n).preview).toBe(`1${"0".repeat(59)}n`);
+      expect(describeValue(-12n).preview).toBe("-12n");
     });
   });
 
   suite("search", () => {
     it("stops reading text when the character budget runs out", () => {
-      const root = describe(["heron", "x".repeat(100), "heron"]);
+      const root = describeValue(["heron", "x".repeat(100), "heron"]);
 
       const matches = getMatches(root, "heron", 1000, 20);
 
@@ -111,7 +115,7 @@ suite("describe limits", () => {
     });
 
     it("reports a value with a rest row as searched in part", () => {
-      const root = describe(new Uint8Array(CHILD_LIMIT + 1));
+      const root = describeValue(new Uint8Array(CHILD_LIMIT + 1));
 
       const matches = getMatches(root, "more", 500_000);
 
@@ -125,7 +129,7 @@ suite("describe limits", () => {
         deep = { inner: deep };
       }
 
-      const matches = getMatches(describe(deep), "bottom", 500_000);
+      const matches = getMatches(describeValue(deep), "bottom", 500_000);
 
       expect(matches.ids).toHaveLength(1);
       expect(matches.isComplete).toBe(true);
@@ -134,7 +138,7 @@ suite("describe limits", () => {
     it("still finds a cycle below a value that also appears elsewhere", () => {
       const shared: Record<string, unknown> = { name: "shared" };
       shared.self = shared;
-      const root = describe({ first: shared, second: shared });
+      const root = describeValue({ first: shared, second: shared });
 
       const second = root.children()[1];
       const first = root.children()[0];
@@ -147,26 +151,26 @@ suite("describe limits", () => {
 
   suite("copy", () => {
     it("says a copy is whole when nothing was left out", () => {
-      expect(getCopyText(describe({ a: [1, 2] })).isComplete).toBe(true);
-      expect(getCopyText(describe("plain")).isComplete).toBe(true);
+      expect(getCopyText(describeValue({ a: [1, 2] })).isComplete).toBe(true);
+      expect(getCopyText(describeValue("plain")).isComplete).toBe(true);
     });
 
     it("says a copy is partial when the value limit cut it", () => {
-      const copy = getCopyText(describe([[1], [2], [3]]), 3);
+      const copy = getCopyText(describeValue([[1], [2], [3]]), 3);
 
       expect(copy.isComplete).toBe(false);
       expect(copy.text).toContain("…");
     });
 
     it("says a copy is partial when a list was too long to open", () => {
-      const copy = getCopyText(describe({ list: [1, 2, 3, 4] }), 3);
+      const copy = getCopyText(describeValue({ list: [1, 2, 3, 4] }), 3);
 
       expect(copy.isComplete).toBe(false);
     });
 
     it("cuts a long string inside a value at the character budget", () => {
       const copy = getCopyText(
-        describe({ note: "x".repeat(500), after: true }),
+        describeValue({ note: "x".repeat(500), after: true }),
         5000,
         50,
       );
@@ -179,7 +183,9 @@ suite("describe limits", () => {
     it("copies many references to one huge string without failing", () => {
       const huge = "a".repeat(1_000_000);
 
-      const copy = getCopyText(describe(new Array<string>(600).fill(huge)));
+      const copy = getCopyText(
+        describeValue(new Array<string>(600).fill(huge)),
+      );
 
       expect(copy.isComplete).toBe(false);
       expect(copy.text.length).toBeLessThan(7_000_000);
@@ -188,7 +194,7 @@ suite("describe limits", () => {
     it("copies a single string whole, however long", () => {
       const huge = "a".repeat(6_000_000);
 
-      const copy = getCopyText(describe(huge));
+      const copy = getCopyText(describeValue(huge));
 
       expect(copy.text).toBe(huge);
       expect(copy.isComplete).toBe(true);
