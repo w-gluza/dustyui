@@ -67,6 +67,18 @@ export function getDataProperty(target: object, key: PropertyKey): unknown {
   return descriptor && "value" in descriptor ? descriptor.value : undefined;
 }
 
+export function getArrayLength(value: unknown): number | undefined {
+  try {
+    if (!Array.isArray(value)) {
+      return undefined;
+    }
+    const length = getDataProperty(value, "length");
+    return typeof length === "number" ? length : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function getConstructorName(value: object): string | undefined {
   const prototype = Reflect.getPrototypeOf(value);
   if (prototype === null) {

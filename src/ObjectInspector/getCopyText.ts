@@ -1,4 +1,5 @@
 import type { InspectorNode } from "./describe/describe.js";
+import { getArrayLength } from "./describe/safeRead.js";
 import { getLabelText } from "./getLabelText.js";
 import { getValueText } from "./getValueText.js";
 
@@ -19,8 +20,9 @@ function getLeafText(node: InspectorNode): string {
   if (node.kind === "string" && typeof node.value === "string") {
     return JSON.stringify(node.value);
   }
-  if (Array.isArray(node.value) && node.value.length > 0) {
-    return `[${getHoleText(node.value.length).slice(0, -1)}]`;
+  const length = getListLength(node);
+  if (length !== undefined && length > 0) {
+    return `[${getHoleText(length).slice(0, -1)}]`;
   }
   return node.typeName && PLAIN_TYPES.has(node.typeName)
     ? getOpening(node) + getClosing(node)
@@ -32,6 +34,10 @@ function getOpening(node: InspectorNode): string {
   return node.typeName && !PLAIN_TYPES.has(node.typeName)
     ? `${node.typeName} ${bracket}`
     : bracket;
+}
+
+function getListLength(node: InspectorNode): number | undefined {
+  return node.kind === "array" ? getArrayLength(node.value) : undefined;
 }
 
 function getHoleText(count: number): string {
@@ -82,8 +88,9 @@ export function getCopyText(root: InspectorNode, limit = 5000): string {
     pending.push(indent + getClosing(item) + end);
     const children = item.children();
     const childIndent = INDENT.repeat(depth + 1);
-    const isList = Array.isArray(item.value);
-    let next = isList ? (item.value as unknown[]).length : 0;
+    const length = getListLength(item);
+    const isList = length !== undefined;
+    let next = length ?? 0;
     for (let index = children.length - 1; index >= 0; index--) {
       const child = children[index];
       if (!child) {
