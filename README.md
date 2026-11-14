@@ -55,11 +55,11 @@ To write your own theme, copy `src/styles/themes/mono.css`, rename the selector 
 
 ## Scripts
 
-| Script              | What it does                                  |
-| ------------------- | --------------------------------------------- |
-| `npm run build`     | Compiles to `dist` and copies the stylesheets |
-| `npm run typecheck` | Type-checks with TypeScript 7                 |
-| `npm test`          | Unit tests with the Node test runner          |
-| `npm run lint`      | ESLint, with accessibility rules as errors    |
-| `npm run lint:css`  | Stylelint                                     |
-| `npm run format`    | Prettier                                      |
+| Script              | What it does                                                |
+| ------------------- | ----------------------------------------------------------- |
+| `npm run build`     | Compiles to `dist` and copies the stylesheets               |
+| `npm run typecheck` | Type-checks with TypeScript 7                               |
+| `npm test`          | Unit tests in Node and component tests in headless Chromium |
+| `npm run lint`      | ESLint, with accessibility rules as errors                  |
+| `npm run lint:css`  | Stylelint                                                   |
+| `npm run format`    | Prettier                                                    |

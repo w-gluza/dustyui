@@ -1,38 +1,37 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import { getInitials } from "./getInitials.js";
 
 describe("getInitials", () => {
   it("takes the first letter of the first and last word", () => {
-    assert.equal(getInitials("Wioletta Gluza"), "WG");
+    expect(getInitials("Wioletta Gluza")).toBe("WG");
   });
 
   it("skips middle names", () => {
-    assert.equal(getInitials("Ada King Lovelace"), "AL");
+    expect(getInitials("Ada King Lovelace")).toBe("AL");
   });
 
   it("returns one letter for a single word", () => {
-    assert.equal(getInitials("Madonna"), "M");
+    expect(getInitials("Madonna")).toBe("M");
   });
 
   it("ignores leading, trailing and repeated whitespace", () => {
-    assert.equal(getInitials("  Grace \t  Hopper\n"), "GH");
+    expect(getInitials("  Grace \t  Hopper\n")).toBe("GH");
   });
 
   it("returns an empty string when there is no name", () => {
-    assert.equal(getInitials(""), "");
-    assert.equal(getInitials("   "), "");
+    expect(getInitials("")).toBe("");
+    expect(getInitials("   ")).toBe("");
   });
 
   it("keeps the original letter case", () => {
-    assert.equal(getInitials("bell hooks"), "bh");
+    expect(getInitials("bell hooks")).toBe("bh");
   });
 
   it("keeps an accented letter whole when it is written as two code points", () => {
-    assert.equal(getInitials("E\u0301mile Zola"), "E\u0301Z");
+    expect(getInitials("E\u0301mile Zola")).toBe("E\u0301Z");
   });
 
   it("keeps an emoji made of several code points whole", () => {
-    assert.equal(getInitials("👩‍🚀 Ride"), "👩‍🚀R");
+    expect(getInitials("👩‍🚀 Ride")).toBe("👩‍🚀R");
   });
 });
