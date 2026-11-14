@@ -79,7 +79,7 @@ function isInsideControl(target: EventTarget, row: Element): boolean {
   return control !== null && control !== row && row.contains(control);
 }
 
-export interface TreeProps<Node extends TreeNode> extends Omit<
+export interface TreeBaseProps<Node extends TreeNode> extends Omit<
   ComponentProps<"div">,
   | "children"
   | "dangerouslySetInnerHTML"
@@ -95,8 +95,6 @@ export interface TreeProps<Node extends TreeNode> extends Omit<
   label: string;
   renderRow: (row: TreeRow<Node>) => ReactNode;
   getRowText?: ((row: TreeRow<Node>) => string) | undefined;
-  expanded?: ReadonlySet<string> | undefined;
-  defaultExpanded?: ReadonlySet<string> | readonly string[] | undefined;
   onExpandedChange?: ((expanded: ReadonlySet<string>) => void) | undefined;
   selected?: string | undefined;
   onSelectedChange?: ((selected: string) => void) | undefined;
@@ -106,6 +104,19 @@ export interface TreeProps<Node extends TreeNode> extends Omit<
   "aria-activedescendant"?: never;
   "aria-orientation"?: never;
 }
+
+export type TreeExpansionProps =
+  | {
+      expanded: ReadonlySet<string>;
+      defaultExpanded?: never;
+    }
+  | {
+      expanded?: undefined;
+      defaultExpanded?: ReadonlySet<string> | readonly string[] | undefined;
+    };
+
+export type TreeProps<Node extends TreeNode> = TreeBaseProps<Node> &
+  TreeExpansionProps;
 
 export function Tree<Node extends TreeNode>({
   root,

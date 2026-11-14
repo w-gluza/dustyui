@@ -23,15 +23,20 @@ const files = folder(
   folder("readme"),
 );
 
-function Files(props: Partial<TreeProps<Folder>>) {
+function Files({
+  expanded,
+  defaultExpanded = ["root"],
+  ...props
+}: Partial<TreeProps<Folder>>) {
+  const expansion = expanded ? { expanded } : { defaultExpanded };
   return (
     <Tree
       root={files}
       label="Files"
-      defaultExpanded={["root"]}
       renderRow={(row) => row.node.name}
       getRowText={(row) => row.node.name}
       {...props}
+      {...expansion}
     />
   );
 }
@@ -422,7 +427,9 @@ describe("Tree", () => {
 
   describe("open state", () => {
     it("starts with nothing open unless told otherwise", async () => {
-      await render(<Files defaultExpanded={undefined} />);
+      await render(
+        <Tree root={files} label="Files" renderRow={(row) => row.node.name} />,
+      );
 
       expect(names()).toEqual(["root"]);
     });

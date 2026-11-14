@@ -22,6 +22,8 @@ interface TreeBase {
   renderRow: () => null;
 }
 
+type Open = ReadonlySet<string>;
+
 interface InspectorBase {
   label: string;
   value: unknown;
@@ -89,5 +91,29 @@ describe("props", () => {
         InspectorBase & { "aria-labelledby": string }
       >
     >().toEqualTypeOf<false>();
+  });
+
+  it("refuse controlled and default expansion together", () => {
+    expectTypeOf<
+      Accepts<
+        TreeProps<TreeNode>,
+        TreeBase & { expanded: Open; defaultExpanded: Open }
+      >
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<
+        ObjectInspectorProps,
+        InspectorBase & { expanded: Open; defaultExpanded: string[] }
+      >
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<TreeProps<TreeNode>, TreeBase & { expanded: Open }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<
+        ObjectInspectorProps,
+        InspectorBase & { defaultExpanded: string[] }
+      >
+    >().toEqualTypeOf<true>();
   });
 });
