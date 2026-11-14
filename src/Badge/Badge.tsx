@@ -7,14 +7,14 @@ export interface BadgeProps extends Omit<
   "children" | "dangerouslySetInnerHTML"
 > {
   label: string;
-  icon?: ReactNode;
-  iconPosition?: "left" | "right";
+  icon?: ReactNode | undefined;
+  iconPosition?: "start" | "end" | undefined;
 }
 
 export function Badge({
   label,
   icon,
-  iconPosition = "left",
+  iconPosition = "start",
   className,
   ...props
 }: BadgeProps) {
@@ -27,9 +27,9 @@ export function Badge({
 
   return (
     <span {...props} className={clsx(styles.badge, className)}>
-      {iconPosition === "left" ? iconNode : null}
+      {iconPosition === "start" ? iconNode : null}
       <span className={styles.label}>{label}</span>
-      {iconPosition === "right" ? iconNode : null}
+      {iconPosition === "end" ? iconNode : null}
     </span>
   );
 }

@@ -18,6 +18,7 @@ import { chromium } from "playwright";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const fixture = join(root, "consumer");
 const work = join(tmpdir(), "dustyui-consumer");
+const SKIPPED = new Set(["node_modules", ".next", "tsconfig.tsbuildinfo"]);
 const results = [];
 
 function run(command, args, cwd) {
@@ -70,6 +71,11 @@ function measure(page) {
       surfaceToken: getComputedStyle(document.documentElement)
         .getPropertyValue("--dusty-surface")
         .trim(),
+      monoToken: getComputedStyle(
+        document.querySelector("#mono") ?? document.documentElement,
+      )
+        .getPropertyValue("--dusty-surface")
+        .trim(),
       buttonRadius: button ? getComputedStyle(button).borderRadius : "",
       buttonBackground: button ? getComputedStyle(button).backgroundColor : "",
       avatarWidth: avatar
@@ -111,13 +117,26 @@ function recordTree(prefix, measured) {
   );
 }
 
+function watchPolicy(context) {
+  return context.addInitScript(() => {
+    window.blockedByPolicy = [];
+    document.addEventListener("securitypolicyviolation", (event) => {
+      window.blockedByPolicy.push(event.effectiveDirective);
+    });
+  });
+}
+
+function getBlocked(page) {
+  return page.evaluate(() => [...new Set(window.blockedByPolicy)]);
+}
+
 async function checkPages(origin, policy) {
   const browser = await chromium.launch();
   try {
     const response = await fetch(origin);
     const html = await response.text();
     record(
-      "the strict policy is the one being served",
+      "the policy that forbids inline styles is the one being served",
       response.headers.get("content-security-policy") === policy,
       response.headers.get("content-security-policy") ?? "no header",
     );
@@ -139,6 +158,7 @@ async function checkPages(origin, policy) {
     await noScript.close();
 
     const context = await browser.newContext();
+    await watchPolicy(context);
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -147,6 +167,11 @@ async function checkPages(origin, policy) {
     await page.getByText("1 match").waitFor();
     const hydrated = await measure(page);
     recordStyles("server page after hydration", hydrated);
+    record(
+      "server page: a theme imported by its own path applies",
+      hydrated.monoToken !== "" && hydrated.monoToken !== hydrated.surfaceToken,
+      `mono --dusty-surface ${hydrated.monoToken || "missing"}`,
+    );
     recordTree("server page after hydration", hydrated);
     record(
       "known limit - server page after hydration: the avatar size is blocked by the policy",
@@ -164,26 +189,33 @@ async function checkPages(origin, policy) {
       selected ?? "nothing selected",
     );
     const path = await page
-      .getByRole("region", { name: "Selected value" })
+      .getByRole("region", { name: "Selected value in Park" })
       .textContent();
     record(
       "server page after hydration: details show the selected path",
       path?.includes("$.animals[1].commonName") === true,
     );
 
-    const violations = [];
+    const blockedOnServerPage = await getBlocked(page);
+    record(
+      "known limit - server page: the policy blocks inline style attributes and nothing else",
+      blockedOnServerPage.join() === "style-src-attr",
+      blockedOnServerPage.join(", ") || "nothing blocked",
+    );
+
     const clientPage = await context.newPage();
-    clientPage.on("console", (message) => {
-      if (message.text().includes("Content Security Policy")) {
-        violations.push(message.text());
-      }
-    });
     clientPage.on("pageerror", (error) => errors.push(error.message));
     await clientPage.goto(`${origin}/client`);
     await clientPage.getByRole("button", { name: "Mount" }).click();
-    await clientPage.getByRole("tree", { name: "Rows" }).waitFor();
-    await clientPage.waitForTimeout(300);
+    await clientPage
+      .locator('[role="tree"][aria-label="Rows"] [role="treeitem"]')
+      .first()
+      .waitFor();
+    await clientPage.getByRole("searchbox").fill("puma");
+    await clientPage.getByText("1 match").waitFor();
+    await clientPage.getByRole("button", { name: "Copy path" }).click();
     const mounted = await measure(clientPage);
+    const blockedOnClientPage = await getBlocked(clientPage);
     recordStyles("client page", mounted);
     recordTree("client page, mounted after load", mounted);
     record(
@@ -193,8 +225,8 @@ async function checkPages(origin, policy) {
     );
     record(
       "client page: nothing is blocked by the policy",
-      violations.length === 0,
-      violations[0]?.slice(0, 120) ?? "",
+      blockedOnClientPage.length === 0,
+      blockedOnClientPage.join(", "),
     );
     record("no page threw an error", errors.length === 0, errors[0] ?? "");
     await context.close();
@@ -206,10 +238,9 @@ async function checkPages(origin, policy) {
 async function main() {
   const packDir = join(work, "pack");
   const app = join(work, "app");
+  rmSync(work, { recursive: true, force: true });
   mkdirSync(packDir, { recursive: true });
-  for (const old of readdirSync(packDir)) {
-    rmSync(join(packDir, old));
-  }
+  mkdirSync(app, { recursive: true });
   run("npm", ["pack", "--pack-destination", packDir], root);
   const tarball = readdirSync(packDir).find((name) => name.endsWith(".tgz"));
   if (!tarball) {
@@ -226,20 +257,17 @@ async function main() {
     `${listing.trim().split("\n").length} files`,
   );
 
-  for (const name of [
-    "app",
-    "next.config.mjs",
-    "tsconfig.json",
-    "package.json",
-  ]) {
-    rmSync(join(app, name), { recursive: true, force: true });
-    cpSync(join(fixture, name), join(app, name), { recursive: true });
+  for (const name of readdirSync(fixture)) {
+    if (!SKIPPED.has(name)) {
+      cpSync(join(fixture, name), join(app, name), { recursive: true });
+    }
   }
-  const settings = JSON.parse(readFileSync(join(app, "tsconfig.json"), "utf8"));
-  delete settings.compilerOptions.paths;
-  writeFileSync(join(app, "tsconfig.json"), JSON.stringify(settings, null, 2));
-  rmSync(join(app, ".next"), { recursive: true, force: true });
-  run("npm", ["install", "--no-audit", "--no-fund"], app);
+  for (const name of ["tsconfig.json", "tsconfig.types.json"]) {
+    const settings = JSON.parse(readFileSync(join(app, name), "utf8"));
+    delete settings.compilerOptions.paths;
+    writeFileSync(join(app, name), JSON.stringify(settings, null, 2));
+  }
+  run("npm", ["ci", "--no-audit", "--no-fund"], app);
   run(
     "npm",
     ["install", "--no-audit", "--no-fund", "--no-save", join(packDir, tarball)],
@@ -248,6 +276,12 @@ async function main() {
   record(
     "the packed library installs into a fresh Next.js app",
     existsSync(join(app, "node_modules", "dustyui", "dist", "index.js")),
+  );
+
+  run("npx", ["tsc", "-p", "tsconfig.types.json"], app);
+  record(
+    "the published types pass for a consumer that also checks libraries",
+    true,
   );
 
   run("npx", ["next", "build"], app);

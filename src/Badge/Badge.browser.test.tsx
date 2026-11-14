@@ -27,7 +27,7 @@ describe("Badge", () => {
     const screen = await render(
       <>
         <Badge label="Before" icon="◀" />
-        <Badge label="After" icon="▶" iconPosition="right" />
+        <Badge label="After" icon="▶" iconPosition="end" />
       </>,
     );
 

@@ -1,24 +1,31 @@
 "use client";
 
 import {
-  useCallback,
   useDeferredValue,
   useEffect,
+  useEffectEvent,
   useMemo,
   useState,
 } from "react";
-import { announce } from "../announcer/announcer.js";
+import clsx from "clsx";
+import { announce, readyAnnouncer } from "../announcer/announcer.js";
 import { Tree, type TreeProps } from "../Tree/Tree.js";
 import type { TreeRow } from "../Tree/treeModel.js";
-import { describe, type InspectorNode } from "./describe/describe.js";
+import {
+  describe,
+  type InspectorNode,
+  type NodeLabel,
+} from "./describe/describe.js";
+import { getEscapedText } from "./describe/getEscapedText.js";
 import { getNode } from "./describe/getNode.js";
 import { getAncestorIds, ROOT_ID } from "./describe/getPath.js";
+import { getTruncatedText } from "./describe/getTruncatedText.js";
 import { getLabelText } from "./getLabelText.js";
 import { InspectorDetails } from "./InspectorDetails.js";
 import { InspectorSearch } from "./InspectorSearch.js";
-import { getHighlightParts } from "./search/getHighlightParts.js";
 import { getMatches, type Matches } from "./search/getMatches.js";
 import { getSearchStatus } from "./search/getSearchStatus.js";
+import { Highlighted } from "./search/Highlighted.js";
 import styles from "./ObjectInspector.module.css";
 
 export interface ObjectInspectorProps extends Omit<
@@ -26,35 +33,27 @@ export interface ObjectInspectorProps extends Omit<
   "root" | "renderRow" | "getRowText"
 > {
   value: unknown;
-  searchable?: boolean;
-  showDetails?: boolean;
+  searchable?: boolean | undefined;
+  showDetails?: boolean | undefined;
 }
 
 const ROOT_OPEN = [ROOT_ID];
 const SEARCH_LIMIT = 500_000;
 const ANNOUNCE_DELAY = 700;
+const LABEL_LIMIT = 80;
+const ANNOUNCED_PATH_LIMIT = 120;
+
+function getShownLabel(label: NodeLabel): string {
+  return getEscapedText(getTruncatedText(getLabelText(label), LABEL_LIMIT));
+}
 
 function getRowText({ node }: TreeRow<InspectorNode>): string {
   return node.label ? getLabelText(node.label) : "";
 }
 
-function Highlighted({ text, query }: { text: string; query: string }) {
-  if (query === "") {
-    return text;
-  }
-  return getHighlightParts(text, query).map((part, index) =>
-    part.isMatch ? (
-      <mark key={index} className={styles.match}>
-        {part.text}
-      </mark>
-    ) : (
-      part.text
-    ),
-  );
-}
-
 export function ObjectInspector({
   value,
+  label,
   searchable = false,
   showDetails = false,
   expanded: controlledExpanded,
@@ -62,6 +61,7 @@ export function ObjectInspector({
   onExpandedChange,
   selected: controlledSelected,
   onSelectedChange,
+  className,
   ...props
 }: ObjectInspectorProps) {
   const root = useMemo(() => describe(value), [value]);
@@ -82,7 +82,10 @@ export function ObjectInspector({
     () => getMatches(root, searched, SEARCH_LIMIT),
     [root, searched],
   );
-  const current = position.matches === matches ? position.index : -1;
+  const current =
+    position.matches === matches && matches.ids[position.index] === selected
+      ? position.index
+      : -1;
   const status = getSearchStatus(searched, matches, current);
   const selectedNode = useMemo(
     () =>
@@ -93,12 +96,28 @@ export function ObjectInspector({
   );
 
   useEffect(() => {
-    if (status === "") {
+    if (searchable || showDetails) {
+      readyAnnouncer();
+    }
+  }, [searchable, showDetails]);
+
+  const announceStatus = useEffectEvent(() => {
+    const id = matches.ids[current];
+    const match = id === undefined ? undefined : getNode(root, id);
+    announce(
+      match
+        ? `Match ${status}: ${getEscapedText(getTruncatedText(match.path, ANNOUNCED_PATH_LIMIT))}`
+        : status,
+    );
+  });
+
+  useEffect(() => {
+    if (searched.trim() === "") {
       return;
     }
-    const timer = setTimeout(() => announce(status), ANNOUNCE_DELAY);
+    const timer = setTimeout(() => announceStatus(), ANNOUNCE_DELAY);
     return () => clearTimeout(timer);
-  }, [status]);
+  }, [searched, current]);
 
   function changeExpanded(next: ReadonlySet<string>) {
     if (controlledExpanded === undefined) {
@@ -132,13 +151,13 @@ export function ObjectInspector({
     setPosition({ matches, index });
   }
 
-  const renderRow = useCallback(
-    ({ node }: TreeRow<InspectorNode>) => (
+  function renderRow({ node }: TreeRow<InspectorNode>) {
+    return (
       <>
         {node.label ? (
           <>
             <span>
-              <Highlighted text={getLabelText(node.label)} query={searched} />
+              <Highlighted text={getShownLabel(node.label)} query={searched} />
             </span>
             <span className={styles.separator}>: </span>
           </>
@@ -151,31 +170,14 @@ export function ObjectInspector({
           )}
         </span>
       </>
-    ),
-    [searched],
-  );
-
-  const tree = (
-    <Tree
-      {...props}
-      root={root}
-      expanded={expanded}
-      onExpandedChange={changeExpanded}
-      selected={selected}
-      onSelectedChange={changeSelected}
-      renderRow={renderRow}
-      getRowText={getRowText}
-    />
-  );
-
-  if (!searchable && !showDetails) {
-    return tree;
+    );
   }
 
   return (
-    <div className={styles.inspector}>
+    <div {...props} className={clsx(styles.inspector, className)}>
       {searchable ? (
         <InspectorSearch
+          label={label}
           query={query}
           status={status}
           hasMatches={matches.ids.length > 0}
@@ -183,8 +185,20 @@ export function ObjectInspector({
           onMove={moveToMatch}
         />
       ) : null}
-      {tree}
-      {showDetails ? <InspectorDetails node={selectedNode} /> : null}
+      <Tree
+        root={root}
+        label={label}
+        className={styles.tree}
+        expanded={expanded}
+        onExpandedChange={changeExpanded}
+        selected={selected}
+        onSelectedChange={changeSelected}
+        renderRow={renderRow}
+        getRowText={getRowText}
+      />
+      {showDetails ? (
+        <InspectorDetails label={label} node={selectedNode} query={searched} />
+      ) : null}
     </div>
   );
 }

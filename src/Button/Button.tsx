@@ -2,13 +2,26 @@
 
 import {
   useEffect,
+  useId,
   type ComponentProps,
   type MouseEvent,
   type ReactNode,
 } from "react";
 import clsx from "clsx";
-import { announce } from "../announcer/announcer.js";
+import { announce, readyAnnouncer } from "../announcer/announcer.js";
 import styles from "./Button.module.css";
+
+const ACTIVATION_HANDLERS = {
+  onDoubleClick: undefined,
+  onKeyDown: undefined,
+  onKeyUp: undefined,
+  onMouseDown: undefined,
+  onMouseUp: undefined,
+  onPointerDown: undefined,
+  onPointerUp: undefined,
+  onTouchStart: undefined,
+  onTouchEnd: undefined,
+} satisfies Partial<ComponentProps<"button">>;
 
 export type ButtonVariant = "primary" | "secondary";
 
@@ -17,9 +30,9 @@ export interface ButtonProps extends Omit<
   "children" | "dangerouslySetInnerHTML"
 > {
   children: ReactNode;
-  variant?: ButtonVariant;
-  loading?: boolean;
-  loadingLabel?: string;
+  variant?: ButtonVariant | undefined;
+  loading?: boolean | undefined;
+  loadingLabel?: string | undefined;
 }
 
 export function Button({
@@ -31,15 +44,18 @@ export function Button({
   children,
   onClick,
   "aria-disabled": ariaDisabled,
+  "aria-describedby": describedBy,
   ...props
 }: ButtonProps) {
+  const loadingId = useId();
   const inactive = loading || ariaDisabled === true || ariaDisabled === "true";
 
-  useEffect(() => {
-    if (loading) {
-      announce(loadingLabel);
-    }
-  }, [loading, loadingLabel]);
+  useEffect(readyAnnouncer, []);
+
+  useEffect(
+    () => (loading ? announce(loadingLabel) : undefined),
+    [loading, loadingLabel],
+  );
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (inactive) {
@@ -53,15 +69,24 @@ export function Button({
   return (
     <button
       {...props}
+      {...(inactive ? ACTIVATION_HANDLERS : undefined)}
       type={type}
       className={clsx(styles.button, styles[variant], className)}
       data-variant={variant}
       data-loading={loading || undefined}
       aria-disabled={inactive ? true : ariaDisabled}
+      aria-describedby={loading ? clsx(describedBy, loadingId) : describedBy}
       onClick={handleClick}
     >
       <span className={styles.label}>{children}</span>
-      {loading ? <span className={styles.spinner} aria-hidden="true" /> : null}
+      {loading ? (
+        <>
+          <span className={styles.spinner} aria-hidden="true" />
+          <span id={loadingId} hidden>
+            {loadingLabel}
+          </span>
+        </>
+      ) : null}
     </button>
   );
 }

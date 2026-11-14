@@ -1,4 +1,7 @@
 import type { Child, ChildSource } from "./getChildren.js";
+import { getEscapedText } from "./getEscapedText.js";
+import { getTruncatedText } from "./getTruncatedText.js";
+import { isIdentifier } from "./isIdentifier.js";
 import { getValueKind, type ValueKind } from "./getValueKind.js";
 import {
   getConstructorName,
@@ -26,26 +29,11 @@ const MAX_NESTED_TEXT_LENGTH = 20;
 const MAX_MEMBERS = 5;
 const ELLIPSIS = "…";
 const GETTER = "(...)";
-const IDENTIFIER = /^[A-Za-z_$][\w$]*$/u;
-const LINE_BREAKING = /[\p{Cc}\u2028\u2029]/gu;
-
-function toSingleLine(text: string): string {
-  return text.replace(
-    LINE_BREAKING,
-    (character) =>
-      `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
-  );
-}
-
-function truncate(text: string, limit: number): string {
-  const characters = Array.from(text);
-  return characters.length > limit
-    ? `${characters.slice(0, limit).join("")}${ELLIPSIS}`
-    : text;
-}
+const HEX_DIGITS_SHOWN = 16;
+const DECIMAL_BIGINT_LIMIT = 10n ** 60n;
 
 function quote(text: string, limit: number): string {
-  return JSON.stringify(truncate(text, limit));
+  return JSON.stringify(getTruncatedText(text, limit));
 }
 
 function withSize(name: string, size: number): string {
@@ -62,14 +50,33 @@ function getArrayLength(value: object): number {
 }
 
 function getUninspectablePreview(reason: string): string {
-  return `Uninspectable: ${truncate(reason, MAX_TEXT_LENGTH)}`;
+  return `Could not be read: ${getTruncatedText(reason, MAX_TEXT_LENGTH)}`;
 }
 
 function getFunctionPreview(value: object): string {
   const name = getDataProperty(value, "name");
   const label =
-    typeof name === "string" ? truncate(name, MAX_NESTED_TEXT_LENGTH) : "";
+    typeof name === "string"
+      ? getTruncatedText(name, MAX_NESTED_TEXT_LENGTH)
+      : "";
   return isClass(value) ? `class ${label}`.trimEnd() : `ƒ ${label}()`;
+}
+
+function getBigIntPreview(value: bigint): string {
+  if (value > -DECIMAL_BIGINT_LIMIT && value < DECIMAL_BIGINT_LIMIT) {
+    return `${value}n`;
+  }
+  const sign = value < 0n ? "-" : "";
+  const digits = (value < 0n ? -value : value).toString(16);
+  return `${sign}0x${digits.slice(0, HEX_DIGITS_SHOWN)}${ELLIPSIS}n (${digits.length.toLocaleString("en-GB")} hex digits)`;
+}
+
+function getHolePreview(count: number): string {
+  return `<${count.toLocaleString("en-GB")} empty ${count === 1 ? "item" : "items"}>`;
+}
+
+function getRestPreview(count: number): string {
+  return `${count.toLocaleString("en-GB")} more not shown`;
 }
 
 function getDatePreview(value: object): string {
@@ -81,7 +88,7 @@ function getErrorPreview(value: object): string {
   const name = getConstructorName(value) ?? "Error";
   const message = getDataProperty(value, "message");
   return typeof message === "string" && message !== ""
-    ? `${name}: ${truncate(message, MAX_TEXT_LENGTH)}`
+    ? `${name}: ${getTruncatedText(message, MAX_TEXT_LENGTH)}`
     : name;
 }
 
@@ -96,13 +103,15 @@ function getPrimitivePreview(
     case "number":
       return Object.is(value, -0) ? "-0" : String(value);
     case "bigint":
-      return `${String(value)}n`;
+      return getBigIntPreview(value as bigint);
     case "boolean":
+      return value === true ? "true" : "false";
     case "null":
+      return "null";
     case "undefined":
-      return String(value);
+      return "undefined";
     case "symbol":
-      return truncate(getSymbolText(value as symbol), textLimit);
+      return getTruncatedText(getSymbolText(value as symbol), textLimit);
     default:
       return undefined;
   }
@@ -124,7 +133,7 @@ function getNestedObjectPreview(value: object, kind: ValueKind): string {
     case "date":
       return getDatePreview(value);
     case "regexp":
-      return truncate(getRegExpText(value), MAX_NESTED_TEXT_LENGTH);
+      return getTruncatedText(getRegExpText(value), MAX_NESTED_TEXT_LENGTH);
     case "error":
       return getConstructorName(value) ?? "Error";
     default: {
@@ -154,6 +163,10 @@ function getSourcePreview(source: ChildSource): string {
       return GETTER;
     case "failure":
       return getUninspectablePreview(source.reason);
+    case "rest":
+      return getRestPreview(source.count);
+    case "hole":
+      return getHolePreview(source.count);
     case "entry":
       return `${getNestedPreview(source.key)} => ${getNestedPreview(source.value)}`;
   }
@@ -162,11 +175,14 @@ function getSourcePreview(source: ChildSource): string {
 function getMemberName(child: Child): string {
   switch (child.step.type) {
     case "property":
-      return IDENTIFIER.test(child.step.key)
-        ? truncate(child.step.key, MAX_NESTED_TEXT_LENGTH)
+      return isIdentifier(child.step.key)
+        ? getTruncatedText(child.step.key, MAX_NESTED_TEXT_LENGTH)
         : quote(child.step.key, MAX_NESTED_TEXT_LENGTH);
     case "symbol":
-      return truncate(getSymbolText(child.step.key), MAX_NESTED_TEXT_LENGTH);
+      return getTruncatedText(
+        getSymbolText(child.step.key),
+        MAX_NESTED_TEXT_LENGTH,
+      );
     default:
       return "";
   }
@@ -197,7 +213,7 @@ function getContainerPreview(input: PreviewInput, value: object): string {
     case "date":
       return getDatePreview(value);
     case "regexp":
-      return truncate(getRegExpText(value), MAX_TEXT_LENGTH);
+      return getTruncatedText(getRegExpText(value), MAX_TEXT_LENGTH);
     case "error":
       return getErrorPreview(value);
     case "array":
@@ -209,7 +225,7 @@ function getContainerPreview(input: PreviewInput, value: object): string {
     default: {
       const name =
         typeName && typeName !== "Object"
-          ? `${truncate(typeName, MAX_NESTED_TEXT_LENGTH)} `
+          ? `${getTruncatedText(typeName, MAX_NESTED_TEXT_LENGTH)} `
           : "";
       return `${name}${getMembersPreview(children, "{", "}")}`;
     }
@@ -235,8 +251,10 @@ function getRawPreview(input: PreviewInput): string {
     case "uninspectable":
       return getUninspectablePreview(input.detail);
     case "circular":
-      return `[Circular ${truncate(input.detail, MAX_TEXT_LENGTH)}]`;
+      return `[Circular ${getTruncatedText(input.detail, MAX_TEXT_LENGTH)}]`;
     case "entry":
+    case "rest":
+    case "hole":
       return getSourcePreview(input.source);
     default:
       return getValuePreview(input);
@@ -244,5 +262,5 @@ function getRawPreview(input: PreviewInput): string {
 }
 
 export function getPreview(input: PreviewInput): string {
-  return toSingleLine(getRawPreview(input));
+  return getEscapedText(getRawPreview(input));
 }

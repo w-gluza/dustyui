@@ -1,5 +1,6 @@
-import type { ComponentProps, CSSProperties, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import clsx from "clsx";
+import { getStyle } from "../styles/getStyle.js";
 import { getInitials } from "./getInitials.js";
 import styles from "./Avatar.module.css";
 
@@ -16,10 +17,13 @@ export interface AvatarProps extends Omit<
   | "aria-hidden"
 > {
   name: string;
-  image?: ReactNode;
-  fallback?: string;
-  size?: number;
-  decorative?: boolean;
+  image?: ReactNode | undefined;
+  fallback?: string | undefined;
+  size?: number | undefined;
+  decorative?: boolean | undefined;
+  "aria-label"?: never;
+  "aria-labelledby"?: never;
+  "aria-hidden"?: never;
 }
 
 export function Avatar({
@@ -33,10 +37,10 @@ export function Avatar({
   ...props
 }: AvatarProps) {
   const safeSize = Number.isFinite(size) && size > 0 ? size : DEFAULT_SIZE;
-  const sizedStyle = {
+  const sizedStyle = getStyle({
     ...style,
     "--avatar-size": `${safeSize / ROOT_FONT_SIZE}rem`,
-  } as CSSProperties;
+  });
   const accessibility = decorative
     ? { "aria-hidden": true }
     : { role: "img", "aria-label": name };
@@ -48,11 +52,8 @@ export function Avatar({
       className={clsx(styles.avatar, className)}
       style={sizedStyle}
     >
-      {image ? (
-        image
-      ) : (
-        <span className={styles.fallback}>{fallback ?? getInitials(name)}</span>
-      )}
+      <span className={styles.fallback}>{fallback ?? getInitials(name)}</span>
+      {image}
     </span>
   );
 }

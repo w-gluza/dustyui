@@ -25,7 +25,9 @@ export type ValueKind =
   | "entry"
   | "getter"
   | "circular"
-  | "uninspectable";
+  | "uninspectable"
+  | "hole"
+  | "rest";
 
 function succeeds(read: () => unknown): boolean {
   try {
@@ -41,10 +43,9 @@ function isRegExp(value: object): boolean {
 }
 
 function isError(value: object): boolean {
-  const { isError: nativeIsError } = Error as {
-    isError?: (candidate: unknown) => boolean;
-  };
-  return nativeIsError ? nativeIsError(value) : value instanceof Error;
+  return typeof Error.isError === "function"
+    ? Error.isError(value)
+    : value instanceof Error;
 }
 
 function isTypedArray(value: object): boolean {
@@ -95,6 +96,6 @@ export function getValueKind(value: unknown): ValueKind {
     case "object":
       return getObjectKind(value);
     default:
-      return typeof value as ValueKind;
+      return typeof value;
   }
 }

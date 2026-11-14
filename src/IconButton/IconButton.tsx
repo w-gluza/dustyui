@@ -10,6 +10,8 @@ export interface IconButtonProps extends Omit<
 > {
   label: string;
   icon: ReactNode;
+  "aria-label"?: never;
+  "aria-labelledby"?: never;
 }
 
 export function IconButton({

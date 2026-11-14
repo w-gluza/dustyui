@@ -5,6 +5,7 @@ export type Politeness = "polite" | "assertive";
 const REGION_READY_DELAY = 100;
 const MESSAGE_LIFETIME = 7000;
 
+let container: HTMLElement | undefined;
 let regions: Record<Politeness, HTMLElement> | undefined;
 let regionsReadyAt = 0;
 
@@ -16,41 +17,61 @@ function createRegion(politeness: Politeness): HTMLElement {
   return region;
 }
 
+function getHost(): HTMLElement {
+  return (
+    [...document.querySelectorAll<HTMLElement>("dialog:modal")].at(-1) ??
+    document.body
+  );
+}
+
 function ensureRegions(): Record<Politeness, HTMLElement> {
-  if (regions?.polite.isConnected && regions.assertive.isConnected) {
+  const host = getHost();
+  if (regions && container?.parentElement === host) {
     return regions;
   }
-
-  const container = document.createElement("div");
-  container.dataset.dustyAnnouncer = "";
-  container.className = visuallyHidden.visuallyHidden ?? "";
-
-  regions = {
-    polite: createRegion("polite"),
-    assertive: createRegion("assertive"),
-  };
-  container.append(regions.polite, regions.assertive);
-  document.body.append(container);
+  if (!regions || !container?.isConnected) {
+    container = document.createElement("div");
+    container.dataset.dustyAnnouncer = "";
+    container.className = visuallyHidden.visuallyHidden ?? "";
+    regions = {
+      polite: createRegion("polite"),
+      assertive: createRegion("assertive"),
+    };
+    container.append(regions.polite, regions.assertive);
+  }
+  host.append(container);
   regionsReadyAt = performance.now() + REGION_READY_DELAY;
 
   return regions;
 }
 
+function ignore(): void {
+  return undefined;
+}
+
+export function readyAnnouncer(): void {
+  if (typeof document !== "undefined") {
+    ensureRegions();
+  }
+}
+
 export function announce(
   message: string,
   politeness: Politeness = "polite",
-): void {
+): () => void {
   if (typeof document === "undefined" || message.trim() === "") {
-    return;
+    return ignore;
   }
 
   const region = ensureRegions()[politeness];
   const delay = Math.max(0, regionsReadyAt - performance.now());
 
-  setTimeout(() => {
+  const timer = setTimeout(() => {
     const entry = document.createElement("div");
     entry.textContent = message;
     region.append(entry);
     setTimeout(() => entry.remove(), MESSAGE_LIFETIME);
   }, delay);
+
+  return () => clearTimeout(timer);
 }

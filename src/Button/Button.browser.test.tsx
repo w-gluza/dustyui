@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { userEvent } from "vitest/browser";
@@ -192,6 +193,95 @@ describe("Button", () => {
       await render(<Button loading>Save</Button>);
 
       await expect.poll(() => announcements()).toEqual(["Loading"]);
+    });
+
+    it("announces once under strict mode", async () => {
+      await render(
+        <StrictMode>
+          <Button loading>Save</Button>
+        </StrictMode>,
+      );
+
+      await expect.poll(() => announcements()).toEqual(["Loading"]);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(announcements()).toEqual(["Loading"]);
+    });
+
+    it("does not announce when it stops loading straight away", async () => {
+      const screen = await render(<Button loading>Save</Button>);
+
+      await screen.rerender(<Button>Save</Button>);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      expect(announcements()).toEqual([]);
+    });
+
+    it("keeps its name and describes itself with the loading message", async () => {
+      const screen = await render(
+        <>
+          <Button loading loadingLabel="Saving" aria-describedby="hint">
+            Save
+          </Button>
+          <p id="hint">Stores the draft.</p>
+        </>,
+      );
+      const button = screen.getByRole("button", { name: "Save", exact: true });
+
+      await expect
+        .element(button)
+        .toHaveAccessibleDescription("Stores the draft. Saving");
+
+      await screen.rerender(
+        <>
+          <Button aria-describedby="hint">Save</Button>
+          <p id="hint">Stores the draft.</p>
+        </>,
+      );
+      await expect
+        .element(button)
+        .toHaveAccessibleDescription("Stores the draft.");
+    });
+
+    it("says its status inside an open modal dialog", async () => {
+      const screen = await render(
+        <dialog aria-label="Confirm">
+          <Button>Save</Button>
+        </dialog>,
+      );
+      const dialog = document.querySelector("dialog");
+      dialog?.showModal();
+
+      await screen.rerender(
+        <dialog aria-label="Confirm">
+          <Button loading>Save</Button>
+        </dialog>,
+      );
+
+      await expect.poll(() => announcements()).toEqual(["Loading"]);
+      expect(dialog?.querySelector("[data-dusty-announcer]")).not.toBeNull();
+      dialog?.close();
+    });
+
+    it("runs none of the consumer's activation handlers while unavailable", async () => {
+      const handler = vi.fn();
+      const screen = await render(
+        <Button
+          aria-disabled
+          onClick={handler}
+          onKeyDown={handler}
+          onPointerDown={handler}
+          onMouseDown={handler}
+          onDoubleClick={handler}
+        >
+          Save
+        </Button>,
+      );
+
+      await screen.getByRole("button").click({ force: true });
+      await screen.getByRole("button").dblClick({ force: true });
+      await userEvent.keyboard("{Enter}");
+
+      expect(handler).not.toHaveBeenCalled();
     });
 
     it("announces a custom loading message", async () => {

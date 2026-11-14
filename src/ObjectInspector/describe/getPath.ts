@@ -1,3 +1,4 @@
+import { isIdentifier } from "./isIdentifier.js";
 import { getSymbolText } from "./safeRead.js";
 
 export const ROOT_ID = "$";
@@ -13,9 +14,10 @@ export type PathStep =
   | { readonly type: "entry"; readonly index: number }
   | { readonly type: "item"; readonly index: number }
   | { readonly type: "entryKey" }
-  | { readonly type: "entryValue" };
+  | { readonly type: "entryValue" }
+  | { readonly type: "hole"; readonly index: number }
+  | { readonly type: "rest" };
 
-const IDENTIFIER = /^[A-Za-z_$][\w$]*$/u;
 const CANONICAL_INDEX = /^(?:0|[1-9]\d*)$/u;
 const MAX_ARRAY_INDEX = 2 ** 32 - 2;
 
@@ -34,6 +36,7 @@ function getSegment(step: PathStep): string {
     case "symbol":
       return `@${step.position}`;
     case "index":
+    case "hole":
       return `[${step.index}]`;
     case "entry":
     case "item":
@@ -42,6 +45,8 @@ function getSegment(step: PathStep): string {
       return "key";
     case "entryValue":
       return "value";
+    case "rest":
+      return "rest";
   }
 }
 
@@ -52,12 +57,13 @@ export function getChildId(parentId: string, step: PathStep): string {
 export function getPath(parentPath: string, step: PathStep): string {
   switch (step.type) {
     case "property":
-      return IDENTIFIER.test(step.key)
+      return isIdentifier(step.key)
         ? `${parentPath}.${step.key}`
         : `${parentPath}[${JSON.stringify(step.key)}]`;
     case "symbol":
       return `${parentPath}[${getSymbolText(step.key)}]`;
     case "index":
+    case "hole":
       return `${parentPath}[${step.index}]`;
     case "entry":
       return `${parentPath}[entry ${step.index}]`;
@@ -67,6 +73,8 @@ export function getPath(parentPath: string, step: PathStep): string {
       return `${parentPath}.key`;
     case "entryValue":
       return `${parentPath}.value`;
+    case "rest":
+      return `${parentPath}[…]`;
   }
 }
 

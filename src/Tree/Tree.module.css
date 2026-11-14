@@ -2,25 +2,29 @@
   overflow-x: auto;
   color: var(--dusty-text);
   font-family: var(--dusty-font-mono);
-  font-size: 0.8125rem;
-  line-height: 1.6;
+  font-size: var(--dusty-font-size-code);
+  line-height: var(--dusty-line-height-code);
 }
 
 .row {
   display: flex;
-  align-items: baseline;
+  box-sizing: border-box;
+  align-items: center;
   inline-size: max-content;
   min-inline-size: 100%;
   padding-inline: calc((var(--tree-level, 1) - 1) * var(--tree-indent, 1rem))
     0.5rem;
-  block-size: var(--tree-row-height, 1.3rem);
+  block-size: var(--tree-row-height, max(1lh, 1.5rem));
+  border-inline-start: 0.1875rem solid transparent;
   border-radius: var(--dusty-radius-sm);
   white-space: nowrap;
   cursor: default;
 }
 
 .gap {
-  block-size: calc(var(--tree-gap-rows, 0) * var(--tree-row-height, 1.3rem));
+  block-size: calc(
+    var(--tree-gap-rows, 0) * var(--tree-row-height, max(1lh, 1.5rem))
+  );
 }
 
 .row[aria-expanded] {
@@ -28,6 +32,7 @@
 }
 
 .row[aria-selected="true"] {
+  border-inline-start-color: var(--dusty-border-strong);
   background-color: var(--dusty-surface-selected);
 }
 
@@ -52,6 +57,14 @@
   rotate: 90deg;
 }
 
+.row[aria-expanded]:dir(rtl) > .toggle::before {
+  scale: -1 1;
+}
+
+.row[aria-expanded="true"]:dir(rtl) > .toggle::before {
+  rotate: -90deg;
+}
+
 @media (hover: hover) {
   .row:hover:not([aria-selected="true"]) {
     background-color: var(--dusty-surface-hover);
@@ -61,5 +74,15 @@
 @media (prefers-reduced-motion: no-preference) {
   .row[aria-expanded] > .toggle::before {
     transition: rotate 120ms ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .row {
+    border-inline-start-color: Canvas;
+  }
+
+  .row[aria-selected="true"] {
+    border-inline-start-color: Highlight;
   }
 }

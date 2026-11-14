@@ -5,7 +5,7 @@ const WINDOW_THRESHOLD = 200;
 const WINDOW_OVERSCAN = 10;
 const WINDOW_LIMIT = 500;
 const INITIAL_WINDOW: RowWindow = { start: 0, end: 50 };
-const ESTIMATED_ROW_HEIGHT = 21;
+const ESTIMATED_ROW_HEIGHT = 24;
 const TREE_ITEM = ':scope > [role="treeitem"]';
 const GAP = ":scope > [data-gap-rows]";
 

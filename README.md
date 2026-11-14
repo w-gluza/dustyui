@@ -22,6 +22,17 @@ export function Example() {
 
 The styles load with the components, so there is no stylesheet to import.
 
+The colours follow the system light or dark setting. Components take their text colour from the theme and paint no background of their own, so give the page the matching one:
+
+```css
+body {
+  background-color: var(--dusty-surface);
+  color: var(--dusty-text);
+}
+```
+
+To stay in one scheme, set `data-color-scheme="light"` or `"dark"` on the root element.
+
 Components, props and themes are documented in [dustyui-docs](https://github.com/w-gluza/dustyui-docs).
 
 ## Accessibility
@@ -40,15 +51,15 @@ announce("Connection lost", "assertive");
 
 ## Scripts
 
-| Script                  | What it does                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------- |
-| `npm run build`         | Compiles to `dist` and copies the stylesheets                                                     |
-| `npm run typecheck`     | Type-checks the source and the tests with TypeScript 7                                            |
-| `npm test`              | Unit tests in Node and component tests in headless Chromium                                       |
-| `npm run test:consumer` | Installs the packed library in a Next.js app and checks it under a strict content security policy |
-| `npm run lint`          | ESLint, with accessibility rules as errors                                                        |
-| `npm run lint:css`      | Stylelint                                                                                         |
-| `npm run format`        | Prettier                                                                                          |
+| Script                  | What it does                                                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `npm run build`         | Compiles to `dist` and copies the stylesheets                                                              |
+| `npm run typecheck`     | Type-checks the source and the tests with TypeScript 7                                                     |
+| `npm test`              | Unit tests in Node and component tests in headless Chromium                                                |
+| `npm run test:consumer` | Installs the packed library in a fresh Next.js app and checks it under a policy that forbids inline styles |
+| `npm run lint`          | ESLint, with accessibility rules as errors                                                                 |
+| `npm run lint:css`      | Stylelint                                                                                                  |
+| `npm run format`        | Prettier                                                                                                   |
 
 Run `npx playwright install chromium` once before the first `npm test`.
 

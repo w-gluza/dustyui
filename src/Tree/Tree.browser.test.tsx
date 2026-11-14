@@ -512,6 +512,143 @@ describe("Tree", () => {
         .toHaveAttribute("aria-selected", "true");
     });
 
+    it("leaves focus alone after a move the parent declined", async () => {
+      const screen = await render(
+        <>
+          <Files selected="src" />
+          <input aria-label="Elsewhere" />
+        </>,
+      );
+      await userEvent.tab();
+      await press("{ArrowDown}");
+
+      await screen.getByRole("textbox", { name: "Elsewhere" }).click();
+      await screen.rerender(
+        <>
+          <Files selected="src" className="again" />
+          <input aria-label="Elsewhere" />
+        </>,
+      );
+
+      await expect
+        .element(screen.getByRole("textbox", { name: "Elsewhere" }))
+        .toHaveFocus();
+    });
+
+    it("keeps the last row it showed when the parent asks for a hidden one", async () => {
+      const onSelectedChange = vi.fn();
+      const screen = await render(
+        <Files
+          expanded={new Set(["root", "docs"])}
+          selected="guide"
+          onSelectedChange={onSelectedChange}
+        />,
+      );
+      await screen.rerender(
+        <Files
+          expanded={new Set(["root"])}
+          selected="guide"
+          onSelectedChange={onSelectedChange}
+        />,
+      );
+      await screen.rerender(
+        <Files
+          expanded={new Set(["root"])}
+          selected="readme"
+          onSelectedChange={onSelectedChange}
+        />,
+      );
+
+      await screen.rerender(
+        <Files
+          expanded={new Set(["root"])}
+          selected="index"
+          onSelectedChange={onSelectedChange}
+        />,
+      );
+
+      await expect
+        .element(screen.getByRole("treeitem", { name: "readme" }))
+        .toHaveAttribute("aria-selected", "true");
+      expect(onSelectedChange).toHaveBeenLastCalledWith("readme");
+    });
+
+    it("lets the keyboard move on from a fallback row", async () => {
+      const screen = await render(
+        <Files expanded={new Set(["root"])} selected="index" />,
+      );
+      await userEvent.tab();
+
+      await press("{ArrowDown}");
+
+      await expect
+        .element(screen.getByRole("treeitem", { name: "docs" }))
+        .toHaveAttribute("aria-selected", "true");
+      expect(focusedName()).toBe("docs");
+    });
+
+    it("moves focus to the current row when the tree itself is focused", async () => {
+      const screen = await render(<Files selected="src" />);
+
+      screen.getByRole("tree").element().focus();
+
+      expect(focusedName()).toBe("src");
+    });
+
+    it("leaves letter keys to the browser when it has no row text to search", async () => {
+      const prevented: boolean[] = [];
+      const record = (event: KeyboardEvent) => {
+        prevented.push(event.defaultPrevented);
+      };
+      await render(<Files getRowText={undefined} />);
+      await userEvent.tab();
+      document.addEventListener("keydown", record);
+
+      await press("s", "{ArrowDown}");
+      document.removeEventListener("keydown", record);
+
+      expect(prevented).toEqual([false, true]);
+    });
+
+    it("brings the start of a deep row into view in a narrow tree", async () => {
+      const screen = await render(
+        <Files
+          defaultExpanded={["root", "docs", "notes"]}
+          style={{ inlineSize: "6rem", "--tree-indent": "4rem" } as never}
+        />,
+      );
+      const tree = screen.getByRole("tree").element();
+      await userEvent.tab();
+
+      await press(
+        "{End}",
+        "{Home}",
+        "{ArrowDown}",
+        "{ArrowDown}",
+        "{ArrowDown}",
+        "{ArrowDown}",
+      );
+
+      expect(focusedName()).toBe("draft");
+      const toggle = document.activeElement?.firstElementChild;
+      const offset =
+        (toggle?.getBoundingClientRect().left ?? 0) -
+        tree.getBoundingClientRect().left;
+      expect(tree.scrollLeft).toBeGreaterThan(0);
+      expect(offset).toBeGreaterThanOrEqual(0);
+      expect(offset).toBeLessThan(tree.clientWidth / 2 + 1);
+    });
+
+    it("gives a callback ref the tree once, not on every render", async () => {
+      const attach = vi.fn();
+      const screen = await render(<Files ref={attach} />);
+
+      await screen.rerender(<Files ref={attach} className="again" />);
+      await screen.rerender(<Files ref={attach} className="once more" />);
+
+      expect(attach).toHaveBeenCalledTimes(1);
+    });
+
     it("tells the parent when its selected row closes and an ancestor takes over", async () => {
       const onSelectedChange = vi.fn();
       const screen = await render(

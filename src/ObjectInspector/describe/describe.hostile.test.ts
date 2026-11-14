@@ -20,7 +20,7 @@ suite("describe with hostile values", () => {
     const [before, broken, after] = root.children();
 
     expect(broken?.kind).toBe("uninspectable");
-    expect(broken?.preview).toBe("Uninspectable: refused");
+    expect(broken?.preview).toBe("Could not be read: refused");
     expect(broken?.childCount).toBe(0);
     expect(before?.preview).toBe("1");
     expect(after?.preview).toBe("2");
@@ -75,7 +75,7 @@ suite("describe with hostile values", () => {
       },
     );
 
-    expect(describe(hostile).preview).toBe("Uninspectable: unknown error");
+    expect(describe(hostile).preview).toBe("Could not be read: unknown error");
   });
 
   it("never runs a getter that would throw", () => {

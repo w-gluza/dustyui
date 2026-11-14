@@ -1,10 +1,16 @@
 .avatar {
-  display: inline-flex;
+  display: inline-grid;
   flex-shrink: 0;
   inline-size: var(--avatar-size, 4rem);
   block-size: var(--avatar-size, 4rem);
   overflow: hidden;
   border-radius: var(--dusty-radius-full);
+}
+
+.avatar > * {
+  grid-area: 1 / 1;
+  min-inline-size: 0;
+  min-block-size: 0;
 }
 
 .avatar > img {

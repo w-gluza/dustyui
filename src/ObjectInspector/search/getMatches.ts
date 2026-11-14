@@ -8,24 +8,13 @@ export interface Matches {
 }
 
 const NO_MATCHES: Matches = { ids: [], isComplete: true };
-
-function isMatch(node: InspectorNode, query: string): boolean {
-  if (
-    node.label &&
-    getLabelText(node.label).toLocaleLowerCase().includes(query)
-  ) {
-    return true;
-  }
-  return (
-    node.childCount === 0 &&
-    getValueText(node).toLocaleLowerCase().includes(query)
-  );
-}
+const CHARACTER_LIMIT = 100_000_000;
 
 export function getMatches(
   root: InspectorNode,
   text: string,
   limit: number,
+  characterLimit = CHARACTER_LIMIT,
 ): Matches {
   const query = text.trim().toLocaleLowerCase();
   if (query === "") {
@@ -34,7 +23,24 @@ export function getMatches(
   const ids: string[] = [];
   const pending: InspectorNode[] = [root];
   let remaining = limit;
+  let remainingCharacters = characterLimit;
   let isComplete = true;
+
+  function contains(candidate: string): boolean {
+    if (candidate.length > remainingCharacters) {
+      isComplete = false;
+      return false;
+    }
+    remainingCharacters -= candidate.length;
+    return candidate.toLocaleLowerCase().includes(query);
+  }
+
+  function isMatch(node: InspectorNode): boolean {
+    if (node.label && contains(getLabelText(node.label))) {
+      return true;
+    }
+    return node.childCount === 0 && contains(getValueText(node));
+  }
 
   for (let node = pending.pop(); node; node = pending.pop()) {
     if (remaining <= 0) {
@@ -42,7 +48,11 @@ export function getMatches(
       break;
     }
     remaining -= 1;
-    if (isMatch(node, query)) {
+    if (node.kind === "rest") {
+      isComplete = false;
+      continue;
+    }
+    if (node.kind !== "hole" && isMatch(node)) {
       ids.push(node.id);
     }
     if (node.childCount === 0) {

@@ -134,7 +134,7 @@ describe("ObjectInspector", () => {
 
     expect(rowTexts().slice(1)).toEqual([
       "before: 1",
-      "hostile: Uninspectable: refused",
+      "hostile: Could not be read: refused",
     ]);
   });
 
@@ -277,11 +277,19 @@ describe("ObjectInspector", () => {
         <ObjectInspector label="Park" value={parks} searchable />,
       );
 
-      await screen.getByRole("searchbox").fill("guanaco");
+      await screen.getByRole("searchbox").click();
+      for (const letter of "guanaco") {
+        await userEvent.keyboard(letter);
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      }
       await expect.poll(() => announcements()).toEqual(["2 matches"]);
 
       await userEvent.keyboard("{Enter}");
-      await expect.poll(() => announcements()).toContain("1 of 2");
+      await expect
+        .poll(() =>
+          announcements().filter((text) => text.startsWith("Match 1 of 2: $")),
+        )
+        .toHaveLength(1);
     });
 
     it("lets the tree keep working from the match after Tab", async () => {
@@ -366,9 +374,9 @@ describe("ObjectInspector", () => {
       );
 
       await expect
-        .element(screen.getByRole("region", { name: "Selected value" }))
+        .element(screen.getByRole("region", { name: "Selected value in Park" }))
         .toBeVisible();
-      expect(facts()).toEqual({ Path: "$", Type: "object (Object)" });
+      expect(facts()).toEqual({ Path: "$", Type: "Object" });
     });
 
     it("shows the path, type and whole value of the selected row", async () => {
@@ -385,7 +393,7 @@ describe("ObjectInspector", () => {
 
       expect(facts()).toEqual({
         Path: "$.notes.text",
-        Type: "string",
+        Type: "String",
         Value: long,
       });
     });
@@ -400,7 +408,7 @@ describe("ObjectInspector", () => {
 
       expect(facts()).toEqual({
         Path: "$.name",
-        Type: "string",
+        Type: "String",
         Value: "Tatra",
       });
     });
@@ -438,7 +446,13 @@ describe("ObjectInspector", () => {
       await screen.getByRole("treeitem", { name: /^tags/u }).click();
       await copyValue.click();
       expect(writeText).toHaveBeenLastCalledWith('[\n  "a",\n  "b",\n]');
-      await expect.element(screen.getByText("Value copied")).toBeVisible();
+      await expect
+        .element(
+          screen
+            .getByRole("region", { name: "Selected value in Park" })
+            .getByText("Value copied"),
+        )
+        .toBeVisible();
     });
 
     it("clears the confirmation when another row is selected", async () => {
@@ -452,7 +466,13 @@ describe("ObjectInspector", () => {
 
       await screen.getByRole("treeitem", { name: /^name/u }).click();
 
-      expect(screen.getByText("Path copied").query()).toBeNull();
+      await expect
+        .element(
+          screen
+            .getByRole("region", { name: "Selected value in Park" })
+            .getByText("Path copied"),
+        )
+        .not.toBeInTheDocument();
     });
 
     it("says when copying fails", async () => {
@@ -465,8 +485,19 @@ describe("ObjectInspector", () => {
 
       await screen.getByRole("button", { name: "Copy value" }).click();
 
-      await expect.element(screen.getByText("Copying failed")).toBeVisible();
-      await expect.poll(() => announcements()).toEqual(["Copying failed"]);
+      const failure = "Could not copy. Select the text and copy it by hand.";
+      await expect
+        .element(
+          screen
+            .getByRole("region", { name: "Selected value in Park" })
+            .getByText(failure),
+        )
+        .toBeVisible();
+      await expect
+        .poll(
+          () => document.querySelector('[aria-live="assertive"]')?.textContent,
+        )
+        .toBe(failure);
     });
 
     it("falls back to the whole value when the selected row no longer exists", async () => {

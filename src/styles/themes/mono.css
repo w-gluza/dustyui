@@ -6,7 +6,6 @@
   --dusty-surface-selected: light-dark(#e0e0e0, #3a3a3a);
   --dusty-text: light-dark(#222, #f0f0f0);
   --dusty-text-muted: light-dark(#555, #adadad);
-  --dusty-text-disabled: light-dark(#999, #6b6b6b);
   --dusty-border: light-dark(#ddd, #3d3d3d);
   --dusty-border-strong: light-dark(#767676, #8a8a8a);
   --dusty-focus-ring: light-dark(#222, #fafafa);
@@ -14,6 +13,7 @@
   --dusty-action-hover: light-dark(#3a3a3a, #d6d6d6);
   --dusty-action-active: light-dark(#505050, #bdbdbd);
   --dusty-on-action: light-dark(#fafafa, #1a1a1a);
+  --dusty-status-danger: light-dark(#a32a1d, #f0968a);
   --dusty-syntax-string: light-dark(#8a3d12, #e8a87c);
   --dusty-syntax-number: light-dark(#1d5f8a, #7fb8e0);
   --dusty-syntax-boolean: light-dark(#7a4a9a, #c79be0);

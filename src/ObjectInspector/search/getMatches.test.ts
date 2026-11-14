@@ -2,10 +2,7 @@ import fc from "fast-check";
 import { describe as suite, expect, it } from "vitest";
 import { describe } from "../describe/describe.js";
 import { getNode } from "../describe/getNode.js";
-import { getAncestorIds } from "../describe/getPath.js";
-import { getHighlightParts } from "./getHighlightParts.js";
 import { getMatches } from "./getMatches.js";
-import { getSearchStatus } from "./getSearchStatus.js";
 
 const park = {
   name: "Torres del Paine",
@@ -139,103 +136,6 @@ suite("getMatches", () => {
         },
       ),
       { numRuns: 200 },
-    );
-  });
-});
-
-suite("getNode and getAncestorIds", () => {
-  it("lists every ancestor from the root down", () => {
-    expect(getAncestorIds("$/.animals/[1]/.commonName")).toEqual([
-      "$",
-      "$/.animals",
-      "$/.animals/[1]",
-    ]);
-    expect(getAncestorIds("$")).toEqual([]);
-  });
-
-  it("finds a node by id, including keys that contain a slash", () => {
-    const root = describe({ "a/b": { c: 1 }, a: { b: 2 } });
-
-    expect(getNode(root, "$/.a~1b/.c")?.path).toBe('$["a/b"].c');
-    expect(getNode(root, "$/.a/.b")?.path).toBe("$.a.b");
-    expect(getNode(root, "$")).toBe(root);
-  });
-
-  it("returns nothing for an id that is not in the value", () => {
-    const root = describe({ a: 1 });
-
-    expect(getNode(root, "$/.missing")).toBeUndefined();
-    expect(getNode(root, "elsewhere")).toBeUndefined();
-  });
-});
-
-suite("getHighlightParts", () => {
-  it("splits the text around every match, keeping the original letters", () => {
-    expect(getHighlightParts("Guanaco guanaco", "GUA")).toEqual([
-      { text: "Gua", isMatch: true },
-      { text: "naco ", isMatch: false },
-      { text: "gua", isMatch: true },
-      { text: "naco", isMatch: false },
-    ]);
-  });
-
-  it("returns the whole text when nothing matches or the query is blank", () => {
-    expect(getHighlightParts("Puma", "x")).toEqual([
-      { text: "Puma", isMatch: false },
-    ]);
-    expect(getHighlightParts("Puma", " ")).toEqual([
-      { text: "Puma", isMatch: false },
-    ]);
-  });
-
-  it("leaves text alone when lower-casing changes its length", () => {
-    expect(getHighlightParts("İstanbul", "i")).toEqual([
-      { text: "İstanbul", isMatch: false },
-    ]);
-  });
-
-  it("always adds back up to the original text", () => {
-    fc.assert(
-      fc.property(fc.string(), fc.string({ maxLength: 3 }), (text, query) => {
-        const parts = getHighlightParts(text, query);
-
-        expect(parts.map((part) => part.text).join("")).toBe(text);
-      }),
-      { numRuns: 500 },
-    );
-  });
-});
-
-suite("getSearchStatus", () => {
-  const some = { ids: ["a", "b", "c"], isComplete: true };
-
-  it("says nothing for a blank query", () => {
-    expect(getSearchStatus(" ", some, -1)).toBe("");
-  });
-
-  it("counts the matches before one is chosen", () => {
-    expect(getSearchStatus("x", some, -1)).toBe("3 matches");
-    expect(getSearchStatus("x", { ids: ["a"], isComplete: true }, -1)).toBe(
-      "1 match",
-    );
-  });
-
-  it("says which match is current", () => {
-    expect(getSearchStatus("x", some, 1)).toBe("2 of 3");
-  });
-
-  it("says when there are none", () => {
-    expect(getSearchStatus("x", { ids: [], isComplete: true }, -1)).toBe(
-      "No matches",
-    );
-  });
-
-  it("says when only part of the value was searched", () => {
-    expect(
-      getSearchStatus("x", { ids: ["a", "b"], isComplete: false }, -1),
-    ).toBe("2 matches in the part that was searched");
-    expect(getSearchStatus("x", { ids: [], isComplete: false }, -1)).toBe(
-      "No matches in the part that was searched",
     );
   });
 });

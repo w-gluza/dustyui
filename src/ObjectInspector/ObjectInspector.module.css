@@ -26,15 +26,28 @@
 
 .value[data-kind="getter"],
 .value[data-kind="circular"],
-.value[data-kind="uninspectable"] {
+.value[data-kind="uninspectable"],
+.value[data-kind="hole"],
+.value[data-kind="rest"] {
   color: var(--dusty-text-muted);
   font-style: italic;
 }
 
 .inspector {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   color: var(--dusty-text);
+}
+
+.tree {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+.value,
+.inspector mark {
+  unicode-bidi: isolate;
 }
 
 .match {
@@ -43,4 +56,19 @@
   font-weight: var(--dusty-weight-semibold);
   text-decoration: underline;
   text-decoration-thickness: 0.125em;
+}
+
+[aria-selected="true"] .match {
+  border-radius: var(--dusty-radius-sm);
+  background-color: var(--dusty-action);
+  color: var(--dusty-on-action);
+  text-decoration: none;
+}
+
+@media (forced-colors: active) {
+  [aria-selected="true"] .match {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
 }

@@ -1,8 +1,9 @@
-import type { KeyboardEvent } from "react";
+import { useId, type KeyboardEvent } from "react";
 import { IconButton } from "../IconButton/IconButton.js";
 import styles from "./InspectorSearch.module.css";
 
 interface InspectorSearchProps {
+  label: string;
   query: string;
   status: string;
   hasMatches: boolean;
@@ -11,12 +12,16 @@ interface InspectorSearchProps {
 }
 
 export function InspectorSearch({
+  label,
   query,
   status,
   hasMatches,
   onQueryChange,
   onMove,
 }: InspectorSearchProps) {
+  const inputId = useId();
+  const statusId = useId();
+
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -25,20 +30,24 @@ export function InspectorSearch({
   }
 
   return (
-    <search className={styles.search}>
-      <label className={styles.field}>
-        <span>Search</span>
+    <search aria-label={`Search ${label}`} className={styles.search}>
+      <div className={styles.field}>
+        <label htmlFor={inputId}>Search</label>
         <input
+          id={inputId}
           type="search"
           className={styles.input}
           value={query}
           autoComplete="off"
           spellCheck={false}
+          aria-describedby={statusId}
           onChange={(event) => onQueryChange(event.target.value)}
           onKeyDown={handleKeyDown}
         />
-      </label>
-      <span className={styles.status}>{status}</span>
+      </div>
+      <span id={statusId} className={styles.status}>
+        {status}
+      </span>
       <IconButton
         variant="secondary"
         className={styles.move}

@@ -11,8 +11,8 @@
   gap: 0.25rem 0.75rem;
   margin: 0;
   font-family: var(--dusty-font-mono);
-  font-size: 0.8125rem;
-  line-height: 1.6;
+  font-size: var(--dusty-font-size-code);
+  line-height: var(--dusty-line-height-code);
 }
 
 .facts dt {
@@ -24,10 +24,14 @@
   overflow-wrap: anywhere;
 }
 
-.facts .value {
-  max-block-size: 8rem;
-  overflow-y: auto;
+.value {
   white-space: pre-wrap;
+  unicode-bidi: isolate;
+}
+
+.note {
+  margin: 0;
+  color: var(--dusty-text-muted);
 }
 
 .actions {
@@ -39,9 +43,13 @@
 
 .copy {
   --button-padding-block: 0.375rem;
-  --button-padding-inline: 0.75rem;
+  --button-padding-inline: 0.625rem;
 }
 
 .feedback {
   color: var(--dusty-text-muted);
+}
+
+.feedback[data-failed] {
+  color: var(--dusty-status-danger);
 }

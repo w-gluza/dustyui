@@ -17,7 +17,8 @@ export type NodeLabel =
   | { readonly type: "index"; readonly index: number }
   | { readonly type: "entry"; readonly index: number }
   | { readonly type: "entryKey" }
-  | { readonly type: "entryValue" };
+  | { readonly type: "entryValue" }
+  | { readonly type: "rest" };
 
 export interface InspectorNode {
   readonly id: string;
@@ -56,8 +57,10 @@ function toLeaf(kind: ValueKind, detail = ""): Shape {
   return { kind, typeName: undefined, detail, children: NO_CHILDREN };
 }
 
-function toLabel(step: PathStep): NodeLabel {
+function toLabel(step: PathStep): NodeLabel | undefined {
   switch (step.type) {
+    case "hole":
+      return undefined;
     case "symbol":
       return { type: "symbol", key: step.key };
     case "item":
@@ -82,8 +85,11 @@ function findAncestor(
 function getObjectShape(
   target: object,
   ancestors: Ancestor | undefined,
+  opened: WeakSet<object>,
 ): Shape {
-  const repeated = findAncestor(target, ancestors);
+  const repeated = opened.has(target)
+    ? findAncestor(target, ancestors)
+    : undefined;
   if (repeated) {
     return toLeaf("circular", repeated.path);
   }
@@ -96,10 +102,18 @@ function getObjectShape(
   };
 }
 
-function getShape(source: ChildSource, ancestors: Ancestor | undefined): Shape {
+function getShape(
+  source: ChildSource,
+  ancestors: Ancestor | undefined,
+  opened: WeakSet<object>,
+): Shape {
   switch (source.type) {
     case "getter":
       return toLeaf("getter");
+    case "rest":
+      return toLeaf("rest");
+    case "hole":
+      return toLeaf("hole");
     case "failure":
       return toLeaf("uninspectable", source.reason);
     case "entry":
@@ -112,7 +126,7 @@ function getShape(source: ChildSource, ancestors: Ancestor | undefined): Shape {
     case "value":
       try {
         return isObject(source.value)
-          ? getObjectShape(source.value, ancestors)
+          ? getObjectShape(source.value, ancestors, opened)
           : toLeaf(getValueKind(source.value));
       } catch (error) {
         return toLeaf("uninspectable", getFailureReason(error));
@@ -126,6 +140,7 @@ class ValueNode implements InspectorNode {
   readonly label: NodeLabel | undefined;
   readonly #source: ChildSource;
   readonly #ancestors: Ancestor | undefined;
+  readonly #opened: WeakSet<object>;
   #shape: Shape | undefined;
   #preview: string | undefined;
   #children: readonly InspectorNode[] | undefined;
@@ -136,16 +151,18 @@ class ValueNode implements InspectorNode {
     label: NodeLabel | undefined,
     source: ChildSource,
     ancestors: Ancestor | undefined,
+    opened: WeakSet<object>,
   ) {
     this.id = id;
     this.path = path;
     this.label = label;
     this.#source = source;
     this.#ancestors = ancestors;
+    this.#opened = opened;
   }
 
   get #resolved(): Shape {
-    this.#shape ??= getShape(this.#source, this.#ancestors);
+    this.#shape ??= getShape(this.#source, this.#ancestors, this.#opened);
     return this.#shape;
   }
 
@@ -180,10 +197,11 @@ class ValueNode implements InspectorNode {
 
   #createChildren(): readonly InspectorNode[] {
     const { value } = this;
-    const ancestors: Ancestor | undefined =
-      this.#source.type === "value" && isObject(value)
-        ? { value, path: this.path, parent: this.#ancestors }
-        : this.#ancestors;
+    let ancestors = this.#ancestors;
+    if (this.#source.type === "value" && isObject(value)) {
+      this.#opened.add(value);
+      ancestors = { value, path: this.path, parent: this.#ancestors };
+    }
 
     return this.#resolved.children.map(
       ({ step, source }) =>
@@ -193,6 +211,7 @@ class ValueNode implements InspectorNode {
           toLabel(step),
           source,
           ancestors,
+          this.#opened,
         ),
     );
   }
@@ -205,5 +224,6 @@ export function describe(value: unknown): InspectorNode {
     undefined,
     { type: "value", value },
     undefined,
+    new WeakSet(),
   );
 }

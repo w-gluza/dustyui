@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && cpy \"**/*.css\" ../dist --cwd=src",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && cpy \"**/*.css\" \"**/*.d.css.ts\" ../dist --cwd=src",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -80,6 +80,12 @@
     "**/*.css"
   ],
   "peerDependencies": {
+    "@types/react": "^19.2.0",
     "react": "^19.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
   }
 }

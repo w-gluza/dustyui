@@ -1,26 +1,42 @@
-function nativeGetter<T>(
-  prototype: object,
-  name: string,
-): (target: unknown) => T {
-  const get = Object.getOwnPropertyDescriptor(prototype, name)?.get;
+import { getTruncatedText } from "./getTruncatedText.js";
+
+const TYPE_NAME_LIMIT = 80;
+const CLASS_SOURCE = /^class[\s{]/u;
+
+function nativeGetter<Prototype extends object, Name extends keyof Prototype>(
+  prototype: Prototype,
+  name: Name,
+): (target: unknown) => Prototype[Name] {
+  const get = Object.getOwnPropertyDescriptor(prototype, name)?.get as
+    ((this: unknown) => Prototype[Name]) | undefined;
   if (!get) {
-    throw new TypeError(`Missing native getter: ${name}`);
+    throw new TypeError(`Missing native getter: ${String(name)}`);
   }
-  return (target) => get.call(target) as T;
+  return (target) => get.call(target);
 }
 
-const typedArrayPrototype: object = Object.getPrototypeOf(Uint8Array.prototype);
+const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype) as Pick<
+  Uint8Array,
+  "length"
+>;
 const getTime = Date.prototype.getTime;
 const functionToString = Function.prototype.toString;
 const symbolToString = Symbol.prototype.toString;
+const mapEntries = Map.prototype.entries;
+const setValues = Set.prototype.values;
+const mapIteratorNext = (
+  Object.getPrototypeOf(new Map().entries()) as Iterator<
+    readonly [unknown, unknown]
+  >
+).next as (this: unknown) => IteratorResult<readonly [unknown, unknown]>;
+const setIteratorNext = (
+  Object.getPrototypeOf(new Set().values()) as Iterator<unknown>
+).next as (this: unknown) => IteratorResult<unknown>;
 
-export const getMapSize = nativeGetter<number>(Map.prototype, "size");
-export const getSetSize = nativeGetter<number>(Set.prototype, "size");
-export const getTypedArrayLength = nativeGetter<number>(
-  typedArrayPrototype,
-  "length",
-);
-export const getRegExpSource = nativeGetter<string>(RegExp.prototype, "source");
+export const getMapSize = nativeGetter(Map.prototype, "size");
+export const getSetSize = nativeGetter(Set.prototype, "size");
+export const getTypedArrayLength = nativeGetter(typedArrayPrototype, "length");
+export const getRegExpSource = nativeGetter(RegExp.prototype, "source");
 
 const regExpFlags: readonly (readonly [
   string,
@@ -38,9 +54,34 @@ const regExpFlags: readonly (readonly [
   ] as const
 ).flatMap(([flag, name]) =>
   Object.getOwnPropertyDescriptor(RegExp.prototype, name)?.get
-    ? [[flag, nativeGetter<boolean>(RegExp.prototype, name)] as const]
+    ? [[flag, nativeGetter(RegExp.prototype, name)] as const]
     : [],
 );
+
+function take<Item>(next: () => IteratorResult<Item>, limit: number): Item[] {
+  const items: Item[] = [];
+  while (items.length < limit) {
+    const result = next();
+    if (result.done) {
+      break;
+    }
+    items.push(result.value);
+  }
+  return items;
+}
+
+export function getMapEntries(
+  target: object,
+  limit: number,
+): (readonly [unknown, unknown])[] {
+  const iterator: unknown = mapEntries.call(target);
+  return take(() => mapIteratorNext.call(iterator), limit);
+}
+
+export function getSetItems(target: object, limit: number): unknown[] {
+  const iterator: unknown = setValues.call(target);
+  return take(() => setIteratorNext.call(iterator), limit);
+}
 
 export function getDateTime(value: object): number {
   return getTime.call(value);
@@ -59,7 +100,7 @@ export function getSymbolText(value: symbol): string {
 }
 
 export function isClass(value: object): boolean {
-  return functionToString.call(value).startsWith("class");
+  return CLASS_SOURCE.test(functionToString.call(value));
 }
 
 export function getDataProperty(target: object, key: PropertyKey): unknown {
@@ -89,7 +130,9 @@ export function getConstructorName(value: object): string | undefined {
     return undefined;
   }
   const name = getDataProperty(constructor, "name");
-  return typeof name === "string" && name !== "" ? name : undefined;
+  return typeof name === "string" && name !== ""
+    ? getTruncatedText(name, TYPE_NAME_LIMIT)
+    : undefined;
 }
 
 export function getFailureReason(error: unknown): string {

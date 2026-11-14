@@ -7,7 +7,6 @@
   --dusty-surface-selected: light-dark(#dcebed, #1f3a40);
   --dusty-text: light-dark(#1f2a2e, #e8e4dc);
   --dusty-text-muted: light-dark(#55636a, #a3acaf);
-  --dusty-text-disabled: light-dark(#9aa3a3, #5f6a6e);
   --dusty-border: light-dark(#d9d2c5, #3a4448);
   --dusty-border-strong: light-dark(#7d837f, #7f8a8e);
   --dusty-focus-ring: light-dark(#1d6f7a, #6cc5d0);
@@ -15,6 +14,7 @@
   --dusty-action-hover: light-dark(#33424a, #cfc9be);
   --dusty-action-active: light-dark(#465862, #b9b3a8);
   --dusty-on-action: light-dark(#faf7f2, #14191b);
+  --dusty-status-danger: light-dark(#a32a1d, #f0968a);
   --dusty-syntax-string: light-dark(#a04a1c, #e8a87c);
   --dusty-syntax-number: light-dark(#1d5f8a, #7fb8e0);
   --dusty-syntax-boolean: light-dark(#7a4a9a, #c79be0);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar, Button, ObjectInspector } from "dustyui";
+import { Avatar, Badge, Button, IconButton, ObjectInspector } from "dustyui";
 import { park, rows } from "../data";
 
 export default function ClientPage() {
@@ -13,10 +13,14 @@ export default function ClientPage() {
       {isMounted ? (
         <>
           <Avatar name="Mounted Later" size={32} />
+          <Badge label="New" icon="*" />
+          <IconButton label="Close" icon="x" />
           <ObjectInspector
             label="Park"
             value={park}
             defaultExpanded={["$", "$/.animals"]}
+            searchable
+            showDetails
           />
           <ObjectInspector
             label="Rows"

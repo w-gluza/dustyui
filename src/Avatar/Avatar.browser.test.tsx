@@ -27,14 +27,38 @@ describe("Avatar", () => {
     ).toBe("W");
   });
 
-  it("shows the image instead of the fallback and keeps the name", async () => {
+  it("lays the image over the initials and keeps the name", async () => {
     const screen = await render(
       <Avatar name="Wioletta Gluza" image={<img alt="" src={portrait} />} />,
     );
-    const avatar = screen.getByRole("img", { name: "Wioletta Gluza" });
+    const avatar = screen
+      .getByRole("img", { name: "Wioletta Gluza" })
+      .element();
+    const image = avatar.querySelector("img");
+    const initials = screen.getByText("WG").element();
 
-    await expect.element(avatar).toHaveTextContent("");
-    expect(avatar.element().querySelector("img")).not.toBeNull();
+    expect(image?.getBoundingClientRect()).toEqual(
+      initials.getBoundingClientRect(),
+    );
+    expect(
+      initials.compareDocumentPosition(image ?? initials) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("still shows the initials when the image cannot be loaded", async () => {
+    const screen = await render(
+      <Avatar
+        name="Wioletta Gluza"
+        image={<img alt="" src="/missing-portrait.png" />}
+      />,
+    );
+    const image = document.querySelector("img");
+
+    await expect.poll(() => image?.complete).toBe(true);
+
+    expect(image?.naturalWidth).toBe(0);
+    await expect.element(screen.getByText("WG")).toBeVisible();
   });
 
   it("is hidden from assistive technology when decorative", async () => {

@@ -9,11 +9,11 @@ import {
   useRef,
   useState,
   type ComponentProps,
-  type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
 import clsx from "clsx";
+import { getStyle } from "../styles/getStyle.js";
 import { getWindowItems } from "./getWindow.js";
 import {
   findVisibleAncestor,
@@ -58,6 +58,19 @@ function getSelected(
   return hasRow(rows, controlled) ? controlled : own;
 }
 
+function reveal(container: HTMLElement, row: Element): void {
+  row.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const content = row.firstElementChild;
+  if (!content) {
+    return;
+  }
+  const view = container.getBoundingClientRect();
+  const offset = content.getBoundingClientRect().left - view.left;
+  if (offset < 0 || offset > view.width / 2) {
+    container.scrollBy({ left: offset });
+  }
+}
+
 function isInsideControl(target: EventTarget, row: Element): boolean {
   if (!(target instanceof Element)) {
     return false;
@@ -71,18 +84,27 @@ export interface TreeProps<Node extends TreeNode> extends Omit<
   | "children"
   | "dangerouslySetInnerHTML"
   | "role"
+  | "tabIndex"
   | "aria-label"
   | "aria-labelledby"
+  | "aria-multiselectable"
+  | "aria-activedescendant"
+  | "aria-orientation"
 > {
   root: Node;
   label: string;
   renderRow: (row: TreeRow<Node>) => ReactNode;
-  getRowText?: (row: TreeRow<Node>) => string;
-  expanded?: ReadonlySet<string>;
-  defaultExpanded?: Iterable<string>;
-  onExpandedChange?: (expanded: ReadonlySet<string>) => void;
-  selected?: string;
-  onSelectedChange?: (selected: string) => void;
+  getRowText?: ((row: TreeRow<Node>) => string) | undefined;
+  expanded?: ReadonlySet<string> | undefined;
+  defaultExpanded?: ReadonlySet<string> | readonly string[] | undefined;
+  onExpandedChange?: ((expanded: ReadonlySet<string>) => void) | undefined;
+  selected?: string | undefined;
+  onSelectedChange?: ((selected: string) => void) | undefined;
+  "aria-label"?: never;
+  "aria-labelledby"?: never;
+  "aria-multiselectable"?: never;
+  "aria-activedescendant"?: never;
+  "aria-orientation"?: never;
 }
 
 export function Tree<Node extends TreeNode>({
@@ -107,7 +129,7 @@ export function Tree<Node extends TreeNode>({
   );
   const [ownSelected, setOwnSelected] = useState<string>();
   const element = useRef<HTMLDivElement>(null);
-  const focusAfterRender = useRef(false);
+  const focusTarget = useRef<string | undefined>(undefined);
   const hasFocusWithin = useRef(false);
   const reported = useRef(controlledSelected);
 
@@ -121,6 +143,9 @@ export function Tree<Node extends TreeNode>({
     if (before !== undefined && !hasRow(rows, before)) {
       setOwnSelected(findVisibleAncestor(previousRows, before, rows));
     }
+  }
+  if (hasRow(rows, controlledSelected) && ownSelected !== controlledSelected) {
+    setOwnSelected(controlledSelected);
   }
 
   const focused = getSelected(rows, controlledSelected, ownSelected);
@@ -150,7 +175,7 @@ export function Tree<Node extends TreeNode>({
     }
   }, [focused, controlledSelected]);
 
-  useImperativeHandle(ref, () => element.current as HTMLDivElement);
+  useImperativeHandle(ref, () => element.current as HTMLDivElement, []);
 
   useLayoutEffect(() => {
     const container = element.current;
@@ -173,8 +198,10 @@ export function Tree<Node extends TreeNode>({
     }
     const lostFocus =
       hasFocusWithin.current && !container.contains(document.activeElement);
-    if (focusAfterRender.current || lostFocus) {
-      focusAfterRender.current = false;
+    const reachedTarget =
+      focusTarget.current !== undefined && focusTarget.current === focused;
+    if (reachedTarget || lostFocus) {
+      focusTarget.current = undefined;
       const target = container.querySelector(TAB_STOP);
       if (target instanceof HTMLElement) {
         target.focus();
@@ -182,9 +209,10 @@ export function Tree<Node extends TreeNode>({
     }
     if (scrolledTo.current !== focused) {
       scrolledTo.current = focused;
-      container
-        .querySelector(TAB_STOP)
-        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const row = container.querySelector(TAB_STOP);
+      if (row) {
+        reveal(container, row);
+      }
     }
   });
 
@@ -193,13 +221,11 @@ export function Tree<Node extends TreeNode>({
       return;
     }
     reported.current = id;
-    if (controlledSelected === undefined) {
-      setOwnSelected(id);
-    }
+    setOwnSelected(id);
     onSelectedChange?.(id);
   }
 
-  function dispatch(action: TreeAction) {
+  function dispatch(action: TreeAction): void {
     const current = { expanded, focused: rows[tabStop]?.id };
     const next = reduceTree(rows, current, action, getRowText);
 
@@ -210,7 +236,7 @@ export function Tree<Node extends TreeNode>({
       onExpandedChange?.(next.expanded);
     }
     if (next.focused !== undefined && next.focused !== focused) {
-      focusAfterRender.current = true;
+      focusTarget.current = next.focused;
       select(next.focused);
     }
   }
@@ -227,10 +253,11 @@ export function Tree<Node extends TreeNode>({
       return;
     }
     const action = keyToAction(event.key);
-    if (action) {
-      event.preventDefault();
-      dispatch(withTypedText(action, event.timeStamp));
+    if (!action || (action.type === "typeahead" && !getRowText)) {
+      return;
     }
+    event.preventDefault();
+    dispatch(withTypedText(action, event.timeStamp));
   }
 
   function renderTreeRow(row: TreeRow<Node> | undefined, index: number) {
@@ -248,7 +275,7 @@ export function Tree<Node extends TreeNode>({
         aria-selected={row.id === focused}
         tabIndex={index === tabStop ? 0 : -1}
         className={styles.row}
-        style={{ "--tree-level": row.level } as CSSProperties}
+        style={getStyle({ "--tree-level": row.level })}
         onClick={(event) => {
           if (!isInsideControl(event.target, event.currentTarget)) {
             dispatch({ type: "toggle", id: row.id });
@@ -273,11 +300,15 @@ export function Tree<Node extends TreeNode>({
       className={clsx(styles.tree, className)}
       onFocus={(event) => {
         hasFocusWithin.current = true;
+        if (event.target === event.currentTarget) {
+          event.currentTarget.querySelector<HTMLElement>(TAB_STOP)?.focus();
+        }
         onFocus?.(event);
       }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
           hasFocusWithin.current = false;
+          focusTarget.current = undefined;
         }
         onBlur?.(event);
       }}
@@ -290,7 +321,7 @@ export function Tree<Node extends TreeNode>({
                 role="none"
                 className={styles.gap}
                 data-gap-rows={item.rowCount}
-                style={{ "--tree-gap-rows": item.rowCount } as CSSProperties}
+                style={getStyle({ "--tree-gap-rows": item.rowCount })}
               />
             ) : (
               renderTreeRow(rows[item.index], item.index)

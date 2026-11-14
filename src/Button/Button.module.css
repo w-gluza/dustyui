@@ -86,6 +86,8 @@
   .button:disabled,
   .button[aria-disabled="true"]:not([data-loading]) {
     opacity: 1;
+    border-color: GrayText;
+    color: GrayText;
   }
 
   .spinner {

@@ -1,14 +1,14 @@
-:root {
+:where(:root) {
   --dusty-radius-sm: 0.25rem;
   --dusty-radius-md: 0.5rem;
   --dusty-radius-full: 999px;
   --dusty-weight-semibold: 600;
   --dusty-font-mono: ui-monospace, "SFMono-Regular", menlo, consolas, monospace;
+  --dusty-font-size-code: 0.8125rem;
+  --dusty-line-height-code: 1.6;
   --dusty-focus-ring-width: 2px;
   --dusty-focus-ring-offset: 2px;
-}
 
-:where(:root) {
   color-scheme: light dark;
 }
 

@@ -6,11 +6,15 @@ function refuse(): never {
   throw new Error("refused");
 }
 
+function getText(...input: Parameters<typeof getCopyText>): string {
+  return getCopyText(...input).text;
+}
+
 suite("getCopyText", () => {
   it("copies a string as it is, without quotes or shortening", () => {
     const long = "line one\nline two ".repeat(50);
 
-    expect(getCopyText(describe(long))).toBe(long);
+    expect(getText(describe(long))).toBe(long);
   });
 
   it.each([
@@ -20,7 +24,7 @@ suite("getCopyText", () => {
     [undefined, "undefined"],
     [BigInt(12), "12n"],
   ])("copies the simple value %s as %s", (value, text) => {
-    expect(getCopyText(describe(value))).toBe(text);
+    expect(getText(describe(value))).toBe(text);
   });
 
   it("copies an object as indented text", () => {
@@ -31,7 +35,7 @@ suite("getCopyText", () => {
       empty: [],
     };
 
-    expect(getCopyText(describe(value))).toBe(
+    expect(getText(describe(value))).toBe(
       [
         "{",
         '  name: "Torres del Paine",',
@@ -56,10 +60,10 @@ suite("getCopyText", () => {
     mixed[4] = "fifth";
     mixed.length = 8;
 
-    expect(getCopyText(describe(sparse))).toBe(
+    expect(getText(describe(sparse))).toBe(
       ["[", "  <9 empty items>,", '  "last",', "]"].join("\n"),
     );
-    expect(getCopyText(describe(mixed))).toBe(
+    expect(getText(describe(mixed))).toBe(
       [
         "[",
         '  "first",',
@@ -74,11 +78,11 @@ suite("getCopyText", () => {
   });
 
   it("keeps the holes of an array that has nothing else", () => {
-    expect(getCopyText(describe({ slots: new Array<number>(5) }))).toBe(
-      ["{", "  slots: [<5 empty items>],", "}"].join("\n"),
+    expect(getText(describe({ slots: new Array<number>(5) }))).toBe(
+      ["{", "  slots: [", "    <5 empty items>,", "  ],", "}"].join("\n"),
     );
-    expect(getCopyText(describe(new Array<number>(1)))).toBe(
-      "[<1 empty item>]",
+    expect(getText(describe(new Array<number>(1)))).toBe(
+      ["[", "  <1 empty item>,", "]"].join("\n"),
     );
   });
 
@@ -87,7 +91,7 @@ suite("getCopyText", () => {
     tagged.length = 3;
     tagged.note = "extra";
 
-    expect(getCopyText(describe(tagged))).toBe(
+    expect(getText(describe(tagged))).toBe(
       ["[", '  "a",', "  <2 empty items>,", '  note: "extra",', "]"].join("\n"),
     );
   });
@@ -97,7 +101,7 @@ suite("getCopyText", () => {
       name = "Tatra";
     }
 
-    expect(getCopyText(describe(new Park()))).toBe(
+    expect(getText(describe(new Park()))).toBe(
       ["Park {", '  name: "Tatra",', "}"].join("\n"),
     );
   });
@@ -112,7 +116,7 @@ suite("getCopyText", () => {
     };
     value.self = value;
 
-    expect(getCopyText(describe(value))).toBe(
+    expect(getText(describe(value))).toBe(
       ["{", "  costly: (...),", "  self: [Circular $],", "}"].join("\n"),
     );
     expect(runs).toBe(0);
@@ -124,8 +128,8 @@ suite("getCopyText", () => {
     const alone = describe(proxy);
     const nested = describe({ before: 1, proxy, after: [proxy] });
 
-    expect(getCopyText(alone)).toBe(alone.preview);
-    expect(getCopyText(nested)).toBe(
+    expect(getText(alone)).toBe(alone.preview);
+    expect(getText(nested)).toBe(
       [
         "{",
         "  before: 1,",
@@ -150,10 +154,10 @@ suite("getCopyText", () => {
       },
     });
 
-    expect(getCopyText(describe(list))).toBe(
+    expect(getText(describe(list))).toBe(
       ["[", '  "a",', '  "b",', "]"].join("\n"),
     );
-    expect(getCopyText(describe({ list }))).toContain('"b"');
+    expect(getText(describe({ list }))).toContain('"b"');
     expect(reads).toBe(0);
   });
 
@@ -170,29 +174,27 @@ suite("getCopyText", () => {
     sparse[2] = 3;
     const list = new Proxy(sparse, handler);
 
-    expect(() => getCopyText(describe(list))).not.toThrow();
-    expect(() => getCopyText(describe({ list, after: true }))).not.toThrow();
-    expect(getCopyText(describe({ list, after: true }))).toContain(
-      "after: true",
-    );
+    expect(() => getText(describe(list))).not.toThrow();
+    expect(() => getText(describe({ list, after: true }))).not.toThrow();
+    expect(getText(describe({ list, after: true }))).toContain("after: true");
   });
 
   it("stops at the limit with an ellipsis and still closes every bracket", () => {
     const value = { rows: [1, 2, 3, 4, 5], after: true };
 
-    expect(getCopyText(describe(value), 4)).toBe(
+    expect(getText(describe(value), 4)).toBe(
       ["{", "  rows: Array(5) [1, 2, 3, 4, 5],", "  after: true,", "}"].join(
         "\n",
       ),
     );
-    expect(getCopyText(describe([[1], [2], [3]]), 3)).toBe(
+    expect(getText(describe([[1], [2], [3]]), 3)).toBe(
       ["[", "  [", "    1,", "  ],", "  …", "]"].join("\n"),
     );
   });
 
   it("does not open a list far larger than the limit", () => {
     const root = describe({ huge: new Float64Array(100_000) });
-    const text = getCopyText(root);
+    const text = getText(root);
 
     expect(text.split("\n")).toHaveLength(3);
     expect(text).toContain("huge: Float64Array(100000)");
@@ -204,6 +206,8 @@ suite("getCopyText", () => {
       deep = { inner: deep };
     }
 
-    expect(getCopyText(describe(deep), 10_000)).toContain('inner: "bottom"');
+    expect(getText(describe(deep), 10_000, Infinity)).toContain(
+      'inner: "bottom"',
+    );
   });
 });

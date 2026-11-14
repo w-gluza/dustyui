@@ -129,17 +129,51 @@ suite("describe", () => {
       expect(children.map((child) => child.id)).toEqual(["$/[0]", "$/[1]"]);
     });
 
-    it("reports the full length of a sparse array and lists only the items present", () => {
+    it("reports the full length of a sparse array and shows its holes as one row each", () => {
       const sparse: unknown[] = [];
       sparse[1_000_000] = "last";
       const node = describe(sparse);
+      const [hole, last] = node.children();
 
-      expect(node.preview).toBe('Array(1000001) ["last"]');
-      expect(node.childCount).toBe(1);
-      expect(node.children()[0]?.label).toEqual({
-        type: "index",
-        index: 1_000_000,
-      });
+      expect(node.preview).toBe(
+        'Array(1000001) [<1,000,000 empty items>, "last"]',
+      );
+      expect(node.childCount).toBe(2);
+      expect(hole?.kind).toBe("hole");
+      expect(hole?.label).toBeUndefined();
+      expect(hole?.path).toBe("$[0]");
+      expect(hole?.childCount).toBe(0);
+      expect(last?.label).toEqual({ type: "index", index: 1_000_000 });
+    });
+
+    it("shows holes before, between and after the items of an array", () => {
+      const sparse: unknown[] = [];
+      sparse[1] = "a";
+      sparse[4] = "b";
+      sparse.length = 6;
+      const tagged = Object.assign(new Array<number>(2), { note: "x" });
+
+      expect(
+        describe(sparse)
+          .children()
+          .map((child) => child.preview),
+      ).toEqual([
+        "<1 empty item>",
+        '"a"',
+        "<2 empty items>",
+        '"b"',
+        "<1 empty item>",
+      ]);
+      expect(
+        describe(tagged)
+          .children()
+          .map((child) => child.preview),
+      ).toEqual(["<2 empty items>", '"x"']);
+      expect(
+        describe([1, 2])
+          .children()
+          .map((child) => child.kind),
+      ).toEqual(["number", "number"]);
     });
 
     it("shows extra properties set on an array", () => {

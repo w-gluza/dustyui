@@ -9,7 +9,7 @@ export function getSearchStatus(
     return "";
   }
   const count = matches.ids.length;
-  const scope = matches.isComplete ? "" : " in the part that was searched";
+  const scope = matches.isComplete ? "" : ", searched in part";
   if (count === 0) {
     return `No matches${scope}`;
   }
