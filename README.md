@@ -40,14 +40,15 @@ announce("Connection lost", "assertive");
 
 ## Scripts
 
-| Script              | What it does                                                |
-| ------------------- | ----------------------------------------------------------- |
-| `npm run build`     | Compiles to `dist` and copies the stylesheets               |
-| `npm run typecheck` | Type-checks the source and the tests with TypeScript 7      |
-| `npm test`          | Unit tests in Node and component tests in headless Chromium |
-| `npm run lint`      | ESLint, with accessibility rules as errors                  |
-| `npm run lint:css`  | Stylelint                                                   |
-| `npm run format`    | Prettier                                                    |
+| Script                  | What it does                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------- |
+| `npm run build`         | Compiles to `dist` and copies the stylesheets                                                     |
+| `npm run typecheck`     | Type-checks the source and the tests with TypeScript 7                                            |
+| `npm test`              | Unit tests in Node and component tests in headless Chromium                                       |
+| `npm run test:consumer` | Installs the packed library in a Next.js app and checks it under a strict content security policy |
+| `npm run lint`          | ESLint, with accessibility rules as errors                                                        |
+| `npm run lint:css`      | Stylelint                                                                                         |
+| `npm run format`        | Prettier                                                                                          |
 
 Run `npx playwright install chromium` once before the first `npm test`.
 

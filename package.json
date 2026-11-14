@@ -26,6 +26,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:consumer": "node scripts/check-consumer.mjs",
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:css": "stylelint \"src/**/*.css\"",
