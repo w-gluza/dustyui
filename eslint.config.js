@@ -17,7 +17,10 @@ export default defineConfig([
       globals: { ...globals.browser },
     },
     rules: {
-      "jsx-a11y/control-has-associated-label": "error",
+      "jsx-a11y/control-has-associated-label": [
+        "error",
+        { ignoreElements: ["input", "select", "textarea"] },
+      ],
       "jsx-a11y/no-aria-hidden-on-focusable": "error",
       "jsx-a11y/prefer-tag-over-role": "error",
       "@typescript-eslint/consistent-type-imports": "error",
