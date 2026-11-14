@@ -22,7 +22,15 @@ export function Example() {
 
 The styles load with the components, so there is no stylesheet to import.
 
-The colours follow the system light or dark setting. Components take their text colour from the theme and paint no background of their own, so give the page the matching one:
+The library is light by default and never changes the colour scheme of your page on its own. Set `data-color-scheme` on the root element, or on any part of the page, to choose:
+
+| Value    | Result                     |
+| -------- | -------------------------- |
+| `light`  | Light, the default         |
+| `dark`   | Dark                       |
+| `system` | Follows the system setting |
+
+Components take their text colour from the theme and paint no background of their own, so give the page the matching one:
 
 ```css
 body {
@@ -31,15 +39,11 @@ body {
 }
 ```
 
-To stay in one scheme, set `data-color-scheme="light"` or `"dark"` on the root element.
-
-Components, props and themes are documented in [dustyui-docs](https://github.com/w-gluza/dustyui-docs).
-
 ## Accessibility
 
 - A component that needs an accessible name takes it as a required prop, so it cannot be left out by accident.
 - Decorative parts, such as icons, are hidden from screen readers.
-- Unavailable and loading controls stay focusable, so keyboard users do not lose their place.
+- Loading controls and controls marked `aria-disabled` stay focusable, so keyboard users do not lose their place. Native `disabled` controls do not.
 - Status changes are announced through one shared live region, which you can also use directly:
 
 ```tsx
