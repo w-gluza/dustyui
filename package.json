@@ -16,53 +16,60 @@
     "type": "git",
     "url": "https://github.com/w-gluza/dustyui"
   },
-  "homepage": "https://dustyui.com",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "homepage": "https://github.com/w-gluza/dustyui",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsup && tsc -p tsconfig.build.json && cpy \"src/**/*.css\" dist --parents",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && cpy \"**/*.css\" ../dist --cwd=src",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --check .",
-    "format:fix": "prettier --write .",
+    "format": "prettier --write .",
     "lint": "eslint .",
-    "lint:css": "stylelint 'src/**/*.css'"
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "format:check": "prettier --check ."
   },
   "sideEffects": [
     "**/*.css"
   ],
   "peerDependencies": {
-    "react": ">=17.0.0",
-    "react-dom": ">=17.0.0"
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.35.1",
-    "@typescript-eslint/parser": "^8.35.1",
-    "cpy-cli": "^6.0.0",
-    "eslint": "^9.30.1",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-config-turbo": "^2.5.4",
-    "eslint-plugin-react": "^7.37.5",
-    "prettier": "^3.6.2",
-    "stylelint": "^16.21.1",
-    "stylelint-config-css-modules": "^4.5.1",
-    "stylelint-config-standard": "^38.0.0",
-    "tsup": "^7.0.0",
-    "typescript": "^5.0.0"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
-    }
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "cpy-cli": "^7.0.0",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "stylelint": "^18.0.0",
+    "stylelint-config-standard": "^41.0.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.72.2"
   },
   "dependencies": {
     "clsx": "^2.1.1"
+  },
+  "type": "module",
+  "overrides": {
+    "eslint-plugin-jsx-a11y": {
+      "eslint": "$eslint"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./dist/styles/tokens.css",
+    "./package.json": "./package.json"
   }
 }

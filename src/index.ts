@@ -1,4 +1,5 @@
 import "./styles/tokens.css";
 
-export { Badge } from "./Badge/Badge";
-export { Button } from "./Button/Button";
+export { Avatar, type AvatarProps } from "./Avatar/Avatar.js";
+export { Badge, type BadgeProps } from "./Badge/Badge.js";
+export { Button, type ButtonProps } from "./Button/Button.js";

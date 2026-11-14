@@ -1,21 +1,27 @@
 .avatar {
   display: flex;
   flex-shrink: 0;
+  inline-size: var(--avatar-size, 64px);
+  block-size: var(--avatar-size, 64px);
   overflow: hidden;
   border-radius: 50%;
-  position: relative;
+}
+
+.avatar > img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .fallback {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+  inline-size: 100%;
+  block-size: 100%;
   background-color: var(--color-gray-200);
   color: var(--color-gray-700);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   font-size: calc(var(--avatar-size, 64px) / 3);
   text-transform: uppercase;
 }

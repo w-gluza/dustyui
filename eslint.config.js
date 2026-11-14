@@ -1,33 +1,30 @@
-import turbo from "eslint-config-turbo/flat";
-import tseslint from "@typescript-eslint/eslint-plugin";
-import tsparser from "@typescript-eslint/parser";
-import prettier from "eslint-config-prettier";
-import react from "eslint-plugin-react";
+import { defineConfig, globalIgnores } from "eslint/config";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
+import jsxA11y from "eslint-plugin-jsx-a11y";
+import prettier from "eslint-config-prettier/flat";
+import globals from "globals";
 
-export default [
-  ...turbo,
+const a11yRulesAsErrors = Object.fromEntries(
+  Object.keys(jsxA11y.flatConfigs.strict.rules).map((rule) => [rule, "error"]),
+);
+
+export default defineConfig([
+  globalIgnores(["dist/**"]),
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  reactHooks.configs.flat.recommended,
+  jsxA11y.flatConfigs.strict,
   {
-    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      parser: tsparser,
-      parserOptions: {
-        project: "./tsconfig.json",
-        sourceType: "module",
-      },
-    },
-    plugins: {
-      "@typescript-eslint": tseslint,
-      react,
+      globals: { ...globals.browser },
     },
     rules: {
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "error",
-      "prefer-const": "error",
+      ...a11yRulesAsErrors,
       "@typescript-eslint/consistent-type-imports": "error",
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/explicit-module-boundary-types": "warn",
-      "no-console": "warn",
+      "no-console": "error",
     },
   },
   prettier,
-];
+]);

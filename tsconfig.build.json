@@ -1,16 +1,8 @@
-// tsconfig.build.json
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": false, // override dev
+    "noEmit": false,
     "declaration": true,
-    "emitDeclarationOnly": true,
-    "declarationMap": false,
-    "outDir": "dist",
-    "rootDir": "src",
-    "skipLibCheck": true,
-    "jsx": "react-jsx"
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
-  "exclude": ["node_modules", "dist"]
+    "outDir": "dist"
+  }
 }
