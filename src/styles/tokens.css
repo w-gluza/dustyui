@@ -1,15 +1,21 @@
 :root {
-  --color-black: #222;
-  --color-black-800: #2a2a2a;
-  --color-black-700: #2f2f2f;
-  --color-gray-700: #444;
-  --color-gray-600: #666;
-  --color-gray-500: #999;
-  --color-gray-400: #bbb;
-  --color-gray-300: #ddd;
-  --color-gray-200: #eee;
-  --color-gray-100: #f5f5f5;
-  --color-gray-50: #fcfcfc;
-  --color-white: #fafafa;
-  --weight-semibold: 600;
+  --dusty-radius-sm: 0.25rem;
+  --dusty-radius-md: 0.5rem;
+  --dusty-radius-full: 999px;
+  --dusty-weight-semibold: 600;
+  --dusty-font-mono: ui-monospace, "SFMono-Regular", menlo, consolas, monospace;
+  --dusty-focus-ring-width: 2px;
+  --dusty-focus-ring-offset: 2px;
+}
+
+:where(:root) {
+  color-scheme: light dark;
+}
+
+[data-color-scheme="light"] {
+  color-scheme: light;
+}
+
+[data-color-scheme="dark"] {
+  color-scheme: dark;
 }

@@ -4,7 +4,7 @@
   inline-size: var(--avatar-size, 4rem);
   block-size: var(--avatar-size, 4rem);
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: var(--dusty-radius-full);
 }
 
 .avatar > img {
@@ -19,9 +19,9 @@
   justify-content: center;
   inline-size: 100%;
   block-size: 100%;
-  background-color: var(--color-gray-200);
-  color: var(--color-gray-700);
-  font-weight: var(--weight-semibold);
+  background-color: var(--dusty-surface-sunken);
+  color: var(--dusty-text-muted);
+  font-weight: var(--dusty-weight-semibold);
   font-size: calc(var(--avatar-size, 4rem) / 3);
   text-transform: uppercase;
 }

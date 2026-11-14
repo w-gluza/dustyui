@@ -12,7 +12,7 @@ export default {
   },
   overrides: [
     {
-      files: ["src/styles/**/*.css"],
+      files: ["src/styles/themes/*.css"],
       rules: { "color-no-hex": null },
     },
   ],

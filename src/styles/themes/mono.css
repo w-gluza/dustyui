@@ -1,0 +1,21 @@
+[data-theme="mono"] {
+  --dusty-surface: light-dark(#fafafa, #1a1a1a);
+  --dusty-surface-raised: light-dark(#fff, #242424);
+  --dusty-surface-sunken: light-dark(#eee, #121212);
+  --dusty-surface-hover: light-dark(#eee, #2e2e2e);
+  --dusty-surface-selected: light-dark(#e0e0e0, #3a3a3a);
+  --dusty-text: light-dark(#222, #f0f0f0);
+  --dusty-text-muted: light-dark(#555, #adadad);
+  --dusty-text-disabled: light-dark(#999, #6b6b6b);
+  --dusty-border: light-dark(#ddd, #3d3d3d);
+  --dusty-border-strong: light-dark(#767676, #8a8a8a);
+  --dusty-focus-ring: light-dark(#222, #fafafa);
+  --dusty-action: light-dark(#222, #f0f0f0);
+  --dusty-action-hover: light-dark(#3a3a3a, #d6d6d6);
+  --dusty-action-active: light-dark(#505050, #bdbdbd);
+  --dusty-on-action: light-dark(#fafafa, #1a1a1a);
+  --dusty-syntax-string: light-dark(#8a3d12, #e8a87c);
+  --dusty-syntax-number: light-dark(#1d5f8a, #7fb8e0);
+  --dusty-syntax-boolean: light-dark(#7a4a9a, #c79be0);
+  --dusty-syntax-function: light-dark(#2f6b3f, #8fcf9a);
+}

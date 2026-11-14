@@ -9,14 +9,12 @@ export interface BadgeProps extends Omit<
   label: string;
   icon?: ReactNode;
   iconPosition?: "left" | "right";
-  announce?: boolean;
 }
 
 export function Badge({
   label,
   icon,
   iconPosition = "left",
-  announce = false,
   className,
   ...props
 }: BadgeProps) {
@@ -28,11 +26,7 @@ export function Badge({
     ) : null;
 
   return (
-    <span
-      {...props}
-      {...(announce ? { role: "status", "aria-live": "polite" } : {})}
-      className={clsx(styles.badge, className)}
-    >
+    <span {...props} className={clsx(styles.badge, className)}>
       {iconPosition === "left" ? iconNode : null}
       <span className={styles.label}>{label}</span>
       {iconPosition === "right" ? iconNode : null}

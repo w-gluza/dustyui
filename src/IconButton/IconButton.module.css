@@ -1,0 +1,17 @@
+.iconButton {
+  --button-padding-inline: 0.75rem;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  line-height: 1;
+}
+
+.icon > svg {
+  inline-size: 100%;
+  block-size: 100%;
+}

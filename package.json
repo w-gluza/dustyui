@@ -1,6 +1,6 @@
 {
   "name": "dustyui",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "A minimalist, neutral-toned React UI component library styled with CSS Modules.",
   "keywords": [
     "react",
@@ -63,8 +63,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./package.json": "./package.json",
     "./tokens.css": "./dist/styles/tokens.css",
-    "./package.json": "./package.json"
+    "./themes/*.css": "./dist/styles/themes/*.css"
   },
   "sideEffects": [
     "./dist/index.js",
