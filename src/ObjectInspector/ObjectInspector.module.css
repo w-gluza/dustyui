@@ -1,0 +1,32 @@
+.separator {
+  color: var(--dusty-text-muted);
+}
+
+.value[data-kind="string"],
+.value[data-kind="symbol"],
+.value[data-kind="regexp"] {
+  color: var(--dusty-syntax-string);
+}
+
+.value[data-kind="number"],
+.value[data-kind="bigint"],
+.value[data-kind="date"] {
+  color: var(--dusty-syntax-number);
+}
+
+.value[data-kind="boolean"],
+.value[data-kind="null"],
+.value[data-kind="undefined"] {
+  color: var(--dusty-syntax-boolean);
+}
+
+.value[data-kind="function"] {
+  color: var(--dusty-syntax-function);
+}
+
+.value[data-kind="getter"],
+.value[data-kind="circular"],
+.value[data-kind="uninspectable"] {
+  color: var(--dusty-text-muted);
+  font-style: italic;
+}

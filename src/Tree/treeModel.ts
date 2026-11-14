@@ -163,12 +163,34 @@ function collapse(
   };
 }
 
-function typeahead(
+function expandSiblings(
   state: TreeState,
   rows: readonly TreeRow[],
+  current: TreeRow,
+): TreeState {
+  const closed = rows.filter(
+    (row) =>
+      row.parentId === current.parentId && row.expandable && !row.expanded,
+  );
+  if (closed.length === 0) {
+    return state;
+  }
+  return {
+    ...state,
+    expanded: withExpanded(state, (expanded) => {
+      for (const row of closed) {
+        expanded.add(row.id);
+      }
+    }),
+  };
+}
+
+function typeahead<Node extends TreeNode>(
+  state: TreeState,
+  rows: readonly TreeRow<Node>[],
   index: number,
   text: string,
-  labelOf: (row: TreeRow) => string,
+  labelOf: (row: TreeRow<Node>) => string,
 ): TreeState {
   const query = text.toLocaleLowerCase();
   if (query === "") {
@@ -232,36 +254,50 @@ export function reduceTree<Node extends TreeNode>(
       return expand(state, byId(action.id));
     case "collapse":
       return collapse(state, rows, byId(action.id));
-    case "expandSiblings": {
-      if (!current) {
-        return state;
-      }
-      const closed = rows.filter(
-        (row) =>
-          row.parentId === current.parentId && row.expandable && !row.expanded,
-      );
-      return closed.length === 0
-        ? state
-        : {
-            ...state,
-            expanded: withExpanded(state, (expanded) => {
-              for (const row of closed) {
-                expanded.add(row.id);
-              }
-            }),
-          };
-    }
+    case "expandSiblings":
+      return current ? expandSiblings(state, rows, current) : state;
     case "focus":
       return byId(action.id) ? { ...state, focused: action.id } : state;
     case "typeahead":
-      return typeahead(
-        state,
-        rows,
-        index,
-        action.text,
-        labelOf as (row: TreeRow) => string,
-      );
+      return typeahead(state, rows, index, action.text, labelOf);
   }
+}
+
+export function findVisibleAncestor(
+  previousRows: readonly TreeRow[],
+  id: string,
+  rows: readonly TreeRow[],
+): string | undefined {
+  const visible = new Set(rows.map((row) => row.id));
+  const previous = new Map(previousRows.map((row) => [row.id, row]));
+  for (
+    let current = previous.get(id);
+    current;
+    current =
+      current.parentId === undefined
+        ? undefined
+        : previous.get(current.parentId)
+  ) {
+    if (visible.has(current.id)) {
+      return current.id;
+    }
+  }
+  return undefined;
+}
+
+export function getTypeaheadText(
+  typed: string,
+  key: string,
+  isContinuing: boolean,
+): string {
+  if (!isContinuing) {
+    return key;
+  }
+  const letter = key.toLocaleLowerCase();
+  const isRepeat = Array.from(typed.toLocaleLowerCase()).every(
+    (character) => character === letter,
+  );
+  return isRepeat ? key : typed + key;
 }
 
 export function keyToAction(key: string): TreeAction | undefined {

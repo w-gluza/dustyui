@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  findVisibleAncestor,
+  getTypeaheadText,
   INITIAL_TREE_STATE,
   keyToAction,
   reduceTree,
@@ -327,5 +329,52 @@ describe("laziness", () => {
     visibleRows(tree, new Set(["root"]));
 
     expect(asked).toEqual(["root"]);
+  });
+});
+
+describe("findVisibleAncestor", () => {
+  const before = visibleRows(root, new Set(["root", "docs", "notes"]));
+
+  it("returns the row itself while it is still visible", () => {
+    expect(findVisibleAncestor(before, "draft", before)).toBe("draft");
+  });
+
+  it("returns the nearest ancestor that is still visible", () => {
+    const after = visibleRows(root, new Set(["root", "docs"]));
+
+    expect(findVisibleAncestor(before, "draft", after)).toBe("notes");
+  });
+
+  it("skips ancestors that were hidden too", () => {
+    const after = visibleRows(root, new Set(["root"]));
+
+    expect(findVisibleAncestor(before, "draft", after)).toBe("docs");
+  });
+
+  it("returns nothing when the row was never visible or the tree was replaced", () => {
+    const other = visibleRows(folder("other"), new Set());
+
+    expect(findVisibleAncestor(before, "missing", before)).toBeUndefined();
+    expect(findVisibleAncestor(before, "draft", other)).toBeUndefined();
+  });
+});
+
+describe("getTypeaheadText", () => {
+  it("starts again after a pause", () => {
+    expect(getTypeaheadText("do", "s", false)).toBe("s");
+  });
+
+  it("adds to the text while typing continues", () => {
+    expect(getTypeaheadText("d", "o", true)).toBe("do");
+    expect(getTypeaheadText("do", "c", true)).toBe("doc");
+  });
+
+  it("keeps a repeated letter as one letter so matches are cycled", () => {
+    expect(getTypeaheadText("d", "d", true)).toBe("d");
+    expect(getTypeaheadText("d", "D", true)).toBe("D");
+  });
+
+  it("treats a repeat after other letters as part of the word", () => {
+    expect(getTypeaheadText("ad", "d", true)).toBe("add");
   });
 });

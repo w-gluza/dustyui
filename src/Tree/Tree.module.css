@@ -1,0 +1,60 @@
+.tree {
+  overflow-x: auto;
+  color: var(--dusty-text);
+  font-family: var(--dusty-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  padding-inline: calc((var(--tree-level, 1) - 1) * var(--tree-indent, 1rem))
+    0.5rem;
+  border-radius: var(--dusty-radius-sm);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.row[aria-expanded] {
+  cursor: pointer;
+}
+
+.row[aria-selected="true"] {
+  background-color: var(--dusty-surface-selected);
+}
+
+.row:focus-visible {
+  outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
+  outline-offset: calc(-1 * var(--dusty-focus-ring-width));
+}
+
+.toggle {
+  flex: none;
+  inline-size: 1rem;
+  color: var(--dusty-text-muted);
+  text-align: center;
+}
+
+.row[aria-expanded] > .toggle::before {
+  display: inline-block;
+  content: "▸";
+}
+
+.row[aria-expanded="true"] > .toggle::before {
+  rotate: 90deg;
+}
+
+@media (hover: hover) {
+  .row:hover:not([aria-selected="true"]) {
+    background-color: var(--dusty-surface-hover);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .row[aria-expanded] > .toggle::before {
+    transition: rotate 120ms ease-out;
+  }
+}

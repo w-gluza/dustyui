@@ -10,3 +10,15 @@ export {
   type ButtonVariant,
 } from "./Button/Button.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
+export {
+  ObjectInspector,
+  type ObjectInspectorProps,
+} from "./ObjectInspector/ObjectInspector.js";
+export {
+  describe,
+  type InspectorNode,
+  type NodeLabel,
+  type ValueKind,
+} from "./ObjectInspector/describe/describe.js";
+export { Tree, type TreeProps } from "./Tree/Tree.js";
+export type { TreeNode, TreeRow } from "./Tree/treeModel.js";
