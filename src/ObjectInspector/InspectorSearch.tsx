@@ -50,7 +50,7 @@ export function InspectorSearch({
       </span>
       <IconButton
         variant="secondary"
-        className={styles.move}
+        size="small"
         label="Previous match"
         icon="↑"
         aria-disabled={!hasMatches}
@@ -58,7 +58,7 @@ export function InspectorSearch({
       />
       <IconButton
         variant="secondary"
-        className={styles.move}
+        size="small"
         label="Next match"
         icon="↓"
         aria-disabled={!hasMatches}

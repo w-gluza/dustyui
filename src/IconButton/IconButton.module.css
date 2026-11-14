@@ -1,5 +1,5 @@
 .iconButton {
-  --button-padding-inline: 0.75rem;
+  --button-padding-inline: var(--button-size-block);
 }
 
 .icon {

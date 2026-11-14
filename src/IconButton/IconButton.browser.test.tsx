@@ -24,6 +24,29 @@ describe("IconButton", () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it.each(["small", "medium", "large"] as const)(
+    "is square and as tall as a text button when %s",
+    async (name) => {
+      const screen = await render(
+        <>
+          <IconButton label="Close" icon="x" size={name} />
+          <Button size={name}>Save</Button>
+        </>,
+      );
+      const icon = screen
+        .getByRole("button", { name: "Close" })
+        .element()
+        .getBoundingClientRect();
+      const text = screen
+        .getByRole("button", { name: "Save" })
+        .element()
+        .getBoundingClientRect();
+
+      expect(icon.width).toBe(icon.height);
+      expect(icon.height).toBe(text.height);
+    },
+  );
+
   it("is square and as tall as a text button", async () => {
     const screen = await render(
       <>

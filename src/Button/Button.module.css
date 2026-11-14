@@ -2,14 +2,29 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  padding-block: var(--button-padding-block, 0.75rem);
-  padding-inline: var(--button-padding-inline, 1.5rem);
+  padding-block: var(--button-size-block);
+  padding-inline: var(--button-padding-inline, var(--button-size-inline));
   border: 1px solid var(--dusty-action);
   border-radius: var(--dusty-radius-md);
   font: inherit;
   font-weight: var(--dusty-weight-semibold);
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+.small {
+  --button-size-block: 0.375rem;
+  --button-size-inline: 0.75rem;
+}
+
+.medium {
+  --button-size-block: 0.75rem;
+  --button-size-inline: 1.5rem;
+}
+
+.large {
+  --button-size-block: 1rem;
+  --button-size-inline: 2rem;
 }
 
 .button:focus-visible {

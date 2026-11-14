@@ -41,6 +41,25 @@ describe("Button", () => {
       .toHaveAttribute("data-variant", "secondary");
   });
 
+  it("is medium by default and grows from small to large", async () => {
+    const screen = await render(
+      <>
+        <Button size="small">Small</Button>
+        <Button>Default</Button>
+        <Button size="medium">Medium</Button>
+        <Button size="large">Large</Button>
+      </>,
+    );
+    const heights = ["Small", "Default", "Medium", "Large"].map(
+      (name) => size(screen.getByRole("button", { name }).element())[1],
+    );
+
+    expect(heights).toEqual([34, 46, 46, 54]);
+    await expect
+      .element(screen.getByRole("button", { name: "Default" }))
+      .toHaveAttribute("data-size", "medium");
+  });
+
   it("keeps a consumer class name and forwards native attributes and the ref", async () => {
     const ref = vi.fn();
     const screen = await render(

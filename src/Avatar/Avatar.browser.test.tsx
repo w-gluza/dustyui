@@ -84,6 +84,21 @@ describe("Avatar", () => {
     ).toEqual([32, 32]);
   });
 
+  it.each([
+    ["small", 32],
+    ["medium", 48],
+    ["large", 64],
+  ] as const)(
+    "sizes a %s avatar from a class, with no inline style",
+    async (name, pixels) => {
+      const screen = await render(<Avatar name="Wioletta Gluza" size={name} />);
+      const avatar = screen.getByRole("img").element() as HTMLElement;
+
+      expect(size(avatar)).toEqual([pixels, pixels]);
+      expect(avatar.getAttribute("style")).toBeNull();
+    },
+  );
+
   it.each([0, -5, Number.NaN, Number.POSITIVE_INFINITY])(
     "falls back to the default size for an invalid size of %s",
     async (invalid) => {
@@ -97,7 +112,11 @@ describe("Avatar", () => {
 
   it("keeps consumer styles alongside its size", async () => {
     const screen = await render(
-      <Avatar name="Wioletta Gluza" style={{ outlineWidth: "3px" }} />,
+      <Avatar
+        name="Wioletta Gluza"
+        size={64}
+        style={{ outlineWidth: "3px" }}
+      />,
     );
     const avatar = screen.getByRole("img").element() as HTMLElement;
 

@@ -7,6 +7,18 @@
   border-radius: var(--dusty-radius-full);
 }
 
+.small {
+  --avatar-size: 2rem;
+}
+
+.medium {
+  --avatar-size: 3rem;
+}
+
+.large {
+  --avatar-size: 4rem;
+}
+
 .avatar > * {
   grid-area: 1 / 1;
   min-inline-size: 0;

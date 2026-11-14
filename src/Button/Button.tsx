@@ -24,6 +24,7 @@ const ACTIVATION_HANDLERS = {
 } satisfies Partial<ComponentProps<"button">>;
 
 export type ButtonVariant = "primary" | "secondary";
+export type ButtonSize = "small" | "medium" | "large";
 
 export interface ButtonProps extends Omit<
   ComponentProps<"button">,
@@ -31,12 +32,14 @@ export interface ButtonProps extends Omit<
 > {
   children: ReactNode;
   variant?: ButtonVariant | undefined;
+  size?: ButtonSize | undefined;
   loading?: boolean | undefined;
   loadingLabel?: string | undefined;
 }
 
 export function Button({
   variant = "primary",
+  size = "medium",
   loading = false,
   loadingLabel = "Loading",
   className,
@@ -71,8 +74,9 @@ export function Button({
       {...props}
       {...(inactive ? ACTIVATION_HANDLERS : undefined)}
       type={type}
-      className={clsx(styles.button, styles[variant], className)}
+      className={clsx(styles.button, styles[variant], styles[size], className)}
       data-variant={variant}
+      data-size={size}
       data-loading={loading || undefined}
       aria-disabled={inactive ? true : ariaDisabled}
       aria-describedby={loading ? clsx(describedBy, loadingId) : describedBy}

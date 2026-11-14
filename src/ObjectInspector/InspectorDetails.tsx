@@ -97,7 +97,7 @@ export function InspectorDetails({
       <div className={styles.actions}>
         <Button
           variant="secondary"
-          className={styles.copy}
+          size="small"
           onClick={() =>
             void copy("Path", () => ({ text: node.path, isComplete: true }))
           }
@@ -106,7 +106,7 @@ export function InspectorDetails({
         </Button>
         <Button
           variant="secondary"
-          className={styles.copy}
+          size="small"
           onClick={() => void copy("Value", () => getCopyText(node))}
         >
           Copy value

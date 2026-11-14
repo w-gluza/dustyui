@@ -174,9 +174,9 @@ async function checkPages(origin, policy) {
     );
     recordTree("server page after hydration", hydrated);
     record(
-      "known limit - server page after hydration: the avatar size is blocked by the policy",
-      hydrated.avatarWidth !== 32,
-      `asked for 32px, got ${hydrated.avatarWidth}px`,
+      "server page: a named avatar size applies, with and without script",
+      hydrated.avatarWidth === 32 && withoutScript.avatarWidth === 32,
+      `asked for 32px, got ${withoutScript.avatarWidth}px then ${hydrated.avatarWidth}px`,
     );
     await page.keyboard.press("Enter");
     await page.getByText("1 of 1").waitFor();
@@ -219,7 +219,7 @@ async function checkPages(origin, policy) {
     recordStyles("client page", mounted);
     recordTree("client page, mounted after load", mounted);
     record(
-      "client page, mounted after load: the avatar size applies",
+      "client page, mounted after load: an avatar size given as a number applies",
       mounted.avatarWidth === 32,
       `asked for 32px, got ${mounted.avatarWidth}px`,
     );

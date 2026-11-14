@@ -6,7 +6,7 @@ export default function ServerPage() {
     <main>
       <Button>Save</Button>
       <Badge label="New" />
-      <Avatar name="Server Side" size={32} />
+      <Avatar name="Server Side" size="small" />
       <p id="mono" data-theme="mono">
         Mono theme
       </p>
