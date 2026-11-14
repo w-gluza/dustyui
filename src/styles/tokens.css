@@ -9,7 +9,7 @@
   --dusty-focus-ring-width: 2px;
   --dusty-focus-ring-offset: 2px;
 
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 [data-color-scheme="light"] {
@@ -18,4 +18,8 @@
 
 [data-color-scheme="dark"] {
   color-scheme: dark;
+}
+
+[data-color-scheme="system"] {
+  color-scheme: light dark;
 }
