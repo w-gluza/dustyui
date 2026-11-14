@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, type ComponentProps, type MouseEvent } from "react";
+import {
+  useEffect,
+  type ComponentProps,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import clsx from "clsx";
 import { announce } from "../announcer/announcer.js";
 import styles from "./Button.module.css";
 
 export type ButtonVariant = "primary" | "secondary";
 
-export interface ButtonProps extends ComponentProps<"button"> {
+export interface ButtonProps extends Omit<
+  ComponentProps<"button">,
+  "children" | "dangerouslySetInnerHTML"
+> {
+  children: ReactNode;
   variant?: ButtonVariant;
   loading?: boolean;
   loadingLabel?: string;
@@ -35,6 +44,7 @@ export function Button({
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (inactive) {
       event.preventDefault();
+      event.stopPropagation();
       return;
     }
     onClick?.(event);

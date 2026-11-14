@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { userEvent } from "vitest/browser";
-import { Button } from "../index.js";
+import { Button, type ButtonProps } from "../index.js";
 import { announcements, resetAnnouncer } from "../test/announcements.js";
 
 function size(element: Element): [number, number] {
@@ -86,6 +86,48 @@ describe("Button", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
   });
+
+  it("requires children and rejects raw HTML content", () => {
+    type Content = Pick<ButtonProps, "children">;
+
+    expectTypeOf<Content>().not.toEqualTypeOf<Partial<Content>>();
+    expectTypeOf<ButtonProps>().not.toHaveProperty("dangerouslySetInnerHTML");
+  });
+
+  it("lets an active click reach a surrounding click handler", async () => {
+    const onRowClick = vi.fn();
+    const clickableRow = { onClick: onRowClick };
+    const screen = await render(
+      <div {...clickableRow}>
+        <Button>Save</Button>
+      </div>,
+    );
+
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    expect(onRowClick).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["loading", { loading: true }],
+    ["aria-disabled", { "aria-disabled": true }],
+  ])(
+    "keeps a click from reaching a surrounding click handler while %s",
+    async (_state, props) => {
+      const onRowClick = vi.fn();
+      const clickableRow = { onClick: onRowClick };
+      const screen = await render(
+        <div {...clickableRow}>
+          <Button {...props}>Save</Button>
+        </div>,
+      );
+
+      await screen.getByRole("button", { name: "Save" }).click({ force: true });
+      await userEvent.keyboard("{Enter}");
+
+      expect(onRowClick).not.toHaveBeenCalled();
+    },
+  );
 
   describe("disabled", () => {
     it("ignores activation and cannot be focused", async () => {

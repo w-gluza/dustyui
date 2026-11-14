@@ -26,7 +26,7 @@ Components, props and themes are documented in [dustyui-docs](https://github.com
 
 ## Accessibility
 
-- A component that needs an accessible name takes it as a required prop, so the inaccessible version does not compile.
+- A component that needs an accessible name takes it as a required prop, so it cannot be left out by accident.
 - Decorative parts, such as icons, are hidden from screen readers.
 - Unavailable and loading controls stay focusable, so keyboard users do not lose their place.
 - Status changes are announced through one shared live region, which you can also use directly:
