@@ -1,0 +1,47 @@
+.details {
+  display: grid;
+  gap: 0.5rem;
+  padding-block-start: 0.5rem;
+  border-block-start: 1px solid var(--dusty-border);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  font-family: var(--dusty-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.facts dt {
+  color: var(--dusty-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts .value {
+  max-block-size: 8rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.copy {
+  --button-padding-block: 0.375rem;
+  --button-padding-inline: 0.75rem;
+}
+
+.feedback {
+  color: var(--dusty-text-muted);
+}

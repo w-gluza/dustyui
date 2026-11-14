@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  useEffect,
+  useEffectEvent,
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
@@ -12,9 +14,9 @@ import {
   type ReactNode,
 } from "react";
 import clsx from "clsx";
+import { getWindowItems } from "./getWindow.js";
 import {
   findVisibleAncestor,
-  getTypeaheadText,
   keyToAction,
   reduceTree,
   visibleRows,
@@ -22,9 +24,11 @@ import {
   type TreeNode,
   type TreeRow,
 } from "./treeModel.js";
+import { useRowWindow } from "./useRowWindow.js";
+import { useTypeahead } from "./useTypeahead.js";
 import styles from "./Tree.module.css";
 
-const TYPEAHEAD_PAUSE = 500;
+const TAB_STOP = ':scope > [tabindex="0"]';
 const INTERACTIVE = [
   "a[href]",
   "button",
@@ -41,6 +45,18 @@ const INTERACTIVE = [
   '[contenteditable="true"]',
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
+
+function hasRow(rows: readonly TreeRow[], id: string | undefined): boolean {
+  return id !== undefined && rows.some((row) => row.id === id);
+}
+
+function getSelected(
+  rows: readonly TreeRow[],
+  controlled: string | undefined,
+  own: string | undefined,
+): string | undefined {
+  return hasRow(rows, controlled) ? controlled : own;
+}
 
 function isInsideControl(target: EventTarget, row: Element): boolean {
   if (!(target instanceof Element)) {
@@ -65,6 +81,8 @@ export interface TreeProps<Node extends TreeNode> extends Omit<
   expanded?: ReadonlySet<string>;
   defaultExpanded?: Iterable<string>;
   onExpandedChange?: (expanded: ReadonlySet<string>) => void;
+  selected?: string;
+  onSelectedChange?: (selected: string) => void;
 }
 
 export function Tree<Node extends TreeNode>({
@@ -75,6 +93,8 @@ export function Tree<Node extends TreeNode>({
   expanded: controlledExpanded,
   defaultExpanded,
   onExpandedChange,
+  selected: controlledSelected,
+  onSelectedChange,
   className,
   onKeyDown,
   onFocus,
@@ -85,11 +105,11 @@ export function Tree<Node extends TreeNode>({
   const [ownExpanded, setOwnExpanded] = useState<ReadonlySet<string>>(
     () => new Set(defaultExpanded),
   );
-  const [focused, setFocused] = useState<string>();
+  const [ownSelected, setOwnSelected] = useState<string>();
   const element = useRef<HTMLDivElement>(null);
   const focusAfterRender = useRef(false);
   const hasFocusWithin = useRef(false);
-  const typed = useRef({ text: "", at: 0 });
+  const reported = useRef(controlledSelected);
 
   const expanded = controlledExpanded ?? ownExpanded;
   const rows = useMemo(() => visibleRows(root, expanded), [root, expanded]);
@@ -97,15 +117,38 @@ export function Tree<Node extends TreeNode>({
 
   if (previousRows !== rows) {
     setPreviousRows(rows);
-    if (focused !== undefined && !rows.some((row) => row.id === focused)) {
-      setFocused(findVisibleAncestor(previousRows, focused, rows));
+    const before = getSelected(previousRows, controlledSelected, ownSelected);
+    if (before !== undefined && !hasRow(rows, before)) {
+      setOwnSelected(findVisibleAncestor(previousRows, before, rows));
     }
   }
 
-  const tabStop = Math.max(
-    0,
-    rows.findIndex((row) => row.id === focused),
+  const focused = getSelected(rows, controlledSelected, ownSelected);
+  const tabStop = useMemo(
+    () =>
+      Math.max(
+        0,
+        rows.findIndex((row) => row.id === focused),
+      ),
+    [rows, focused],
   );
+  const rowWindow = useRowWindow(element, rows.length);
+  const withTypedText = useTypeahead();
+  const scrolledTo = useRef(focused);
+  const notifySelected = useEffectEvent((id: string) => {
+    onSelectedChange?.(id);
+  });
+
+  useEffect(() => {
+    if (
+      focused !== undefined &&
+      focused !== controlledSelected &&
+      focused !== reported.current
+    ) {
+      reported.current = focused;
+      notifySelected(focused);
+    }
+  }, [focused, controlledSelected]);
 
   useImperativeHandle(ref, () => element.current as HTMLDivElement);
 
@@ -114,24 +157,47 @@ export function Tree<Node extends TreeNode>({
     if (!container) {
       return;
     }
-    for (const row of container.children) {
-      if (row instanceof HTMLElement) {
-        row.style.setProperty(
+    for (const child of container.children) {
+      if (!(child instanceof HTMLElement)) {
+        continue;
+      }
+      const gapRows = child.dataset.gapRows;
+      if (gapRows === undefined) {
+        child.style.setProperty(
           "--tree-level",
-          row.getAttribute("aria-level") ?? "1",
+          child.getAttribute("aria-level") ?? "1",
         );
+      } else {
+        child.style.setProperty("--tree-gap-rows", gapRows);
       }
     }
     const lostFocus =
       hasFocusWithin.current && !container.contains(document.activeElement);
     if (focusAfterRender.current || lostFocus) {
       focusAfterRender.current = false;
-      const target = container.children[tabStop];
+      const target = container.querySelector(TAB_STOP);
       if (target instanceof HTMLElement) {
         target.focus();
       }
     }
+    if (scrolledTo.current !== focused) {
+      scrolledTo.current = focused;
+      container
+        .querySelector(TAB_STOP)
+        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
   });
+
+  function select(id: string) {
+    if (id === focused) {
+      return;
+    }
+    reported.current = id;
+    if (controlledSelected === undefined) {
+      setOwnSelected(id);
+    }
+    onSelectedChange?.(id);
+  }
 
   function dispatch(action: TreeAction) {
     const current = { expanded, focused: rows[tabStop]?.id };
@@ -143,24 +209,10 @@ export function Tree<Node extends TreeNode>({
       }
       onExpandedChange?.(next.expanded);
     }
-    if (next.focused !== focused) {
+    if (next.focused !== undefined && next.focused !== focused) {
       focusAfterRender.current = true;
-      setFocused(next.focused);
+      select(next.focused);
     }
-  }
-
-  function withTypedText(action: TreeAction, timeStamp: number): TreeAction {
-    if (action.type !== "typeahead") {
-      return action;
-    }
-    const isContinuing = timeStamp - typed.current.at < TYPEAHEAD_PAUSE;
-    const text = getTypeaheadText(
-      typed.current.text,
-      action.text,
-      isContinuing,
-    );
-    typed.current = { text, at: timeStamp };
-    return { type: "typeahead", text };
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -179,6 +231,36 @@ export function Tree<Node extends TreeNode>({
       event.preventDefault();
       dispatch(withTypedText(action, event.timeStamp));
     }
+  }
+
+  function renderTreeRow(row: TreeRow<Node> | undefined, index: number) {
+    if (!row) {
+      return null;
+    }
+    return (
+      <div
+        key={row.id}
+        role="treeitem"
+        aria-level={row.level}
+        aria-setsize={row.setSize}
+        aria-posinset={row.positionInSet}
+        aria-expanded={row.expandable ? row.expanded : undefined}
+        aria-selected={row.id === focused}
+        tabIndex={index === tabStop ? 0 : -1}
+        className={styles.row}
+        style={{ "--tree-level": row.level } as CSSProperties}
+        onClick={(event) => {
+          if (!isInsideControl(event.target, event.currentTarget)) {
+            dispatch({ type: "toggle", id: row.id });
+          }
+        }}
+        onFocus={() => select(row.id)}
+        onKeyDown={handleKeyDown}
+      >
+        <span className={styles.toggle} aria-hidden="true" />
+        <span>{renderRow(row)}</span>
+      </div>
+    );
   }
 
   return (
@@ -200,30 +282,21 @@ export function Tree<Node extends TreeNode>({
         onBlur?.(event);
       }}
     >
-      {rows.map((row, index) => (
-        <div
-          key={row.id}
-          role="treeitem"
-          aria-level={row.level}
-          aria-setsize={row.setSize}
-          aria-posinset={row.positionInSet}
-          aria-expanded={row.expandable ? row.expanded : undefined}
-          aria-selected={row.id === focused}
-          tabIndex={index === tabStop ? 0 : -1}
-          className={styles.row}
-          style={{ "--tree-level": row.level } as CSSProperties}
-          onClick={(event) => {
-            if (!isInsideControl(event.target, event.currentTarget)) {
-              dispatch({ type: "toggle", id: row.id });
-            }
-          }}
-          onFocus={() => setFocused(row.id)}
-          onKeyDown={handleKeyDown}
-        >
-          <span className={styles.toggle} aria-hidden="true" />
-          <span>{renderRow(row)}</span>
-        </div>
-      ))}
+      {rowWindow
+        ? getWindowItems(rowWindow, rows.length, tabStop).map((item) =>
+            item.type === "gap" ? (
+              <div
+                key={`gap-${item.id}`}
+                role="none"
+                className={styles.gap}
+                data-gap-rows={item.rowCount}
+                style={{ "--tree-gap-rows": item.rowCount } as CSSProperties}
+              />
+            ) : (
+              renderTreeRow(rows[item.index], item.index)
+            ),
+          )
+        : rows.map(renderTreeRow)}
     </div>
   );
 }

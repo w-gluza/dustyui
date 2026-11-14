@@ -8,7 +8,7 @@ A small React component library, styled with CSS Modules and themed through CSS 
 npm install dustyui
 ```
 
-Requires React 19 and a bundler that handles CSS Modules, such as Next.js or Vite.
+Requires React 19.2 or later and a bundler that handles CSS Modules, such as Next.js or Vite.
 
 ## Usage
 

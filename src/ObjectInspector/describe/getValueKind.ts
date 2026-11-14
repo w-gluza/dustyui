@@ -47,9 +47,27 @@ function isError(value: object): boolean {
   return nativeIsError ? nativeIsError(value) : value instanceof Error;
 }
 
+function isTypedArray(value: object): boolean {
+  return (
+    ArrayBuffer.isView(value) && succeeds(() => getTypedArrayLength(value))
+  );
+}
+
+function hasPlainPrototype(value: object): boolean {
+  try {
+    const prototype: unknown = Reflect.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch {
+    return false;
+  }
+}
+
 function getObjectKind(value: object): ValueKind {
-  if (Array.isArray(value) || succeeds(() => getTypedArrayLength(value))) {
+  if (Array.isArray(value) || isTypedArray(value)) {
     return "array";
+  }
+  if (hasPlainPrototype(value)) {
+    return "object";
   }
   if (succeeds(() => getMapSize(value))) {
     return "map";

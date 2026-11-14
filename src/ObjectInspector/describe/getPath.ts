@@ -69,3 +69,10 @@ export function getPath(parentPath: string, step: PathStep): string {
       return `${parentPath}.value`;
   }
 }
+
+export function getAncestorIds(id: string): string[] {
+  const segments = id.split("/");
+  return segments
+    .slice(0, -1)
+    .map((_segment, index) => segments.slice(0, index + 1).join("/"));
+}

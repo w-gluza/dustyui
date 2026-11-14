@@ -13,9 +13,14 @@
   min-inline-size: 100%;
   padding-inline: calc((var(--tree-level, 1) - 1) * var(--tree-indent, 1rem))
     0.5rem;
+  block-size: var(--tree-row-height, 1.3rem);
   border-radius: var(--dusty-radius-sm);
   white-space: nowrap;
   cursor: default;
+}
+
+.gap {
+  block-size: calc(var(--tree-gap-rows, 0) * var(--tree-row-height, 1.3rem));
 }
 
 .row[aria-expanded] {

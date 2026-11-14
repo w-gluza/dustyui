@@ -457,4 +457,288 @@ describe("Tree", () => {
       expect(names()).toContain("guide");
     });
   });
+
+  describe("selection", () => {
+    it("tells the parent which row is selected as focus moves", async () => {
+      const onSelectedChange = vi.fn();
+      await render(<Files onSelectedChange={onSelectedChange} />);
+      await userEvent.tab();
+
+      await press("{ArrowDown}", "{ArrowDown}");
+
+      expect(onSelectedChange.mock.calls).toEqual([
+        ["root"],
+        ["docs"],
+        ["src"],
+      ]);
+    });
+
+    it("tells the parent when a click selects a row", async () => {
+      const onSelectedChange = vi.fn();
+      const screen = await render(
+        <Files onSelectedChange={onSelectedChange} />,
+      );
+
+      await screen.getByRole("treeitem", { name: "readme" }).click();
+
+      expect(onSelectedChange).toHaveBeenLastCalledWith("readme");
+    });
+
+    it("selects the row the parent asks for, without taking focus", async () => {
+      const screen = await render(<Files selected="src" />);
+      const src = screen.getByRole("treeitem", { name: "src" });
+
+      await expect.element(src).toHaveAttribute("aria-selected", "true");
+      await expect.element(src).toHaveAttribute("tabindex", "0");
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it("keeps the parent's selection until the parent changes it", async () => {
+      const onSelectedChange = vi.fn();
+      const screen = await render(
+        <Files selected="src" onSelectedChange={onSelectedChange} />,
+      );
+      await userEvent.tab();
+
+      await press("{ArrowDown}");
+      expect(onSelectedChange).toHaveBeenLastCalledWith("readme");
+      await expect
+        .element(screen.getByRole("treeitem", { name: "src" }))
+        .toHaveAttribute("aria-selected", "true");
+
+      await screen.rerender(<Files selected="readme" />);
+      await expect
+        .element(screen.getByRole("treeitem", { name: "readme" }))
+        .toHaveAttribute("aria-selected", "true");
+    });
+
+    it("tells the parent when its selected row closes and an ancestor takes over", async () => {
+      const onSelectedChange = vi.fn();
+      const screen = await render(
+        <Files
+          expanded={new Set(["root", "docs"])}
+          selected="guide"
+          onSelectedChange={onSelectedChange}
+        />,
+      );
+
+      await screen.rerender(
+        <Files
+          expanded={new Set(["root"])}
+          selected="guide"
+          onSelectedChange={onSelectedChange}
+        />,
+      );
+
+      await expect
+        .element(screen.getByRole("treeitem", { name: "docs" }))
+        .toHaveAttribute("aria-selected", "true");
+      expect(onSelectedChange).toHaveBeenLastCalledWith("docs");
+    });
+  });
+
+  describe("large trees", () => {
+    const ROW_COUNT = 100_000;
+    const many = folder(
+      "root",
+      ...Array.from({ length: ROW_COUNT }, (_, index) =>
+        folder(`item ${index}`),
+      ),
+    );
+
+    function Many(props: Partial<TreeProps<Folder>>) {
+      return (
+        <>
+          <style>
+            {".scroller { max-block-size: 300px; overflow: auto; }"}
+          </style>
+          <Files root={many} className="scroller" {...props} />
+        </>
+      );
+    }
+
+    function renderedRows(): Element[] {
+      return [...document.querySelectorAll('[role="treeitem"]')];
+    }
+
+    async function settle(): Promise<void> {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+
+    it("renders every row of a tree with up to 200 rows", async () => {
+      const small = folder(
+        "root",
+        ...Array.from({ length: 199 }, (_, index) => folder(`item ${index}`)),
+      );
+      await render(<Files root={small} className="scroller" />);
+
+      expect(renderedRows()).toHaveLength(200);
+      expect(document.querySelector("[data-gap-rows]")).toBeNull();
+    });
+
+    it("renders only the rows near the view", async () => {
+      const screen = await render(<Many />);
+      await settle();
+
+      expect(renderedRows().length).toBeGreaterThan(10);
+      expect(renderedRows().length).toBeLessThan(60);
+      await expect
+        .element(screen.getByRole("treeitem", { name: "item 0", exact: true }))
+        .toHaveAttribute("aria-setsize", String(ROW_COUNT));
+    });
+
+    it("keeps the full scrolling height", async () => {
+      const screen = await render(<Many />);
+      await settle();
+      const tree = screen.getByRole("tree").element();
+      const rowHeight = renderedRows()[0]?.getBoundingClientRect().height ?? 0;
+
+      expect(rowHeight).toBeGreaterThan(0);
+      expect(tree.scrollHeight / rowHeight).toBeGreaterThan(ROW_COUNT * 0.99);
+      expect(tree.scrollHeight / rowHeight).toBeLessThan(ROW_COUNT * 1.01);
+    });
+
+    it.each([0.25, 0.5, 0.999])(
+      "shows the rows at the new position after scrolling %f of the way",
+      async (fraction) => {
+        const screen = await render(<Many />);
+        await settle();
+        const tree = screen.getByRole("tree").element();
+
+        tree.scrollTop = tree.scrollHeight * fraction;
+        await settle();
+        const { top, bottom } = tree.getBoundingClientRect();
+        const inView = renderedRows().filter((row) => {
+          const bounds = row.getBoundingClientRect();
+          return bounds.bottom > top && bounds.top < bottom;
+        });
+        const first = Number(inView[0]?.getAttribute("aria-posinset"));
+
+        expect(inView.length).toBeGreaterThan(10);
+        expect(first / ROW_COUNT).toBeCloseTo(fraction, 2);
+        expect(renderedRows().length).toBeLessThan(60);
+      },
+    );
+
+    it("moves to the last row with End and back with Home", async () => {
+      const screen = await render(<Many />);
+      await userEvent.tab();
+
+      await press("{End}");
+      expect(focusedName()).toBe(`item ${ROW_COUNT - 1}`);
+      await expect
+        .element(
+          screen.getByRole("treeitem", { name: `item ${ROW_COUNT - 1}` }),
+        )
+        .toBeInViewport();
+
+      await press("{Home}");
+      expect(focusedName()).toBe("root");
+      await expect
+        .element(screen.getByRole("treeitem", { name: "root" }))
+        .toBeInViewport();
+      expect(renderedRows().length).toBeLessThan(60);
+    });
+
+    it("keeps the focused row and the keyboard position after scrolling away", async () => {
+      const screen = await render(<Many />);
+      await userEvent.tab();
+      await press("{ArrowDown}", "{ArrowDown}");
+      const tree = screen.getByRole("tree").element();
+
+      tree.scrollTop = tree.scrollHeight / 2;
+      await settle();
+      expect(focusedName()).toBe("item 1");
+
+      await press("{ArrowDown}");
+      expect(focusedName()).toBe("item 2");
+      await expect
+        .element(screen.getByRole("treeitem", { name: "item 2", exact: true }))
+        .toBeInViewport();
+    });
+
+    it("brings a row the parent selects into view", async () => {
+      const screen = await render(<Many selected="root" />);
+      await settle();
+
+      await screen.rerender(<Many selected="item 70000" />);
+      await settle();
+
+      await expect
+        .element(
+          screen.getByRole("treeitem", { name: "item 70000", exact: true }),
+        )
+        .toBeInViewport();
+    });
+
+    it("windows against the page when the tree has no height of its own", async () => {
+      const screen = await render(<Many className="" />);
+      await settle();
+      expect(renderedRows().length).toBeLessThan(120);
+
+      window.scrollTo(0, document.documentElement.scrollHeight / 2);
+      await settle();
+      const visible = renderedRows().filter((row) => {
+        const { top, bottom } = row.getBoundingClientRect();
+        return bottom > 0 && top < window.innerHeight;
+      });
+
+      expect(visible.length).toBeGreaterThan(5);
+      expect(renderedRows().length).toBeLessThan(120);
+      await expect
+        .element(screen.getByRole("tree"))
+        .toHaveAttribute("aria-label", "Files");
+      window.scrollTo(0, 0);
+    });
+
+    it("windows against a scrolling panel around the tree", async () => {
+      const screen = await render(
+        <>
+          <style>{".panel { block-size: 200px; overflow: auto; }"}</style>
+          <div className="panel" data-testid="panel">
+            <Many className="" />
+          </div>
+        </>,
+      );
+      await settle();
+      const panel = screen.getByTestId("panel").element();
+      const inPanel = () => {
+        const { top, bottom } = panel.getBoundingClientRect();
+        return renderedRows().filter((row) => {
+          const bounds = row.getBoundingClientRect();
+          return bounds.bottom > top && bounds.top < bottom;
+        });
+      };
+      const rowHeight = renderedRows()[0]?.getBoundingClientRect().height ?? 1;
+      const most = Math.ceil(200 / rowHeight) + 22;
+
+      expect(inPanel().length).toBeGreaterThan(5);
+      expect(renderedRows().length).toBeLessThanOrEqual(most);
+
+      panel.scrollTop = panel.scrollHeight / 2;
+      await settle();
+
+      expect(inPanel().length).toBeGreaterThan(5);
+      expect(
+        Number(inPanel()[0]?.getAttribute("aria-posinset")) / ROW_COUNT,
+      ).toBeCloseTo(0.5, 2);
+      expect(renderedRows().length).toBeLessThanOrEqual(most);
+    });
+
+    it("opens, jumps to the end and closes well within a generous time", async () => {
+      const screen = await render(<Many defaultExpanded={[]} />);
+      await userEvent.tab();
+      const started = performance.now();
+
+      await press("{ArrowRight}", "{End}", "{Home}", "{ArrowLeft}");
+      await settle();
+
+      expect(performance.now() - started).toBeLessThan(5000);
+      await expect
+        .element(screen.getByRole("treeitem", { name: "root" }))
+        .toHaveAttribute("aria-expanded", "false");
+      expect(renderedRows()).toHaveLength(1);
+    });
+  });
 });

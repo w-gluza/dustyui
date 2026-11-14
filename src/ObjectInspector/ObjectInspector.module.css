@@ -30,3 +30,17 @@
   color: var(--dusty-text-muted);
   font-style: italic;
 }
+
+.inspector {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--dusty-text);
+}
+
+.match {
+  background-color: transparent;
+  color: inherit;
+  font-weight: var(--dusty-weight-semibold);
+  text-decoration: underline;
+  text-decoration-thickness: 0.125em;
+}

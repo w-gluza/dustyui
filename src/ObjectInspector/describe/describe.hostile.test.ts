@@ -168,4 +168,28 @@ suite("describe with hostile values", () => {
     expect(root.preview).not.toContain("\n");
     expect(root.preview.length).toBeLessThan(100);
   });
+
+  it("recognises a built-in type behind a class of its own", () => {
+    class Register extends Map<string, number> {}
+    class Stamp extends Date {}
+
+    expect(describe(new Register([["a", 1]])).kind).toBe("map");
+    expect(describe(new Stamp(0)).kind).toBe("date");
+  });
+
+  it("recognises a typed array whose prototype was replaced", () => {
+    const bytes = new Uint8Array(3);
+    Object.setPrototypeOf(bytes, Object.prototype);
+
+    expect(describe(bytes).kind).toBe("array");
+    expect(describe(new DataView(new ArrayBuffer(2))).kind).toBe("object");
+  });
+
+  it("shows a map as a plain object once its prototype is replaced with the plain one", () => {
+    const map = new Map([[1, 2]]);
+    Object.setPrototypeOf(map, Object.prototype);
+
+    expect(describe(map).kind).toBe("object");
+    expect(describe(map).childCount).toBe(0);
+  });
 });

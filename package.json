@@ -79,6 +79,6 @@
     "**/*.css"
   ],
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.2.0"
   }
 }
