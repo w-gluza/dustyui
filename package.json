@@ -27,14 +27,8 @@
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:css": "stylelint \"src/**/*.css\"",
-    "format:check": "prettier --check ."
-  },
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "peerDependencies": {
-    "react": ">=19.0.0",
-    "react-dom": ">=19.0.0"
+    "format:check": "prettier --check .",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -71,5 +65,12 @@
     },
     "./tokens.css": "./dist/styles/tokens.css",
     "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "./dist/index.js",
+    "**/*.css"
+  ],
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

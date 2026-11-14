@@ -5,12 +5,19 @@
   border-radius: 0.5rem;
   font: inherit;
   font-weight: var(--weight-semibold);
-  line-height: 1;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (forced-colors: active) {
+  .button:disabled {
+    opacity: 1;
+  }
 }
 
 .primary {

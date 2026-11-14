@@ -4,5 +4,6 @@
     "noEmit": false,
     "declaration": true,
     "outDir": "dist"
-  }
+  },
+  "exclude": ["src/**/*.test.*", "src/**/*.stories.*"]
 }

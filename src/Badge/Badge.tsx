@@ -2,7 +2,10 @@ import type { ComponentProps, ReactNode } from "react";
 import clsx from "clsx";
 import styles from "./Badge.module.css";
 
-export interface BadgeProps extends Omit<ComponentProps<"span">, "children"> {
+export interface BadgeProps extends Omit<
+  ComponentProps<"span">,
+  "children" | "dangerouslySetInnerHTML"
+> {
   label: string;
   icon?: ReactNode;
   iconPosition?: "left" | "right";
@@ -26,9 +29,8 @@ export function Badge({
 
   return (
     <span
-      role={announce ? "status" : undefined}
-      aria-live={announce ? "polite" : undefined}
       {...props}
+      {...(announce ? { role: "status", "aria-live": "polite" } : {})}
       className={clsx(styles.badge, className)}
     >
       {iconPosition === "left" ? iconNode : null}

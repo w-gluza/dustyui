@@ -6,10 +6,6 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import prettier from "eslint-config-prettier/flat";
 import globals from "globals";
 
-const a11yRulesAsErrors = Object.fromEntries(
-  Object.keys(jsxA11y.flatConfigs.strict.rules).map((rule) => [rule, "error"]),
-);
-
 export default defineConfig([
   globalIgnores(["dist/**"]),
   js.configs.recommended,
@@ -21,7 +17,9 @@ export default defineConfig([
       globals: { ...globals.browser },
     },
     rules: {
-      ...a11yRulesAsErrors,
+      "jsx-a11y/control-has-associated-label": "error",
+      "jsx-a11y/no-aria-hidden-on-focusable": "error",
+      "jsx-a11y/prefer-tag-over-role": "error",
       "@typescript-eslint/consistent-type-imports": "error",
       "no-console": "error",
     },

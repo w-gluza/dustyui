@@ -2,7 +2,13 @@ import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import clsx from "clsx";
 import styles from "./Avatar.module.css";
 
-export interface AvatarProps extends Omit<ComponentProps<"span">, "children"> {
+const DEFAULT_SIZE = 64;
+const ROOT_FONT_SIZE = 16;
+
+export interface AvatarProps extends Omit<
+  ComponentProps<"span">,
+  "children" | "dangerouslySetInnerHTML"
+> {
   image?: ReactNode;
   fallback?: string;
   size?: number;
@@ -11,14 +17,15 @@ export interface AvatarProps extends Omit<ComponentProps<"span">, "children"> {
 export function Avatar({
   image,
   fallback,
-  size = 64,
+  size = DEFAULT_SIZE,
   className,
   style,
   ...props
 }: AvatarProps) {
+  const safeSize = Number.isFinite(size) && size > 0 ? size : DEFAULT_SIZE;
   const sizedStyle = {
     ...style,
-    "--avatar-size": `${size}px`,
+    "--avatar-size": `${safeSize / ROOT_FONT_SIZE}rem`,
   } as CSSProperties;
 
   return (

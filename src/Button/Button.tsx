@@ -2,8 +2,13 @@ import type { ComponentProps } from "react";
 import clsx from "clsx";
 import styles from "./Button.module.css";
 
-export interface ButtonProps extends ComponentProps<"button"> {
-  variant?: "primary" | "secondary";
+export type ButtonVariant = "primary" | "secondary";
+
+export interface ButtonProps extends Omit<
+  ComponentProps<"button">,
+  "aria-busy"
+> {
+  variant?: ButtonVariant;
   loading?: boolean;
 }
 
