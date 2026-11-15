@@ -524,6 +524,21 @@ describe("ObjectInspector", () => {
 });
 
 describe("ObjectInspector with lazy rows and ranges", () => {
+  beforeEach(resetAnnouncer);
+
+  it("says nothing when a row opens onto its contents", async () => {
+    const screen = await render(
+      <ObjectInspector label="Park" value={{ inner: { a: 1 } }} />,
+    );
+
+    await screen.getByRole("treeitem", { name: /^inner/u }).click();
+
+    await expect
+      .element(screen.getByRole("treeitem", { name: "a: 1" }))
+      .toBeVisible();
+    expect(announcements()).toEqual([]);
+  });
+
   function facts(): Record<string, string> {
     const terms = [...document.querySelectorAll("dt")];
     return Object.fromEntries(
@@ -569,8 +584,11 @@ describe("ObjectInspector with lazy rows and ranges", () => {
     ]);
     await expect.element(row).not.toHaveAttribute("aria-expanded");
     await expect.element(row).toHaveFocus();
+    await expect.poll(() => announcements()).toEqual(["No properties"]);
 
     await userEvent.keyboard("{ArrowRight}{ArrowDown}");
+
+    expect(announcements()).toEqual(["No properties"]);
 
     expect(document.activeElement?.textContent).toBe("after: 1");
   });

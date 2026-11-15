@@ -49,6 +49,7 @@ const SEARCH_LIMIT = 500_000;
 const ANNOUNCE_DELAY = 700;
 const LABEL_LIMIT = 80;
 const ANNOUNCED_PATH_LIMIT = 120;
+const NOTHING_INSIDE = "No properties";
 
 function getShownLabel(label: NodeLabel): string {
   return getEscapedText(getTruncatedText(getLabelText(label), LABEL_LIMIT));
@@ -102,11 +103,7 @@ export function ObjectInspector({
     [showDetails, root, selected],
   );
 
-  useEffect(() => {
-    if (searchable || showDetails) {
-      readyAnnouncer();
-    }
-  }, [searchable, showDetails]);
+  useEffect(readyAnnouncer, []);
 
   const announceStatus = useEffectEvent(() => {
     const id = matches.ids[current];
@@ -126,7 +123,18 @@ export function ObjectInspector({
     return () => clearTimeout(timer);
   }, [searched, current]);
 
+  function announceEmpty(next: ReadonlySet<string>) {
+    const [opened, ...others] = [...next].filter((id) => !expanded.has(id));
+    if (opened === undefined || others.length > 0) {
+      return;
+    }
+    if (getNode(root, opened)?.children().length === 0) {
+      announce(NOTHING_INSIDE);
+    }
+  }
+
   function changeExpanded(next: ReadonlySet<string>) {
+    announceEmpty(next);
     if (controlledExpanded === undefined) {
       setOwnExpanded(next);
     }
