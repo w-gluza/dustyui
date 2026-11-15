@@ -18,6 +18,7 @@ suite("describe limits", () => {
         "Items 0 to 999,999",
         "Items 1,000,000 to 1,999,999",
         "Items 2,000,000 to 2,999,999",
+        "Properties",
       ]);
       expect(middle).toHaveLength(100);
       expect(middle[5]?.preview).toBe("Items 2,050,000 to 2,059,999");
@@ -69,10 +70,15 @@ suite("describe limits", () => {
       sparse[5_000_000] = "last";
       const root = describeValue(sparse);
 
-      expect(root.children()).toHaveLength(6);
-      expect(root.children().at(-1)?.preview).toBe(
+      expect(root.children().map((child) => child.preview)).toEqual([
+        "Items 0 to 999,999",
+        "Items 1,000,000 to 1,999,999",
+        "Items 2,000,000 to 2,999,999",
+        "Items 3,000,000 to 3,999,999",
+        "Items 4,000,000 to 4,999,999",
         "Items 5,000,000 to 5,000,000",
-      );
+        "Properties",
+      ]);
       expect(getNode(root, "$/[5000000]")?.preview).toBe('"last"');
       expect(
         getNode(root, "$/~i300-399")

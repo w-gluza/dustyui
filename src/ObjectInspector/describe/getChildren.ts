@@ -246,12 +246,22 @@ function getCollectionList(
   }
 }
 
-export function getChildLists(target: object, kind: ValueKind): ChildList[] {
+export interface ChildLists {
+  readonly lists: readonly ChildList[];
+  readonly readProperties: (() => ChildList) | undefined;
+}
+
+export function getChildLists(target: object, kind: ValueKind): ChildLists {
   const collection = getCollectionList(target, kind);
   const hasIndexes = collection !== undefined && kind === "array";
   const lists = collection ? [collection] : [];
-  if (!hasIndexes || collection.size <= KEY_SCAN_LIMIT) {
-    lists.push(getPropertyList(target, hasIndexes));
+  const readProperties = () => getPropertyList(target, hasIndexes);
+  const isDeferred = hasIndexes && collection.size > KEY_SCAN_LIMIT;
+  if (!isDeferred) {
+    lists.push(readProperties());
   }
-  return lists.filter((list) => list.size > 0);
+  return {
+    lists: lists.filter((list) => list.size > 0),
+    readProperties: isDeferred ? readProperties : undefined,
+  };
 }

@@ -4,11 +4,13 @@ import {
   getListLength,
   type Child,
   type ChildList,
+  type ChildLists,
   type ChildSource,
 } from "./getChildren.js";
 import {
   getChildId,
   getPath,
+  getPropertiesId,
   getRangeId,
   getRangeSegment,
   ROOT_ID,
@@ -172,9 +174,13 @@ function isInside(id: string, ancestorId: string): boolean {
   return id.startsWith(`${ancestorId}/`);
 }
 
+type Member = ValueNode | RangeNode | PropertiesNode;
+
+const NO_LISTS: ChildLists = { lists: [], readProperties: undefined };
+
 function findMember(
   owner: ValueNode,
-  members: readonly (ValueNode | RangeNode)[],
+  members: readonly Member[],
   id: string,
 ): InspectorNode | undefined {
   const direct = members.find(
@@ -188,12 +194,12 @@ function findMember(
   const located = owner.locate(id);
   return (
     located &&
-    members.find(
-      (member) =>
-        member instanceof RangeNode &&
-        member.list === located.list &&
-        member.start <= located.position &&
-        located.position < member.end,
+    members.find((member) =>
+      member instanceof RangeNode
+        ? member.list === located.list &&
+          member.start <= located.position &&
+          located.position < member.end
+        : member instanceof PropertiesNode && member.list === located.list,
     )
   );
 }
@@ -205,13 +211,13 @@ class RangeNode implements InspectorNode {
   readonly value = undefined;
   readonly kind = "range";
   readonly typeName = undefined;
-  readonly size = undefined;
+  readonly size: number;
   readonly preview: string;
   readonly list: ChildList;
   readonly start: number;
   readonly end: number;
   readonly #owner: ValueNode;
-  #children: readonly (ValueNode | RangeNode)[] | undefined;
+  #children: readonly Member[] | undefined;
 
   constructor(owner: ValueNode, list: ChildList, start: number, end: number) {
     this.id = getRangeId(owner.id, list.unit, start, end);
@@ -220,6 +226,7 @@ class RangeNode implements InspectorNode {
     this.list = list;
     this.start = start;
     this.end = end;
+    this.size = end - start;
     this.#owner = owner;
   }
 
@@ -235,13 +242,64 @@ class RangeNode implements InspectorNode {
     return findMember(this.#owner, this.#members, id);
   }
 
-  get #members(): readonly (ValueNode | RangeNode)[] {
+  get #members(): readonly Member[] {
     this.#children ??= this.#owner.createMembers(
       this.list,
       this.start,
       this.end,
     );
     return this.#children;
+  }
+}
+
+class PropertiesNode implements InspectorNode {
+  readonly id: string;
+  readonly path: string;
+  readonly label = undefined;
+  readonly value = undefined;
+  readonly kind = "range";
+  readonly typeName = undefined;
+  readonly preview = "Properties";
+  list: ChildList | undefined;
+  readonly #owner: ValueNode;
+  readonly #read: () => ChildList;
+  #children: readonly Member[] | undefined;
+
+  constructor(owner: ValueNode, read: () => ChildList) {
+    this.id = getPropertiesId(owner.id);
+    this.path = owner.path;
+    this.#owner = owner;
+    this.#read = read;
+  }
+
+  get hasChildren(): boolean {
+    return this.#children === undefined || this.#children.length > 0;
+  }
+
+  get size(): number | undefined {
+    return this.#children === undefined ? undefined : (this.list?.size ?? 0);
+  }
+
+  children(): readonly InspectorNode[] {
+    return this.#members;
+  }
+
+  findChild(id: string): InspectorNode | undefined {
+    return findMember(this.#owner, this.#members, id);
+  }
+
+  get #members(): readonly Member[] {
+    this.#children ??= this.#load();
+    return this.#children;
+  }
+
+  #load(): Member[] {
+    try {
+      this.list = this.#owner.addList(this.#read());
+      return this.#owner.createMembers(this.list, 0, this.list.size);
+    } catch {
+      return [];
+    }
   }
 }
 
@@ -255,7 +313,7 @@ class ValueNode implements InspectorNode {
   #shape: Shape | undefined;
   #preview: string | undefined;
   #lists: readonly ChildList[] | undefined;
-  #children: readonly (ValueNode | RangeNode)[] | undefined;
+  #children: readonly Member[] | undefined;
   #childAncestors: Ancestor | undefined;
   #size: number | undefined | null = null;
 
@@ -364,25 +422,27 @@ class ValueNode implements InspectorNode {
     return undefined;
   }
 
-  createMembers(
-    list: ChildList,
-    start: number,
-    end: number,
-  ): (ValueNode | RangeNode)[] {
+  createMembers(list: ChildList, start: number, end: number): Member[] {
     const ranges = getRanges(start, end);
     return ranges
       ? ranges.map((range) => new RangeNode(this, list, range.start, range.end))
       : list.read(start, end - start).map((child) => this.#createValue(child));
   }
 
-  get #members(): readonly (ValueNode | RangeNode)[] {
+  get #members(): readonly Member[] {
     this.#children ??= this.#load();
     return this.#children;
   }
 
-  #load(): (ValueNode | RangeNode)[] {
+  addList(list: ChildList): ChildList {
+    this.#lists = [...(this.#lists ?? []), list];
+    return list;
+  }
+
+  #load(): Member[] {
     this.#preview = undefined;
-    this.#lists = this.#readLists();
+    const { lists, readProperties } = this.#readLists();
+    this.#lists = lists;
     const { value } = this;
     this.#childAncestors = this.#ancestors;
     if (this.#source.type === "value" && isObject(value)) {
@@ -393,23 +453,29 @@ class ValueNode implements InspectorNode {
         parent: this.#ancestors,
       };
     }
-    return this.#lists.flatMap((list) =>
+    const members = lists.flatMap((list) =>
       this.createMembers(list, 0, list.size),
     );
+    return readProperties
+      ? [...members, new PropertiesNode(this, readProperties)]
+      : members;
   }
 
-  #readLists(): readonly ChildList[] {
+  #readLists(): ChildLists {
     if (!this.#canHaveChildren) {
-      return [];
+      return NO_LISTS;
     }
     if (this.#source.type === "entry") {
-      return [getEntryList(this.#source.key, this.#source.value)];
+      return {
+        lists: [getEntryList(this.#source.key, this.#source.value)],
+        readProperties: undefined,
+      };
     }
     try {
       return getChildLists(this.value as object, this.kind);
     } catch (error) {
       this.#shape = toLeaf("uninspectable", getFailureReason(error));
-      return [];
+      return NO_LISTS;
     }
   }
 

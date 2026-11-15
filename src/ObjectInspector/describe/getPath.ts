@@ -70,6 +70,10 @@ export function getRangeId(
   return `${ownerId}/~${unit.charAt(0)}${start}-${end - 1}`;
 }
 
+export function getPropertiesId(ownerId: string): string {
+  return `${ownerId}/~p`;
+}
+
 export function getRangeSegment(segment: string): RangeSegment | undefined {
   const [, letter, start] = RANGE_SEGMENT.exec(segment) ?? [];
   const unit = letter === undefined ? undefined : RANGE_UNITS[letter];

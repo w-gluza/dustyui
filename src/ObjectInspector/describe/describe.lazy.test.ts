@@ -2,6 +2,7 @@ import { describe as suite, expect, it } from "vitest";
 import { getCopyText } from "../getCopyText.js";
 import { getMatches } from "../search/getMatches.js";
 import { describeValue, type InspectorNode } from "./describe.js";
+import { getNodeTrail } from "./getNode.js";
 
 interface Reads {
   keys: number;
@@ -129,11 +130,11 @@ suite("describe reads only what is open", () => {
       const children: readonly InspectorNode[] = node.children();
       expect(children.length).toBeLessThanOrEqual(100);
       created += children.length;
-      node = children.at(-1);
+      node = children.findLast((child) => child.preview !== "Properties");
     }
 
     expect(node?.id).toBe("$/[2999999]");
-    expect(created).toBe(303);
+    expect(created).toBe(304);
   });
 
   it("does not look for named properties on a list too long to scan", () => {
@@ -181,5 +182,102 @@ suite("describe reads only what is open", () => {
     expect(lines).toHaveLength(52);
     expect(lines.at(-2)).toBe("  …");
     expect(lines.at(-1)).toBe("]");
+  });
+
+  suite("named properties of a list too long to scan", () => {
+    const tag = Symbol("tag");
+
+    function tagged(): Uint8Array {
+      return Object.assign(new Uint8Array(100_001), {
+        note: "needle",
+        [tag]: "needle too",
+      });
+    }
+
+    it("offers them behind a row of their own, read only when it is opened", () => {
+      const reads = { keys: 0, descriptors: 0 };
+      const root = describeValue(
+        watch(new Array<number>(100_001).fill(1), reads),
+      );
+      const properties = root.children().at(-1);
+
+      expect(properties?.kind).toBe("range");
+      expect(properties?.preview).toBe("Properties");
+      expect(properties?.id).toBe("$/~p");
+      expect(properties?.path).toBe("$");
+      expect(properties?.hasChildren).toBe(true);
+      expect(properties?.size).toBeUndefined();
+      expect(reads.keys).toBe(0);
+
+      expect(properties?.children()).toEqual([]);
+      expect(reads.keys).toBe(1);
+      expect(properties?.hasChildren).toBe(false);
+      expect(properties?.size).toBe(1);
+    });
+
+    it("lists string and symbol keys once opened, under their usual ids", () => {
+      const root = describeValue(tagged());
+      const properties = root.children().at(-1);
+
+      expect(
+        properties
+          ?.children()
+          .map((child) => [child.id, child.path, child.preview]),
+      ).toEqual([
+        ["$/.note", "$.note", '"needle"'],
+        ["$/@0", "$[Symbol(tag)]", '"needle too"'],
+      ]);
+      expect(getNodeTrail(root, "$/.note").map((node) => node.id)).toEqual([
+        "$",
+        "$/~p",
+        "$/.note",
+      ]);
+    });
+
+    it("cannot find a named property by id before the row is opened", () => {
+      expect(getNodeTrail(describeValue(tagged()), "$/.note")).toEqual([]);
+    });
+
+    it("says a search is incomplete until they are read, then finds them", () => {
+      const root = describeValue(tagged());
+
+      expect(getMatches(root, "needle", 500_000)).toEqual({
+        ids: [],
+        isComplete: false,
+      });
+
+      root.children().at(-1)?.children();
+
+      expect(getMatches(root, "needle", 500_000)).toEqual({
+        ids: ["$/.note", "$/@0"],
+        isComplete: true,
+      });
+    });
+
+    it("says a copy is partial until they are read, then includes them", () => {
+      const root = describeValue(tagged());
+      const before = getCopyText(root, 200_000);
+
+      root.children().at(-1)?.children();
+      const after = getCopyText(root, 200_000);
+
+      expect(before.isComplete).toBe(false);
+      expect(before.text).not.toContain("needle");
+      expect(after.isComplete).toBe(true);
+      expect(after.text.split("\n").slice(-3)).toEqual([
+        '  note: "needle",',
+        '  Symbol(tag): "needle too",',
+        "]",
+      ]);
+    });
+
+    it("keeps reading them straight away for a list short enough to scan", () => {
+      const short = Object.assign(new Uint8Array(100_000), { note: "needle" });
+
+      expect(getMatches(describeValue(short), "needle", 500_000)).toEqual({
+        ids: ["$/.note"],
+        isComplete: true,
+      });
+    });
   });
 });

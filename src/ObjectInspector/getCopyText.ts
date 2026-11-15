@@ -110,7 +110,11 @@ export function getCopyText(
       continue;
     }
     if (item.kind === "range") {
-      addChildren(item, depth);
+      if (item.size === undefined) {
+        isComplete = false;
+      } else {
+        addChildren(item, depth);
+      }
       continue;
     }
     remaining -= 1;

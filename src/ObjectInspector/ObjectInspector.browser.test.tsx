@@ -699,4 +699,28 @@ describe("ObjectInspector with lazy rows and ranges", () => {
     expect(listed).toBe(0);
     expect(described).toBeLessThan(inner.length * 30);
   });
+
+  it("keeps the named properties of a very long list behind a Properties row", async () => {
+    const value = Object.assign(new Uint8Array(100_001), { note: "needle" });
+    const screen = await render(
+      <ObjectInspector label="Bytes" value={value} searchable showDetails />,
+    );
+    const properties = screen.getByRole("treeitem", { name: "Properties" });
+
+    await screen.getByRole("searchbox").fill("needle");
+    await expect
+      .element(screen.getByText("No matches, searched in part"))
+      .toBeVisible();
+    await expect.element(properties).toHaveAttribute("aria-expanded", "false");
+
+    await properties.click();
+
+    await expect
+      .element(screen.getByRole("treeitem", { name: 'note: "needle"' }))
+      .toBeVisible();
+    expect(facts()).toEqual({ Path: "$", Type: "Range" });
+    expect(
+      screen.getByRole("button", { name: "Copy value" }).query(),
+    ).toBeNull();
+  });
 });

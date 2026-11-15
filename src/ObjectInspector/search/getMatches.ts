@@ -59,7 +59,12 @@ export function getMatches(
     if (!node.hasChildren) {
       continue;
     }
-    if (node !== root && node.size !== undefined && node.size > remaining) {
+    const isRange = node.kind === "range";
+    if (isRange && node.size === undefined) {
+      isComplete = false;
+      continue;
+    }
+    if (!isRange && node !== root && (node.size ?? 0) > remaining) {
       isComplete = false;
       continue;
     }
