@@ -21,5 +21,14 @@ export {
   type NodeLabel,
   type ValueKind,
 } from "./ObjectInspector/describe/describe.js";
+export { getNode, getNodeTrail } from "./ObjectInspector/describe/getNode.js";
+export {
+  getChildId,
+  getPropertiesId,
+  getRangeId,
+  ROOT_ID,
+  type PathStep,
+  type RangeUnit,
+} from "./ObjectInspector/describe/getPath.js";
 export { Tree, type TreeProps } from "./Tree/Tree.js";
 export type { TreeNode, TreeRow } from "./Tree/treeModel.js";

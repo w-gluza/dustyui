@@ -65,9 +65,9 @@ export function getRangeId(
   ownerId: string,
   unit: RangeUnit,
   start: number,
-  end: number,
+  endExclusive: number,
 ): string {
-  return `${ownerId}/~${unit.charAt(0)}${start}-${end - 1}`;
+  return `${ownerId}/~${unit.charAt(0)}${start}-${endExclusive - 1}`;
 }
 
 export function getPropertiesId(ownerId: string): string {
