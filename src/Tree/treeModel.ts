@@ -1,6 +1,6 @@
 export interface TreeNode {
   readonly id: string;
-  readonly childCount: number;
+  readonly hasChildren: boolean;
   children(): readonly this[];
 }
 
@@ -88,9 +88,11 @@ function toRow<Node extends TreeNode>(
     positionInSet,
     setSize,
     get expandable() {
-      return node.childCount > 0;
+      return node.hasChildren;
     },
-    expanded: expanded.has(node.id) && node.childCount > 0,
+    get expanded() {
+      return expanded.has(node.id) && node.hasChildren;
+    },
   };
 }
 

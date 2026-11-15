@@ -19,7 +19,7 @@ function folder(name: string, ...contents: Folder[]): Folder {
   return {
     id: name,
     name,
-    childCount: contents.length,
+    hasChildren: contents.length > 0,
     children: () => contents,
   };
 }
@@ -318,9 +318,9 @@ describe("laziness", () => {
     const asked: string[] = [];
     const watched = (name: string, ...contents: TreeNode[]): TreeNode => ({
       id: name,
-      get childCount() {
+      get hasChildren() {
         asked.push(name);
-        return contents.length;
+        return contents.length > 0;
       },
       children: () => contents,
     });

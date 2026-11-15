@@ -37,7 +37,7 @@ function toBranch(shape: Shape, id = "root"): Branch {
   return {
     id,
     name: shape.name,
-    childCount: contents.length,
+    hasChildren: contents.length > 0,
     children: () => contents,
   };
 }
@@ -117,7 +117,7 @@ describe("the tree model, for any tree and any sequence of actions", () => {
             } else {
               expect(parent?.expanded).toBe(true);
               expect(row.level).toBe((parent?.level ?? 0) + 1);
-              expect(row.setSize).toBe(parent?.node.childCount);
+              expect(row.setSize).toBe(parent?.node.children().length);
             }
             expect(row.positionInSet).toBeGreaterThanOrEqual(1);
             expect(row.positionInSet).toBeLessThanOrEqual(row.setSize);
@@ -136,7 +136,7 @@ describe("the tree model, for any tree and any sequence of actions", () => {
         run(root, steps, (_state, rows) => {
           const expected = rows
             .filter((row) => row.expanded)
-            .reduce((total, row) => total + row.node.childCount, 1);
+            .reduce((total, row) => total + row.node.children().length, 1);
 
           expect(rows).toHaveLength(expected);
         });

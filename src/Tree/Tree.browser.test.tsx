@@ -11,7 +11,7 @@ function folder(name: string, ...contents: Folder[]): Folder {
   return {
     id: name,
     name,
-    childCount: contents.length,
+    hasChildren: contents.length > 0,
     children: () => contents,
   };
 }
