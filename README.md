@@ -2,6 +2,8 @@
 
 A small React component library, styled with CSS Modules and themed through CSS custom properties. Accessible by default, with light and dark themes built in.
 
+Live demos and documentation: [dustyui.com](https://www.dustyui.com/)
+
 ## Install
 
 ```bash
