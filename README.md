@@ -22,7 +22,7 @@ export function Example() {
 
 The styles load with the components, so there is no stylesheet to import.
 
-The library is light by default and never changes the colour scheme of your page on its own. Set `data-color-scheme` on the root element, or on any part of the page, to choose:
+The library is light by default. It sets `color-scheme: light` on the root element with no specificity, so any `color-scheme` rule of your own wins, and it never switches to dark on its own. Set `data-color-scheme` on the root element, or on any part of the page, to choose:
 
 | Value    | Result                     |
 | -------- | -------------------------- |
