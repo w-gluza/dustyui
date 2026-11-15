@@ -46,10 +46,11 @@ function getClosing(node: InspectorNode): string {
 }
 
 function isWhole(node: InspectorNode, room: number): boolean {
-  if (node.kind === "rest") {
-    return false;
-  }
   return typeof node.value !== "string" || node.value.length <= room;
+}
+
+function getChildren(node: InspectorNode): readonly InspectorNode[] {
+  return node.hasChildren ? node.children() : [];
 }
 
 export function getCopyText(
@@ -57,10 +58,14 @@ export function getCopyText(
   limit = VALUE_LIMIT,
   characterLimit = CHARACTER_LIMIT,
 ): CopyText {
-  if (root.childCount === 0) {
-    return root.kind === "string"
-      ? { text: getValueText(root), isComplete: true }
-      : { text: getLeafText(root, Infinity), isComplete: root.kind !== "rest" };
+  if (getChildren(root).length === 0) {
+    return {
+      text:
+        root.kind === "string"
+          ? getValueText(root)
+          : getLeafText(root, Infinity),
+      isComplete: true,
+    };
   }
   const lines: string[] = [];
   let room = characterLimit;
@@ -75,6 +80,17 @@ export function getCopyText(
   const depths = new Map<InspectorNode, number>([[root, 0]]);
   let remaining = limit;
   let isCut = false;
+
+  function addChildren(node: InspectorNode, depth: number) {
+    const children = getChildren(node);
+    for (let index = children.length - 1; index >= 0; index--) {
+      const child = children[index];
+      if (child) {
+        depths.set(child, depth);
+        pending.push(child);
+      }
+    }
+  }
 
   for (let item = pending.pop(); item !== undefined; item = pending.pop()) {
     if (typeof item === "string") {
@@ -93,28 +109,25 @@ export function getCopyText(
       }
       continue;
     }
+    if (item.kind === "range") {
+      addChildren(item, depth);
+      continue;
+    }
     remaining -= 1;
     const prefix = indent + getPrefix(item, item === root);
-    if (item.childCount === 0) {
+    if (getChildren(item).length === 0) {
       isComplete &&= isWhole(item, room);
       add(prefix + getLeafText(item, room) + end);
       continue;
     }
-    if (item.childCount > limit) {
+    if (item !== root && item.size !== undefined && item.size > remaining) {
       isComplete = false;
       add(prefix + item.preview + end);
       continue;
     }
     add(prefix + getOpening(item));
     pending.push(indent + getClosing(item) + end);
-    const children = item.children();
-    for (let index = children.length - 1; index >= 0; index--) {
-      const child = children[index];
-      if (child) {
-        depths.set(child, depth + 1);
-        pending.push(child);
-      }
-    }
+    addChildren(item, depth + 1);
   }
 
   return { text: lines.join("\n"), isComplete };

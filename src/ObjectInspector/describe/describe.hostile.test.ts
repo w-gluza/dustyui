@@ -5,7 +5,7 @@ function readEverything(node: InspectorNode): void {
   void node.kind;
   void node.typeName;
   void node.preview;
-  void node.childCount;
+  void node.hasChildren;
   node.children().forEach(readEverything);
 }
 
@@ -19,9 +19,12 @@ suite("describe with hostile values", () => {
     const root = describeValue({ before: 1, hostile, after: 2 });
     const [before, broken, after] = root.children();
 
+    expect(broken?.kind).toBe("object");
+    expect(broken?.preview).toBe("{…}");
+    expect(broken?.children()).toEqual([]);
     expect(broken?.kind).toBe("uninspectable");
     expect(broken?.preview).toBe("Could not be read: refused");
-    expect(broken?.childCount).toBe(0);
+    expect(broken?.hasChildren).toBe(false);
     expect(before?.preview).toBe("1");
     expect(after?.preview).toBe("2");
   });
@@ -75,9 +78,10 @@ suite("describe with hostile values", () => {
       },
     );
 
-    expect(describeValue(hostile).preview).toBe(
-      "Could not be read: unknown error",
-    );
+    const node = describeValue(hostile);
+    node.children();
+
+    expect(node.preview).toBe("Could not be read: unknown error");
   });
 
   it("never runs a getter that would throw", () => {
@@ -134,9 +138,12 @@ suite("describe with hostile values", () => {
     const node = describeValue(new HostileMap([["a", 1]]));
 
     expect(node.kind).toBe("map");
-    expect(node.preview).toBe(
-      'Map(1) {"a" => 1, forEach: ƒ refuse(), entries: ƒ refuse()}',
-    );
+    expect(node.preview).toBe('Map(1) {"a" => 1}');
+    expect(node.children().map((child) => child.preview)).toEqual([
+      '"a" => 1',
+      "ƒ refuse()",
+      "ƒ refuse()",
+    ]);
   });
 
   it("does not trust getters shadowing a regular expression's flags", () => {
@@ -192,6 +199,6 @@ suite("describe with hostile values", () => {
     Object.setPrototypeOf(map, Object.prototype);
 
     expect(describeValue(map).kind).toBe("object");
-    expect(describeValue(map).childCount).toBe(0);
+    expect(describeValue(map).children()).toEqual([]);
   });
 });

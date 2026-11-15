@@ -27,7 +27,7 @@ export type ValueKind =
   | "circular"
   | "uninspectable"
   | "hole"
-  | "rest";
+  | "range";
 
 function succeeds(read: () => unknown): boolean {
   try {

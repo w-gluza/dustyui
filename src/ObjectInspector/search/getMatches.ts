@@ -1,6 +1,6 @@
 import type { InspectorNode } from "../describe/describe.js";
 import { getLabelText } from "../getLabelText.js";
-import { getValueText } from "../getValueText.js";
+import { getValueText, hasValueText } from "../getValueText.js";
 
 export interface Matches {
   readonly ids: readonly string[];
@@ -36,10 +36,13 @@ export function getMatches(
   }
 
   function isMatch(node: InspectorNode): boolean {
+    if (node.kind === "hole") {
+      return false;
+    }
     if (node.label && contains(getLabelText(node.label))) {
       return true;
     }
-    return node.childCount === 0 && contains(getValueText(node));
+    return hasValueText(node) && contains(getValueText(node));
   }
 
   for (let node = pending.pop(); node; node = pending.pop()) {
@@ -47,18 +50,16 @@ export function getMatches(
       isComplete = false;
       break;
     }
-    remaining -= 1;
-    if (node.kind === "rest") {
-      isComplete = false;
-      continue;
+    if (node.kind !== "range") {
+      remaining -= 1;
     }
-    if (node.kind !== "hole" && isMatch(node)) {
+    if (isMatch(node)) {
       ids.push(node.id);
     }
-    if (node.childCount === 0) {
+    if (!node.hasChildren) {
       continue;
     }
-    if (node.childCount > limit) {
+    if (node !== root && node.size !== undefined && node.size > remaining) {
       isComplete = false;
       continue;
     }

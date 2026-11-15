@@ -1,28 +1,47 @@
-import { getArrayIndex, type PathStep } from "./getPath.js";
+import {
+  getArrayIndex,
+  getSegment,
+  type PathStep,
+  type RangeUnit,
+} from "./getPath.js";
 import type { ValueKind } from "./getValueKind.js";
 import {
   getArrayLength,
   getFailureReason,
-  getMapEntries,
+  getMapIterator,
   getMapSize,
-  getSetItems,
+  getSetIterator,
   getSetSize,
   getTypedArrayLength,
 } from "./safeRead.js";
 
-export const CHILD_LIMIT = 100_000;
+export const KEY_SCAN_LIMIT = 100_000;
 
 export type ChildSource =
   | { readonly type: "value"; readonly value: unknown }
   | { readonly type: "getter" }
   | { readonly type: "failure"; readonly reason: string }
   | { readonly type: "entry"; readonly key: unknown; readonly value: unknown }
-  | { readonly type: "hole"; readonly count: number }
-  | { readonly type: "rest"; readonly count: number };
+  | { readonly type: "hole"; readonly count: number };
 
 export interface Child {
   readonly step: PathStep;
   readonly source: ChildSource;
+}
+
+export interface ChildList {
+  readonly unit: RangeUnit;
+  readonly size: number;
+  read(start: number, count: number): Child[];
+  find(segment: string): number | undefined;
+}
+
+const INDEX_SEGMENT = /^\[(\d+)\]$/u;
+const POSITION_SEGMENT = /^#(\d+)$/u;
+
+function getPosition(pattern: RegExp, segment: string): number | undefined {
+  const digits = pattern.exec(segment)?.[1];
+  return digits === undefined ? undefined : Number(digits);
 }
 
 function getPropertySource(
@@ -42,108 +61,148 @@ function getPropertySource(
   }
 }
 
-function getPropertyStep(
-  key: string | symbol,
-  symbolPosition: number,
-  indexed: boolean,
-): PathStep {
-  if (typeof key === "symbol") {
-    return { type: "symbol", key, position: symbolPosition };
-  }
-  const index = indexed ? getArrayIndex(key) : undefined;
-  return index === undefined
-    ? { type: "property", key }
-    : { type: "index", index };
-}
+export function getIndexList(target: object, length: number): ChildList {
+  return {
+    unit: "items",
+    size: length,
+    read(start, count) {
+      const children: Child[] = [];
+      const end = Math.min(start + count, length);
+      let holeStart: number | undefined;
 
-function addHole(children: Child[], start: number, end: number): void {
-  if (end > start) {
-    children.push({
-      step: { type: "hole", index: start },
-      source: { type: "hole", count: end - start },
-    });
-  }
-}
-
-function addProperties(
-  children: Child[],
-  target: object,
-  length: number | undefined,
-): number {
-  const keys = Reflect.ownKeys(target);
-  const indexed = length !== undefined;
-  let symbolPosition = 0;
-  let read = 0;
-  let hasReadLength = false;
-  let nextIndex = 0;
-
-  for (const key of keys) {
-    if (children.length >= CHILD_LIMIT) {
-      break;
-    }
-    read++;
-    hasReadLength ||= key === "length";
-    const step = getPropertyStep(key, symbolPosition, indexed);
-    if (step.type === "symbol") {
-      symbolPosition++;
-    }
-    if (step.type !== "index" && nextIndex !== Infinity) {
-      addHole(children, nextIndex, length ?? 0);
-      nextIndex = Infinity;
-    }
-    const source = getPropertySource(target, key);
-    if (source) {
-      if (step.type === "index") {
-        addHole(children, nextIndex, step.index);
-        nextIndex = step.index + 1;
+      function closeHole(at: number) {
+        if (holeStart !== undefined) {
+          children.push({
+            step: { type: "hole", index: holeStart },
+            source: { type: "hole", count: at - holeStart },
+          });
+          holeStart = undefined;
+        }
       }
-      children.push({ step, source });
-    }
-  }
-  if (read === keys.length) {
-    addHole(children, nextIndex, length ?? 0);
-  }
 
-  const unread = keys.length - read;
-  return unread > 0 && !hasReadLength && Array.isArray(target)
-    ? unread - 1
-    : unread;
+      for (let index = start; index < end; index++) {
+        const source = getPropertySource(target, String(index));
+        if (source) {
+          closeHole(index);
+          children.push({ step: { type: "index", index }, source });
+        } else {
+          holeStart ??= index;
+        }
+      }
+      closeHole(end);
+      return children;
+    },
+    find: (segment) => getPosition(INDEX_SEGMENT, segment),
+  };
 }
 
-function addLeadingItems(children: Child[], target: object): boolean {
-  const start = children.length;
-  for (let index = 0; index < CHILD_LIMIT; index++) {
-    const source = getPropertySource(target, String(index));
-    if (!source) {
-      children.length = start;
-      return false;
-    }
-    children.push({ step: { type: "index", index }, source });
-  }
-  return true;
+function getIteratedList<Item>(
+  unit: RangeUnit,
+  size: number,
+  open: () => () => IteratorResult<Item>,
+  toChild: (item: Item, index: number) => Child,
+): ChildList {
+  let next = open();
+  let cursor = 0;
+
+  return {
+    unit,
+    size,
+    read(start, count) {
+      if (start < cursor) {
+        next = open();
+        cursor = 0;
+      }
+      while (cursor < start) {
+        if (next().done) {
+          return [];
+        }
+        cursor++;
+      }
+      const children: Child[] = [];
+      while (children.length < count) {
+        const result = next();
+        if (result.done) {
+          break;
+        }
+        children.push(toChild(result.value, cursor));
+        cursor++;
+      }
+      return children;
+    },
+    find: (segment) => getPosition(POSITION_SEGMENT, segment),
+  };
 }
 
-function addMapEntries(children: Child[], target: object): number {
-  for (const [key, value] of getMapEntries(target, CHILD_LIMIT)) {
-    children.push({
-      step: { type: "entry", index: children.length },
+function getMapList(target: object): ChildList {
+  return getIteratedList(
+    "entries",
+    getMapSize(target),
+    () => getMapIterator(target),
+    ([key, value], index) => ({
+      step: { type: "entry", index },
       source: { type: "entry", key, value },
-    });
-  }
-  return getMapSize(target) - children.length;
+    }),
+  );
 }
 
-function addSetItems(children: Child[], target: object): number {
-  for (const value of getSetItems(target, CHILD_LIMIT)) {
-    children.push({
-      step: { type: "item", index: children.length },
+function getSetList(target: object): ChildList {
+  return getIteratedList(
+    "items",
+    getSetSize(target),
+    () => getSetIterator(target),
+    (value, index) => ({
+      step: { type: "item", index },
       source: { type: "value", value },
-    });
-  }
-  return getSetSize(target) - children.length;
+    }),
+  );
 }
 
-function getListLength(target: object): number | undefined {
+function isIndexKey(key: string | symbol): boolean {
+  return typeof key === "string" && getArrayIndex(key) !== undefined;
+}
+
+function getPropertyList(target: object, hasIndexes: boolean): ChildList {
+  const own = Reflect.ownKeys(target);
+  const keys = hasIndexes ? own.filter((key) => !isIndexKey(key)) : own;
+  const firstSymbol = keys.findIndex((key) => typeof key === "symbol");
+  let positions: Map<string, number> | undefined;
+
+  function toStep(key: string | symbol, position: number): PathStep {
+    return typeof key === "symbol"
+      ? { type: "symbol", key, position: position - firstSymbol }
+      : { type: "property", key };
+  }
+
+  return {
+    unit: "properties",
+    size: keys.length,
+    read(start, count) {
+      const children: Child[] = [];
+      const end = Math.min(start + count, keys.length);
+      for (let position = start; position < end; position++) {
+        const key = keys[position];
+        const source =
+          key === undefined ? undefined : getPropertySource(target, key);
+        if (key !== undefined && source) {
+          children.push({ step: toStep(key, position), source });
+        }
+      }
+      return children;
+    },
+    find(segment) {
+      positions ??= new Map(
+        keys.map((key, position) => [
+          getSegment(toStep(key, position)),
+          position,
+        ]),
+      );
+      return positions.get(segment);
+    },
+  };
+}
+
+export function getListLength(target: object): number | undefined {
   try {
     return getTypedArrayLength(target);
   } catch {
@@ -151,38 +210,48 @@ function getListLength(target: object): number | undefined {
   }
 }
 
-export function getEntryChildren(key: unknown, value: unknown): Child[] {
-  return [
+export function getEntryList(key: unknown, value: unknown): ChildList {
+  const children: Child[] = [
     { step: { type: "entryKey" }, source: { type: "value", value: key } },
     { step: { type: "entryValue" }, source: { type: "value", value } },
   ];
+  return {
+    unit: "properties",
+    size: children.length,
+    read: (start, count) => children.slice(start, start + count),
+    find(segment) {
+      const position = children.findIndex(
+        (child) => getSegment(child.step) === segment,
+      );
+      return position < 0 ? undefined : position;
+    },
+  };
 }
 
-export function getChildren(target: object, kind: ValueKind): Child[] {
-  const children: Child[] = [];
-  let hidden = 0;
+function getCollectionList(
+  target: object,
+  kind: ValueKind,
+): ChildList | undefined {
+  switch (kind) {
+    case "map":
+      return getMapList(target);
+    case "set":
+      return getSetList(target);
+    case "array": {
+      const length = getListLength(target);
+      return length === undefined ? undefined : getIndexList(target, length);
+    }
+    default:
+      return undefined;
+  }
+}
 
-  if (kind === "map") {
-    hidden += addMapEntries(children, target);
+export function getChildLists(target: object, kind: ValueKind): ChildList[] {
+  const collection = getCollectionList(target, kind);
+  const hasIndexes = collection !== undefined && kind === "array";
+  const lists = collection ? [collection] : [];
+  if (!hasIndexes || collection.size <= KEY_SCAN_LIMIT) {
+    lists.push(getPropertyList(target, hasIndexes));
   }
-  if (kind === "set") {
-    hidden += addSetItems(children, target);
-  }
-  const length = kind === "array" ? getListLength(target) : undefined;
-  if (
-    length !== undefined &&
-    length > CHILD_LIMIT &&
-    addLeadingItems(children, target)
-  ) {
-    hidden += length - CHILD_LIMIT;
-  } else {
-    hidden += addProperties(children, target, length);
-  }
-  if (hidden > 0) {
-    children.push({
-      step: { type: "rest" },
-      source: { type: "rest", count: hidden },
-    });
-  }
-  return children;
+  return lists.filter((list) => list.size > 0);
 }

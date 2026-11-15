@@ -1,5 +1,12 @@
 import { describe as suite, expect, it } from "vitest";
 import { describeValue, type InspectorNode } from "./describe.js";
+import { getNode } from "./getNode.js";
+
+function opened(value: unknown): InspectorNode {
+  const node = describeValue(value);
+  node.children();
+  return node;
+}
 
 function childrenOf(value: unknown): readonly InspectorNode[] {
   return describeValue(value).children();
@@ -28,7 +35,7 @@ suite("describe", () => {
 
       expect(node.kind).toBe(kind);
       expect(node.preview).toBe(preview);
-      expect(node.childCount).toBe(0);
+      expect(node.hasChildren).toBe(false);
       expect(node.children()).toEqual([]);
     });
 
@@ -51,6 +58,8 @@ suite("describe", () => {
       });
 
       expect(root.kind).toBe("object");
+      expect(root.preview).toBe("{…}");
+      root.children();
       expect(root.preview).toBe('{name: "Yellowstone", animals: Array(2)}');
       expect(root.children().map(summary)).toEqual([
         ["$/.name", "string", '"Yellowstone"'],
@@ -72,15 +81,13 @@ suite("describe", () => {
       }
 
       expect(describeValue(new Park()).typeName).toBe("Park");
-      expect(describeValue(new Park()).preview).toBe(
-        'Park {name: "Yellowstone"}',
-      );
-      expect(describeValue({}).preview).toBe("{}");
+      expect(opened(new Park()).preview).toBe('Park {name: "Yellowstone"}');
+      expect(opened({}).preview).toBe("{}");
     });
 
     it("describes an object without a prototype", () => {
       const bare = Object.assign(Object.create(null) as object, { a: 1 });
-      const node = describeValue(bare);
+      const node = opened(bare);
 
       expect(node.kind).toBe("object");
       expect(node.typeName).toBeUndefined();
@@ -88,14 +95,14 @@ suite("describe", () => {
     });
 
     it("previews at most five members and marks the rest", () => {
-      const node = describeValue({ a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 });
+      const node = opened({ a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 });
 
       expect(node.preview).toBe("{a: 1, b: 2, c: 3, d: 4, e: 5, …}");
-      expect(node.childCount).toBe(6);
+      expect(node.children()).toHaveLength(6);
     });
 
     it("quotes keys that are not identifiers", () => {
-      expect(describeValue({ "two words": 1, "": 2 }).preview).toBe(
+      expect(opened({ "two words": 1, "": 2 }).preview).toBe(
         '{"two words": 1, "": 2}',
       );
     });
@@ -133,19 +140,18 @@ suite("describe", () => {
 
     it("reports the full length of a sparse array and shows its holes as one row each", () => {
       const sparse: unknown[] = [];
-      sparse[1_000_000] = "last";
+      sparse[60] = "last";
       const node = describeValue(sparse);
       const [hole, last] = node.children();
 
-      expect(node.preview).toBe(
-        'Array(1000001) [<1,000,000 empty items>, "last"]',
-      );
-      expect(node.childCount).toBe(2);
+      expect(node.preview).toBe("Array(61) [<5 empty items>, …]");
+      expect(node.children()).toHaveLength(2);
       expect(hole?.kind).toBe("hole");
+      expect(hole?.preview).toBe("<60 empty items>");
       expect(hole?.label).toBeUndefined();
       expect(hole?.path).toBe("$[0]");
-      expect(hole?.childCount).toBe(0);
-      expect(last?.label).toEqual({ type: "index", index: 1_000_000 });
+      expect(hole?.hasChildren).toBe(false);
+      expect(last?.label).toEqual({ type: "index", index: 60 });
     });
 
     it("shows holes before, between and after the items of an array", () => {
@@ -222,7 +228,7 @@ suite("describe", () => {
       const entry = describeValue(new Map([[key, "x"]])).children()[0];
 
       expect(entry?.children()[0]?.value).toBe(key);
-      expect(entry?.children()[0]?.childCount).toBe(1);
+      expect(entry?.children()[0]?.children()).toHaveLength(1);
     });
 
     it("describes set items by position", () => {
@@ -271,7 +277,7 @@ suite("describe", () => {
 
       expect(self?.kind).toBe("circular");
       expect(self?.preview).toBe("[Circular $]");
-      expect(self?.childCount).toBe(0);
+      expect(self?.hasChildren).toBe(false);
     });
 
     it("points back to the exact ancestor in a longer cycle", () => {
@@ -368,7 +374,7 @@ suite("describe", () => {
       const node = describeValue({ watched }).children()[0];
 
       expect(reads).toBe(0);
-      expect(node?.childCount).toBe(1);
+      expect(node?.children()).toHaveLength(1);
       expect(reads).toBeGreaterThan(0);
     });
 
@@ -386,7 +392,7 @@ suite("describe", () => {
 
       let node: InspectorNode | undefined = describeValue(value);
       let levels = 0;
-      while (node?.childCount) {
+      while (node?.children().length) {
         expect(node.preview).toBe("{child: {…}}");
         node = node.children()[0];
         levels++;
@@ -395,11 +401,11 @@ suite("describe", () => {
       expect(levels).toBe(10_000);
     });
 
-    it("lists a hundred thousand items", () => {
+    it("reaches the last of a hundred thousand items through its ranges", () => {
       const node = describeValue(Array.from({ length: 100_000 }, (_, i) => i));
 
-      expect(node.childCount).toBe(100_000);
-      expect(node.children()[99_999]?.preview).toBe("99999");
+      expect(node.children()).toHaveLength(10);
+      expect(getNode(node, "$/[99999]")?.preview).toBe("99999");
     });
   });
 });

@@ -70,17 +70,27 @@ function take<Item>(next: () => IteratorResult<Item>, limit: number): Item[] {
   return items;
 }
 
+export function getMapIterator(
+  target: object,
+): () => IteratorResult<readonly [unknown, unknown]> {
+  const iterator: unknown = mapEntries.call(target);
+  return () => mapIteratorNext.call(iterator);
+}
+
+export function getSetIterator(target: object): () => IteratorResult<unknown> {
+  const iterator: unknown = setValues.call(target);
+  return () => setIteratorNext.call(iterator);
+}
+
 export function getMapEntries(
   target: object,
   limit: number,
 ): (readonly [unknown, unknown])[] {
-  const iterator: unknown = mapEntries.call(target);
-  return take(() => mapIteratorNext.call(iterator), limit);
+  return take(getMapIterator(target), limit);
 }
 
 export function getSetItems(target: object, limit: number): unknown[] {
-  const iterator: unknown = setValues.call(target);
-  return take(() => setIteratorNext.call(iterator), limit);
+  return take(getSetIterator(target), limit);
 }
 
 export function getDateTime(value: object): number {

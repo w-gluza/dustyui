@@ -14,7 +14,5 @@ export function getLabelText(label: NodeLabel): string {
       return "key";
     case "entryValue":
       return "value";
-    case "rest":
-      return "…";
   }
 }

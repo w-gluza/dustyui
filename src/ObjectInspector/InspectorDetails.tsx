@@ -6,7 +6,7 @@ import { getEscapedText } from "./describe/getEscapedText.js";
 import { getCopyText, type CopyText } from "./getCopyText.js";
 import { getShownValue } from "./getShownValue.js";
 import { getTypeText } from "./getTypeText.js";
-import { getValueText } from "./getValueText.js";
+import { getValueText, hasValueText } from "./getValueText.js";
 import { Highlighted } from "./search/Highlighted.js";
 import styles from "./InspectorDetails.module.css";
 
@@ -33,7 +33,7 @@ export function InspectorDetails({
   query,
 }: InspectorDetailsProps) {
   const [feedback, setFeedback] = useState(NO_FEEDBACK);
-  const isLeaf = node.childCount === 0;
+  const isLeaf = hasValueText(node);
   const text = isLeaf ? getValueText(node) : "";
   const shown = getShownValue(text, query);
 
@@ -104,13 +104,15 @@ export function InspectorDetails({
         >
           Copy path
         </Button>
-        <Button
-          variant="secondary"
-          size="small"
-          onClick={() => void copy("Value", () => getCopyText(node))}
-        >
-          Copy value
-        </Button>
+        {node.kind === "range" ? null : (
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => void copy("Value", () => getCopyText(node))}
+          >
+            Copy value
+          </Button>
+        )}
         <span
           className={styles.feedback}
           data-failed={feedback.hasFailed || undefined}

@@ -246,6 +246,7 @@ suite("describe never runs code that belongs to the value", () => {
     revoke();
 
     const root = describeValue({ gone: proxy, kept: 1 });
+    root.children();
 
     expect(root.preview).toMatch(/^\{gone: Could not be read: .+, kept: 1\}$/u);
   });

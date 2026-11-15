@@ -1,4 +1,4 @@
-import type { Child, ChildSource } from "./getChildren.js";
+import { getIndexList, type Child, type ChildSource } from "./getChildren.js";
 import { getEscapedText } from "./getEscapedText.js";
 import { getTruncatedText } from "./getTruncatedText.js";
 import { isIdentifier } from "./isIdentifier.js";
@@ -8,20 +8,27 @@ import {
   getDataProperty,
   getDateTime,
   getFailureReason,
+  getMapEntries,
   getMapSize,
   getRegExpText,
+  getSetItems,
   getSetSize,
   getSymbolText,
   getTypedArrayLength,
   isClass,
 } from "./safeRead.js";
 
+export interface Members {
+  readonly children: readonly Child[];
+  readonly hasMore: boolean;
+}
+
 export interface PreviewInput {
   readonly kind: ValueKind;
   readonly typeName: string | undefined;
   readonly detail: string;
   readonly source: ChildSource;
-  readonly children: readonly Child[];
+  readonly properties: Members | undefined;
 }
 
 const MAX_TEXT_LENGTH = 80;
@@ -73,10 +80,6 @@ function getBigIntPreview(value: bigint): string {
 
 function getHolePreview(count: number): string {
   return `<${count.toLocaleString("en-GB")} empty ${count === 1 ? "item" : "items"}>`;
-}
-
-function getRestPreview(count: number): string {
-  return `${count.toLocaleString("en-GB")} more not shown`;
 }
 
 function getDatePreview(value: object): string {
@@ -163,8 +166,6 @@ function getSourcePreview(source: ChildSource): string {
       return GETTER;
     case "failure":
       return getUninspectablePreview(source.reason);
-    case "rest":
-      return getRestPreview(source.count);
     case "hole":
       return getHolePreview(source.count);
     case "entry":
@@ -189,7 +190,7 @@ function getMemberName(child: Child): string {
 }
 
 function getMembersPreview(
-  children: readonly Child[],
+  { children, hasMore }: Members,
   open: string,
   close: string,
 ): string {
@@ -198,14 +199,42 @@ function getMembersPreview(
     const value = getSourcePreview(child.source);
     return name === "" ? value : `${name}: ${value}`;
   });
-  if (children.length > members.length) {
+  if (hasMore || children.length > members.length) {
     members.push(ELLIPSIS);
   }
   return `${open}${members.join(", ")}${close}`;
 }
 
+function getLeadingItems(value: object): Members {
+  const length = getArrayLength(value);
+  return {
+    children: getIndexList(value, length).read(0, MAX_MEMBERS),
+    hasMore: length > MAX_MEMBERS,
+  };
+}
+
+function getLeadingEntries(value: object): Members {
+  return {
+    children: getMapEntries(value, MAX_MEMBERS).map(([key, entry], index) => ({
+      step: { type: "entry", index },
+      source: { type: "entry", key, value: entry },
+    })),
+    hasMore: getMapSize(value) > MAX_MEMBERS,
+  };
+}
+
+function getLeadingSetItems(value: object): Members {
+  return {
+    children: getSetItems(value, MAX_MEMBERS).map((item, index) => ({
+      step: { type: "item", index },
+      source: { type: "value", value: item },
+    })),
+    hasMore: getSetSize(value) > MAX_MEMBERS,
+  };
+}
+
 function getContainerPreview(input: PreviewInput, value: object): string {
-  const { kind, typeName, children } = input;
+  const { kind, typeName, properties } = input;
 
   switch (kind) {
     case "function":
@@ -217,17 +246,19 @@ function getContainerPreview(input: PreviewInput, value: object): string {
     case "error":
       return getErrorPreview(value);
     case "array":
-      return `${withSize(typeName ?? "Array", getArrayLength(value))} ${getMembersPreview(children, "[", "]")}`;
+      return `${withSize(typeName ?? "Array", getArrayLength(value))} ${getMembersPreview(getLeadingItems(value), "[", "]")}`;
     case "map":
-      return `${withSize("Map", getMapSize(value))} ${getMembersPreview(children, "{", "}")}`;
+      return `${withSize("Map", getMapSize(value))} ${getMembersPreview(getLeadingEntries(value), "{", "}")}`;
     case "set":
-      return `${withSize("Set", getSetSize(value))} ${getMembersPreview(children, "{", "}")}`;
+      return `${withSize("Set", getSetSize(value))} ${getMembersPreview(getLeadingSetItems(value), "{", "}")}`;
     default: {
       const name =
         typeName && typeName !== "Object"
           ? `${getTruncatedText(typeName, MAX_NESTED_TEXT_LENGTH)} `
           : "";
-      return `${name}${getMembersPreview(children, "{", "}")}`;
+      return properties
+        ? `${name}${getMembersPreview(properties, "{", "}")}`
+        : `${name}{${ELLIPSIS}}`;
     }
   }
 }
@@ -253,7 +284,6 @@ function getRawPreview(input: PreviewInput): string {
     case "circular":
       return `[Circular ${getTruncatedText(input.detail, MAX_TEXT_LENGTH)}]`;
     case "entry":
-    case "rest":
     case "hole":
       return getSourcePreview(input.source);
     default:

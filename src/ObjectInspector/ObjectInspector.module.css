@@ -28,7 +28,7 @@
 .value[data-kind="circular"],
 .value[data-kind="uninspectable"],
 .value[data-kind="hole"],
-.value[data-kind="rest"] {
+.value[data-kind="range"] {
   color: var(--dusty-text-muted);
   font-style: italic;
 }

@@ -40,7 +40,7 @@ function snapshot(root: InspectorNode): unknown[] {
     node.kind,
     node.typeName,
     node.preview,
-    node.childCount,
+    node.hasChildren,
   ]);
 }
 
@@ -67,11 +67,11 @@ suite("describe, for any value", () => {
     );
   });
 
-  it("reports as many children as it returns, and returns the same ones each time", () => {
+  it("says whether it has children once they are read, and returns the same ones each time", () => {
     fc.assert(
       fc.property(anyValue, (value) => {
         for (const node of walk(describeValue(value))) {
-          expect(node.children()).toHaveLength(node.childCount);
+          expect(node.children().length > 0).toBe(node.hasChildren);
           expect(node.children()).toBe(node.children());
         }
       }),
@@ -125,7 +125,7 @@ suite("describe, for any value", () => {
       fc.property(anyValue, (value) => {
         for (const node of walk(describeValue(value))) {
           if (leaves.has(node.kind)) {
-            expect(node.childCount).toBe(0);
+            expect(node.hasChildren).toBe(false);
           }
         }
       }),

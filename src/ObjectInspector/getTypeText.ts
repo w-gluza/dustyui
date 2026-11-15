@@ -42,7 +42,7 @@ export function getTypeText({ kind, typeName }: InspectorNode): string {
       return "Could not be read";
     case "hole":
       return "Empty items";
-    case "rest":
-      return "Not shown";
+    case "range":
+      return "Range";
   }
 }

@@ -128,14 +128,21 @@ describe("ObjectInspector", () => {
       },
     );
 
-    await render(
+    const screen = await render(
       <ObjectInspector label="Hostile" value={{ before: 1, hostile }} />,
     );
+
+    expect(rowTexts().slice(1)).toEqual(["before: 1", "hostile: {…}"]);
+
+    await screen.getByRole("treeitem", { name: /^hostile/u }).click();
 
     expect(rowTexts().slice(1)).toEqual([
       "before: 1",
       "hostile: Could not be read: refused",
     ]);
+    await expect
+      .element(screen.getByRole("treeitem", { name: /^hostile/u }))
+      .not.toHaveAttribute("aria-expanded");
   });
 
   it("keeps the same rows open when the value is replaced", async () => {
@@ -513,5 +520,183 @@ describe("ObjectInspector", () => {
 
       expect(facts().Path).toBe("$");
     });
+  });
+});
+
+describe("ObjectInspector with lazy rows and ranges", () => {
+  function facts(): Record<string, string> {
+    const terms = [...document.querySelectorAll("dt")];
+    return Object.fromEntries(
+      terms.map((term) => [
+        term.textContent ?? "",
+        term.nextElementSibling?.textContent ?? "",
+      ]),
+    );
+  }
+
+  it("does not read a closed object, so its arrow goes once it turns out to be empty", async () => {
+    let listed = 0;
+    const empty = new Proxy(
+      {},
+      {
+        ownKeys(target) {
+          listed++;
+          return Reflect.ownKeys(target);
+        },
+      },
+    );
+    const screen = await render(
+      <ObjectInspector label="Park" value={{ empty, after: 1 }} />,
+    );
+    const row = screen.getByRole("treeitem", { name: /^empty/u });
+
+    expect(rowTexts()).toEqual([
+      "{empty: {…}, after: 1}",
+      "empty: {…}",
+      "after: 1",
+    ]);
+    expect(listed).toBe(0);
+    await expect.element(row).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowDown}{ArrowRight}");
+
+    expect(listed).toBe(1);
+    expect(rowTexts()).toEqual([
+      "{empty: {…}, after: 1}",
+      "empty: {}",
+      "after: 1",
+    ]);
+    await expect.element(row).not.toHaveAttribute("aria-expanded");
+    await expect.element(row).toHaveFocus();
+
+    await userEvent.keyboard("{ArrowRight}{ArrowDown}");
+
+    expect(document.activeElement?.textContent).toBe("after: 1");
+  });
+
+  it("shows a long list as named ranges that open with the keyboard", async () => {
+    const list = Array.from({ length: 250 }, (_, index) => `item ${index}`);
+    const screen = await render(
+      <ObjectInspector
+        label="List"
+        value={{ list }}
+        defaultExpanded={["$", "$/.list"]}
+      />,
+    );
+    const range = screen.getByRole("treeitem", { name: "Items 100 to 199" });
+
+    expect(rowTexts().slice(2)).toEqual([
+      "Items 0 to 99",
+      "Items 100 to 199",
+      "Items 200 to 249",
+    ]);
+    await expect.element(range).toHaveAttribute("aria-expanded", "false");
+    await expect.element(range).toHaveAttribute("aria-level", "3");
+    await expect.element(range).toHaveAttribute("aria-setsize", "3");
+    await expect.element(range).toHaveAttribute("aria-posinset", "2");
+
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{ArrowRight}");
+
+    await expect.element(range).toHaveFocus();
+    await expect.element(range).toHaveAttribute("aria-expanded", "true");
+    await expect
+      .element(screen.getByRole("treeitem", { name: '100: "item 100"' }))
+      .toHaveAttribute("aria-level", "4");
+
+    await userEvent.keyboard("{ArrowRight}");
+
+    expect(document.activeElement?.textContent).toBe('100: "item 100"');
+
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+
+    await expect.element(range).toHaveFocus();
+    await expect.element(range).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("describes a selected range by the value it belongs to and offers no value to copy", async () => {
+    const list = Array.from({ length: 250 }, (_, index) => index);
+    const screen = await render(
+      <ObjectInspector
+        label="List"
+        value={{ list }}
+        defaultExpanded={["$", "$/.list", "$/.list/~i100-199"]}
+        showDetails
+      />,
+    );
+
+    await screen.getByRole("treeitem", { name: "Items 200 to 249" }).click();
+
+    expect(facts()).toEqual({ Path: "$.list", Type: "Range" });
+    await expect
+      .element(screen.getByRole("button", { name: "Copy path" }))
+      .toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Copy value" }).query(),
+    ).toBeNull();
+
+    await screen.getByRole("treeitem", { name: "150: 150" }).click();
+
+    expect(facts()).toEqual({
+      Path: "$.list[150]",
+      Type: "Number",
+      Value: "150",
+    });
+    await expect
+      .element(screen.getByRole("button", { name: "Copy value" }))
+      .toBeVisible();
+  });
+
+  it("opens the ranges on the way to a match and reports the item, not the range", async () => {
+    const onSelectedChange = vi.fn();
+    const list = Array.from({ length: 25_000 }, () => "plain");
+    list[12_345] = "items heron";
+    const screen = await render(
+      <ObjectInspector
+        label="List"
+        value={list}
+        searchable
+        onSelectedChange={onSelectedChange}
+      />,
+    );
+
+    await screen.getByRole("searchbox").fill("items");
+    await expect.element(screen.getByText("1 match")).toBeVisible();
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(screen.getByRole("treeitem", { name: /^12345/u }))
+      .toHaveAttribute("aria-selected", "true");
+    expect(onSelectedChange).toHaveBeenLastCalledWith("$/[12345]");
+    await expect
+      .element(screen.getByRole("treeitem", { name: "Items 12,300 to 12,399" }))
+      .toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("opens only the outer list, leaving the inner ones unread", async () => {
+    let listed = 0;
+    let described = 0;
+    const inner = Array.from(
+      { length: 20 },
+      () =>
+        new Proxy(new Array<number>(100_000).fill(7), {
+          ownKeys(target) {
+            listed++;
+            return Reflect.ownKeys(target);
+          },
+          getOwnPropertyDescriptor(target, key) {
+            described++;
+            return Reflect.getOwnPropertyDescriptor(target, key);
+          },
+        }),
+    );
+
+    await render(<ObjectInspector label="Grid" value={inner} />);
+
+    expect(rowTexts()).toHaveLength(21);
+    expect(rowTexts()[1]).toBe("0: Array(100000) [7, 7, 7, 7, 7, …]");
+    expect(listed).toBe(0);
+    expect(described).toBeLessThan(inner.length * 30);
   });
 });

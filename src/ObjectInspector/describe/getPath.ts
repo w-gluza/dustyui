@@ -15,8 +15,21 @@ export type PathStep =
   | { readonly type: "item"; readonly index: number }
   | { readonly type: "entryKey" }
   | { readonly type: "entryValue" }
-  | { readonly type: "hole"; readonly index: number }
-  | { readonly type: "rest" };
+  | { readonly type: "hole"; readonly index: number };
+
+export type RangeUnit = "items" | "entries" | "properties";
+
+export interface RangeSegment {
+  readonly unit: RangeUnit;
+  readonly start: number;
+}
+
+const RANGE_UNITS: Readonly<Record<string, RangeUnit>> = {
+  i: "items",
+  e: "entries",
+  p: "properties",
+};
+const RANGE_SEGMENT = /^~([iep])(\d+)-\d+$/u;
 
 const CANONICAL_INDEX = /^(?:0|[1-9]\d*)$/u;
 const MAX_ARRAY_INDEX = 2 ** 32 - 2;
@@ -29,7 +42,7 @@ export function getArrayIndex(key: string): number | undefined {
   return index <= MAX_ARRAY_INDEX ? index : undefined;
 }
 
-function getSegment(step: PathStep): string {
+export function getSegment(step: PathStep): string {
   switch (step.type) {
     case "property":
       return `.${step.key.replaceAll("~", "~0").replaceAll("/", "~1")}`;
@@ -45,9 +58,22 @@ function getSegment(step: PathStep): string {
       return "key";
     case "entryValue":
       return "value";
-    case "rest":
-      return "rest";
   }
+}
+
+export function getRangeId(
+  ownerId: string,
+  unit: RangeUnit,
+  start: number,
+  end: number,
+): string {
+  return `${ownerId}/~${unit.charAt(0)}${start}-${end - 1}`;
+}
+
+export function getRangeSegment(segment: string): RangeSegment | undefined {
+  const [, letter, start] = RANGE_SEGMENT.exec(segment) ?? [];
+  const unit = letter === undefined ? undefined : RANGE_UNITS[letter];
+  return unit === undefined ? undefined : { unit, start: Number(start) };
 }
 
 export function getChildId(parentId: string, step: PathStep): string {
@@ -73,14 +99,5 @@ export function getPath(parentPath: string, step: PathStep): string {
       return `${parentPath}.key`;
     case "entryValue":
       return `${parentPath}.value`;
-    case "rest":
-      return `${parentPath}[…]`;
   }
-}
-
-export function getAncestorIds(id: string): string[] {
-  const segments = id.split("/");
-  return segments
-    .slice(0, -1)
-    .map((_segment, index) => segments.slice(0, index + 1).join("/"));
 }

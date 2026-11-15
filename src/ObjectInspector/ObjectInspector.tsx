@@ -21,10 +21,11 @@ import {
   type NodeLabel,
 } from "./describe/describe.js";
 import { getEscapedText } from "./describe/getEscapedText.js";
-import { getNode } from "./describe/getNode.js";
-import { getAncestorIds, ROOT_ID } from "./describe/getPath.js";
+import { getNode, getNodeTrail } from "./describe/getNode.js";
+import { ROOT_ID } from "./describe/getPath.js";
 import { getTruncatedText } from "./describe/getTruncatedText.js";
 import { getLabelText } from "./getLabelText.js";
+import { hasValueText } from "./getValueText.js";
 import { InspectorDetails } from "./InspectorDetails.js";
 import { InspectorSearch } from "./InspectorSearch.js";
 import { getMatches, type Matches } from "./search/getMatches.js";
@@ -147,9 +148,10 @@ export function ObjectInspector({
     if (id === undefined) {
       return;
     }
-    const closed = getAncestorIds(id).filter(
-      (ancestor) => !expanded.has(ancestor),
-    );
+    const closed = getNodeTrail(root, id)
+      .slice(0, -1)
+      .map((ancestor) => ancestor.id)
+      .filter((ancestor) => !expanded.has(ancestor));
     if (closed.length > 0) {
       changeExpanded(new Set([...expanded, ...closed]));
     }
@@ -169,7 +171,7 @@ export function ObjectInspector({
           </>
         ) : null}
         <span className={styles.value} data-kind={node.kind}>
-          {node.childCount === 0 ? (
+          {hasValueText(node) ? (
             <Highlighted text={node.preview} query={searched} />
           ) : (
             node.preview
