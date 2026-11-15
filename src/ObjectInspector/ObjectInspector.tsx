@@ -22,7 +22,7 @@ import {
 } from "./describe/describe.js";
 import { getEscapedText } from "./describe/getEscapedText.js";
 import { getNode, getNodeTrail } from "./describe/getNode.js";
-import { ROOT_ID } from "./describe/getPath.js";
+import { isPropertiesId, ROOT_ID } from "./describe/getPath.js";
 import { getTruncatedText } from "./describe/getTruncatedText.js";
 import { getLabelText } from "./getLabelText.js";
 import { hasValueText } from "./getValueText.js";
@@ -86,9 +86,21 @@ export function ObjectInspector({
   const expanded = controlledExpanded ?? ownExpanded;
   const selected = controlledSelected ?? ownSelected;
   const searched = useDeferredValue(searchable ? query : "");
+  const propertiesRead = useMemo(
+    () =>
+      [...expanded]
+        .filter(isPropertiesId)
+        .filter((id) => getNode(root, id)?.children() !== undefined)
+        .join(),
+    [root, expanded],
+  );
+  const readSoFar = useMemo(
+    () => ({ root, propertiesRead }),
+    [root, propertiesRead],
+  );
   const matches = useMemo(
-    () => getMatches(root, searched, SEARCH_LIMIT),
-    [root, searched],
+    () => getMatches(readSoFar.root, searched, SEARCH_LIMIT),
+    [readSoFar, searched],
   );
   const current =
     position.matches === matches && matches.ids[position.index] === selected
@@ -128,9 +140,14 @@ export function ObjectInspector({
     if (opened === undefined || others.length > 0) {
       return;
     }
-    if (getNode(root, opened)?.children().length === 0) {
-      announce(NOTHING_INSIDE);
+    const node = getNode(root, opened);
+    if (node?.children().length !== 0) {
+      return;
     }
+    const isUnread =
+      node.kind === "uninspectable" ||
+      (node.kind === "range" && node.size === undefined);
+    announce(isUnread ? node.preview : NOTHING_INSIDE);
   }
 
   function changeExpanded(next: ReadonlySet<string>) {

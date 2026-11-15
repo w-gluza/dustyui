@@ -16,8 +16,10 @@ import {
   ROOT_ID,
   type PathStep,
 } from "./getPath.js";
+import { getEscapedText } from "./getEscapedText.js";
 import { getPreview, type Members } from "./getPreview.js";
 import { getRanges } from "./getRanges.js";
+import { getTruncatedText } from "./getTruncatedText.js";
 import { getValueKind, type ValueKind } from "./getValueKind.js";
 import {
   getConstructorName,
@@ -68,6 +70,8 @@ interface Located {
 }
 
 const MEMBERS_READ = 6;
+const FAILURE_LENGTH = 80;
+const PROPERTIES = "Properties";
 const UNIT_NAMES = {
   items: "Items",
   entries: "Entries",
@@ -259,8 +263,8 @@ class PropertiesNode implements InspectorNode {
   readonly value = undefined;
   readonly kind = "range";
   readonly typeName = undefined;
-  readonly preview = "Properties";
   list: ChildList | undefined;
+  #failure: string | undefined;
   readonly #owner: ValueNode;
   readonly #read: () => ChildList;
   #children: readonly Member[] | undefined;
@@ -276,8 +280,16 @@ class PropertiesNode implements InspectorNode {
     return this.#children === undefined || this.#children.length > 0;
   }
 
+  get preview(): string {
+    return this.#failure === undefined
+      ? PROPERTIES
+      : getEscapedText(
+          `${PROPERTIES}: Could not be read: ${getTruncatedText(this.#failure, FAILURE_LENGTH)}`,
+        );
+  }
+
   get size(): number | undefined {
-    return this.#children === undefined ? undefined : (this.list?.size ?? 0);
+    return this.list?.size;
   }
 
   children(): readonly InspectorNode[] {
@@ -297,7 +309,8 @@ class PropertiesNode implements InspectorNode {
     try {
       this.list = this.#owner.addList(this.#read());
       return this.#owner.createMembers(this.list, 0, this.list.size);
-    } catch {
+    } catch (error) {
+      this.#failure = getFailureReason(error);
       return [];
     }
   }

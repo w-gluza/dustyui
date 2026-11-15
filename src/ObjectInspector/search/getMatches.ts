@@ -56,12 +56,12 @@ export function getMatches(
     if (isMatch(node)) {
       ids.push(node.id);
     }
-    if (!node.hasChildren) {
-      continue;
-    }
     const isRange = node.kind === "range";
     if (isRange && node.size === undefined) {
       isComplete = false;
+      continue;
+    }
+    if (!node.hasChildren) {
       continue;
     }
     if (!isRange && node !== root && (node.size ?? 0) > remaining) {

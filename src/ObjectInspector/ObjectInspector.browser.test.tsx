@@ -741,4 +741,77 @@ describe("ObjectInspector with lazy rows and ranges", () => {
       screen.getByRole("button", { name: "Copy value" }).query(),
     ).toBeNull();
   });
+
+  it("searches again once a Properties row has been read", async () => {
+    const value = Object.assign(new Uint8Array(100_001), { note: "needle" });
+    const screen = await render(
+      <ObjectInspector label="Bytes" value={value} searchable />,
+    );
+
+    await screen.getByRole("searchbox").fill("needle");
+    await expect
+      .element(screen.getByText("No matches, searched in part"))
+      .toBeVisible();
+
+    await screen.getByRole("treeitem", { name: "Properties" }).click();
+
+    await expect.element(screen.getByText("1 match")).toBeVisible();
+    expect(
+      [...document.querySelectorAll("mark")].map((mark) => mark.textContent),
+    ).toEqual(["needle"]);
+
+    await screen.getByRole("searchbox").click();
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(screen.getByRole("treeitem", { name: 'note: "needle"' }))
+      .toHaveAttribute("aria-selected", "true");
+  });
+
+  it("says so when the properties of a very long list cannot be read", async () => {
+    const value = new Proxy(new Array<number>(100_001).fill(1), {
+      ownKeys() {
+        throw new Error("refused");
+      },
+    });
+    const screen = await render(
+      <ObjectInspector label="Numbers" value={value} searchable />,
+    );
+
+    await screen.getByRole("searchbox").fill("refused");
+    await screen.getByRole("treeitem", { name: "Properties" }).click();
+
+    const failed = screen.getByRole("treeitem", {
+      name: "Properties: Could not be read: refused",
+    });
+    await expect.element(failed).toBeVisible();
+    await expect.element(failed).not.toHaveAttribute("aria-expanded");
+    await expect
+      .poll(() => announcements())
+      .toContain("Properties: Could not be read: refused");
+    expect(announcements()).not.toContain("No properties");
+    await expect
+      .element(screen.getByText("No matches, searched in part"))
+      .toBeVisible();
+  });
+
+  it("announces a value that could not be read when it is opened", async () => {
+    const hostile = new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("refused");
+        },
+      },
+    );
+    const screen = await render(
+      <ObjectInspector label="Hostile" value={{ hostile }} />,
+    );
+
+    await screen.getByRole("treeitem", { name: /^hostile/u }).click();
+
+    await expect
+      .poll(() => announcements())
+      .toEqual(["Could not be read: refused"]);
+  });
 });

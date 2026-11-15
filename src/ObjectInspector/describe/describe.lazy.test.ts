@@ -279,5 +279,29 @@ suite("describe reads only what is open", () => {
         isComplete: true,
       });
     });
+
+    it("shows that they could not be read, and keeps search and copy partial", () => {
+      const root = describeValue(
+        new Proxy(new Array<number>(100_001).fill(1), {
+          ownKeys() {
+            throw new Error("refused\u202e");
+          },
+        }),
+      );
+      const properties = root.children().at(-1);
+
+      expect(properties?.children()).toEqual([]);
+      expect(properties?.kind).toBe("range");
+      expect(properties?.preview).toBe(
+        "Properties: Could not be read: refused\\u202e",
+      );
+      expect(properties?.hasChildren).toBe(false);
+      expect(properties?.size).toBeUndefined();
+      expect(getMatches(root, "refused", 500_000)).toEqual({
+        ids: [],
+        isComplete: false,
+      });
+      expect(getCopyText(root, 200_000).isComplete).toBe(false);
+    });
   });
 });

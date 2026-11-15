@@ -74,6 +74,10 @@ export function getPropertiesId(ownerId: string): string {
   return `${ownerId}/~p`;
 }
 
+export function isPropertiesId(id: string): boolean {
+  return id.endsWith("/~p");
+}
+
 export function getRangeSegment(segment: string): RangeSegment | undefined {
   const [, letter, start] = RANGE_SEGMENT.exec(segment) ?? [];
   const unit = letter === undefined ? undefined : RANGE_UNITS[letter];
