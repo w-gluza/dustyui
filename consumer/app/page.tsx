@@ -1,5 +1,5 @@
 import { Avatar, Badge, Button, ObjectInspector } from "dustyui";
-import { park, rows } from "./data";
+import { park, rows, rowsOpen } from "./data";
 
 export default function ServerPage() {
   return (
@@ -20,7 +20,7 @@ export default function ServerPage() {
       <ObjectInspector
         label="Rows"
         value={rows}
-        defaultExpanded={["$", "$/.rows"]}
+        defaultExpanded={rowsOpen}
         className="scroller"
       />
     </main>

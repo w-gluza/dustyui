@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Avatar, Badge, Button, IconButton, ObjectInspector } from "dustyui";
-import { park, rows } from "../data";
+import { park, rows, rowsOpen } from "../data";
 
 export default function ClientPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -25,7 +25,7 @@ export default function ClientPage() {
           <ObjectInspector
             label="Rows"
             value={rows}
-            defaultExpanded={["$", "$/.rows"]}
+            defaultExpanded={rowsOpen}
             className="scroller"
           />
         </>

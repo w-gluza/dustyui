@@ -7,3 +7,12 @@ export const park = {
 export const rows = {
   rows: Array.from({ length: 5000 }, (_, index) => `row ${index}`),
 };
+
+export const rowsOpen = [
+  "$",
+  "$/.rows",
+  ...Array.from(
+    { length: 50 },
+    (_, index) => `$/.rows/~i${index * 100}-${index * 100 + 99}`,
+  ),
+];

@@ -108,7 +108,7 @@ function recordTree(prefix, measured) {
     `level 1 ${measured.indentLevel1}px, level 3 ${measured.indentLevel3}px`,
   );
   record(
-    `${prefix}: a 5,000-item list draws few rows and keeps its full height`,
+    `${prefix}: a 5,000-item list with every range open draws few rows and keeps its full height`,
     measured.largeRows > 5 &&
       measured.largeRows < 100 &&
       measured.largeScrollHeight > 5000 * 10 &&
