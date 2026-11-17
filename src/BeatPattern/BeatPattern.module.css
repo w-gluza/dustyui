@@ -1,0 +1,78 @@
+.pattern {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.beat {
+  display: grid;
+  gap: 0.25rem;
+  align-content: center;
+  inline-size: 2.5rem;
+  min-block-size: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dusty-radius-sm);
+  background-color: transparent;
+  color: var(--dusty-action);
+  font: inherit;
+  cursor: pointer;
+}
+
+.beat:focus-visible {
+  outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
+  outline-offset: var(--dusty-focus-ring-offset);
+}
+
+.accentMark {
+  font-weight: var(--dusty-weight-semibold);
+  font-size: 0.875rem;
+  line-height: 1;
+  text-align: center;
+  visibility: hidden;
+}
+
+.beat[data-kind="accent"] .accentMark {
+  visibility: visible;
+}
+
+.pill {
+  block-size: 0.375rem;
+  border: 1px solid var(--dusty-text-muted);
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-text-muted);
+}
+
+.beat[data-kind="accent"] .pill {
+  border-color: var(--dusty-action);
+  background-color: var(--dusty-action);
+}
+
+.beat[data-kind="skipped"] .pill {
+  background-color: transparent;
+}
+
+.playhead {
+  block-size: 0.125rem;
+  border-radius: var(--dusty-radius-full);
+}
+
+.beat[data-playing] .playhead {
+  background-color: var(--dusty-illustration-primary);
+}
+
+@media (hover: hover) {
+  .beat:hover {
+    background-color: var(--dusty-surface-hover);
+  }
+}
+
+@media (forced-colors: active) {
+  .beat[data-playing] .playhead {
+    background-color: Highlight;
+  }
+}

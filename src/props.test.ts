@@ -6,6 +6,7 @@ import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
 import type { PlaybackControlsProps } from "./PlaybackControls/PlaybackControls.js";
 import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
+import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
@@ -227,6 +228,24 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
     expectTypeOf<
       Accepts<RecordSleeveProps, { revealed: true }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("require a label and a range on a tempo dial and refuse two sources of its value", () => {
+    interface Dial {
+      label: string;
+      min: number;
+      max: number;
+    }
+    expectTypeOf<Accepts<TempoDialProps, Dial>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<TempoDialProps, Omit<Dial, "label">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<TempoDialProps, Omit<Dial, "max">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<TempoDialProps, Dial & { value: number; defaultValue: number }>
     >().toEqualTypeOf<false>();
   });
 });

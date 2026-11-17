@@ -1,0 +1,73 @@
+.dial {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  container-type: inline-size;
+  border-radius: var(--dusty-radius-full);
+  color: var(--dusty-text);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.dial:active {
+  cursor: grabbing;
+}
+
+.dial:has(.input:focus-visible) {
+  outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
+  outline-offset: var(--dusty-focus-ring-offset);
+}
+
+.ticks {
+  display: block;
+  grid-area: 1 / 1;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.tick {
+  stroke: var(--dusty-text-muted);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.tick[data-active] {
+  stroke: var(--dusty-action);
+}
+
+.marker {
+  fill: var(--dusty-action);
+}
+
+.readout {
+  display: grid;
+  grid-area: 1 / 1;
+  place-self: center;
+  justify-items: center;
+  cursor: default;
+}
+
+.value {
+  font-size: clamp(2.5rem, 24cqi, 5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.unit {
+  color: var(--dusty-text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@media (forced-colors: active) {
+  .tick[data-active] {
+    stroke: Highlight;
+  }
+
+  .marker {
+    fill: Highlight;
+  }
+}
