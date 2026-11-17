@@ -1,0 +1,56 @@
+.tracks {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-block-start: 1px solid var(--dusty-border);
+  list-style: none;
+}
+
+.track {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 0.5rem;
+  align-items: baseline;
+  inline-size: 100%;
+  padding-block: 0.625rem;
+  padding-inline: 0.5rem;
+  border: 0;
+  border-block-end: 1px solid var(--dusty-border);
+  background-color: transparent;
+  color: var(--dusty-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.track:focus-visible {
+  outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
+  outline-offset: calc(var(--dusty-focus-ring-offset) * -1);
+}
+
+.track[aria-current] {
+  background-color: var(--dusty-surface-selected);
+  font-weight: var(--dusty-weight-semibold);
+}
+
+.number,
+.duration {
+  color: var(--dusty-text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.track[aria-current] :is(.number, .duration) {
+  color: inherit;
+}
+
+.title {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .track:hover:not([aria-current]) {
+    background-color: var(--dusty-surface-hover);
+  }
+}

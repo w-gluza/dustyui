@@ -4,7 +4,9 @@ import type { AvatarGroupProps } from "./AvatarGroup/AvatarGroup.js";
 import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
+import type { PlaybackControlsProps } from "./PlaybackControls/PlaybackControls.js";
 import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
+import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
@@ -204,26 +206,27 @@ describe("props", () => {
     >().toEqualTypeOf<true>();
   });
 
-  it("require tracks and a heading level on a record sleeve and refuse two sources of playback", () => {
-    interface Sleeve {
-      title: string;
-      artist: string;
-      level: 2;
-      artwork: null;
+  it("refuse two sources of playback and require a label on a track list", () => {
+    expectTypeOf<
+      Accepts<PlaybackControlsProps, { playing: true }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<PlaybackControlsProps, { playing: true; defaultPlaying: true }>
+    >().toEqualTypeOf<false>();
+    interface List {
+      label: string;
       tracks: [];
+      onTrackSelect: (index: number) => void;
     }
-    expectTypeOf<Accepts<RecordSleeveProps, Sleeve>>().toEqualTypeOf<true>();
+    expectTypeOf<Accepts<TrackListProps, List>>().toEqualTypeOf<true>();
     expectTypeOf<
-      Accepts<RecordSleeveProps, Omit<Sleeve, "tracks">>
+      Accepts<TrackListProps, Omit<List, "label">>
     >().toEqualTypeOf<false>();
     expectTypeOf<
-      Accepts<RecordSleeveProps, Omit<Sleeve, "level">>
+      Accepts<TrackListProps, List & { "aria-label": string }>
     >().toEqualTypeOf<false>();
     expectTypeOf<
-      Accepts<
-        RecordSleeveProps,
-        Sleeve & { playing: true; defaultPlaying: true }
-      >
+      Accepts<RecordSleeveProps, { revealed: true }>
     >().toEqualTypeOf<false>();
   });
 });
