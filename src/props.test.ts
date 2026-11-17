@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type { AvatarProps } from "./Avatar/Avatar.js";
+import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
 import type { TreeProps } from "./Tree/Tree.js";
@@ -115,5 +116,23 @@ describe("props", () => {
         InspectorBase & { defaultExpanded: string[] }
       >
     >().toEqualTypeOf<true>();
+  });
+
+  it("require a heading level on a card title", () => {
+    expectTypeOf<
+      Accepts<CardTitleProps, { children: string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<CardTitleProps, { children: string; level: 1 }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<CardTitleProps, { children: string; level: 2 }>
+    >().toEqualTypeOf<true>();
+  });
+
+  it("refuse raw markup inside a card", () => {
+    expectTypeOf<
+      Accepts<CardProps, { dangerouslySetInnerHTML: { __html: string } }>
+    >().toEqualTypeOf<false>();
   });
 });
