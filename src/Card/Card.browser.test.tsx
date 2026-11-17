@@ -270,4 +270,26 @@ describe("Card", () => {
     expect(overflow("poster-media")).toBe("visible");
     expect(overflow("poster")).toBe("clip");
   });
+
+  it("keeps the media at its own height when the card is stretched taller", async () => {
+    const screen = await render(
+      <div style={{ display: "grid", blockSize: "600px", inlineSize: "320px" }}>
+        <Card data-testid="card">
+          <CardMedia label="Featured" data-testid="media">
+            <img alt="" src={picture} />
+          </CardMedia>
+          <CardContent>
+            <CardDescription>Salt flats below sea level.</CardDescription>
+          </CardContent>
+        </Card>
+      </div>,
+    );
+    const media = screen.getByTestId("media").element();
+    const image = media.querySelector("img");
+
+    await expect.poll(() => image?.complete).toBe(true);
+
+    expect(box(screen.getByTestId("card").element()).height).toBe(600);
+    expect(box(media).height).toBe(box(image ?? media).height);
+  });
 });

@@ -12,6 +12,7 @@
   --card-footer-inset: 1rem;
 
   display: grid;
+  align-content: start;
   padding: var(--card-padding);
   border: 1px solid var(--dusty-border);
   border-radius: var(--card-radius);
