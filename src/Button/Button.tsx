@@ -24,6 +24,7 @@ const ACTIVATION_HANDLERS = {
 } satisfies Partial<ComponentProps<"button">>;
 
 export type ButtonVariant = "primary" | "secondary" | "plain";
+export type ButtonShape = "rounded" | "pill";
 export type ButtonSize = "small" | "medium" | "large";
 
 export interface ButtonProps extends Omit<
@@ -33,6 +34,7 @@ export interface ButtonProps extends Omit<
   children: ReactNode;
   variant?: ButtonVariant | undefined;
   size?: ButtonSize | undefined;
+  shape?: ButtonShape | undefined;
   icon?: ReactNode | undefined;
   iconPosition?: "start" | "end" | undefined;
   loading?: boolean | undefined;
@@ -42,6 +44,7 @@ export interface ButtonProps extends Omit<
 export function Button({
   variant = "primary",
   size = "medium",
+  shape = "rounded",
   icon,
   iconPosition = "start",
   loading = false,
@@ -85,7 +88,13 @@ export function Button({
       {...props}
       {...(inactive ? ACTIVATION_HANDLERS : undefined)}
       type={type}
-      className={clsx(styles.button, styles[variant], styles[size], className)}
+      className={clsx(
+        styles.button,
+        styles[variant],
+        styles[size],
+        shape === "pill" && styles.pill,
+        className,
+      )}
       data-variant={variant}
       data-size={size}
       data-loading={loading || undefined}

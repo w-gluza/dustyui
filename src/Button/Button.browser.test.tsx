@@ -476,4 +476,20 @@ describe("Button", () => {
       expect(label && getComputedStyle(label).opacity).toBe("0");
     });
   });
+
+  it("is rounded unless asked to be a pill", async () => {
+    const screen = await render(
+      <>
+        <Button>Rounded</Button>
+        <Button shape="pill">Pill</Button>
+      </>,
+    );
+    const radius = (name: string) =>
+      Number.parseFloat(
+        getComputedStyle(screen.getByRole("button", { name }).element())
+          .borderTopLeftRadius,
+      );
+
+    expect(radius("Pill")).toBeGreaterThan(radius("Rounded") * 10);
+  });
 });

@@ -27,6 +27,10 @@
   --button-size-inline: 2rem;
 }
 
+.pill {
+  border-radius: var(--dusty-radius-full);
+}
+
 .button:focus-visible {
   outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
   outline-offset: var(--dusty-focus-ring-offset);

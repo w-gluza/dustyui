@@ -55,10 +55,27 @@ export {
 export type { HeadingLevel } from "./headingLevel.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
 export {
+  BeatPattern,
+  nextBeatKind,
+  type BeatKind,
+  type BeatPatternProps,
+} from "./BeatPattern/BeatPattern.js";
+export { TempoDial, type TempoDialProps } from "./TempoDial/TempoDial.js";
+export {
   PlaybackControls,
   type PlaybackControlsLabels,
   type PlaybackControlsProps,
 } from "./PlaybackControls/PlaybackControls.js";
+export {
+  Popover,
+  type PopoverAlign,
+  type PopoverProps,
+} from "./Popover/Popover.js";
+export {
+  RadioGroup,
+  type RadioGroupProps,
+  type RadioOption,
+} from "./RadioGroup/RadioGroup.js";
 export {
   RecordSleeve,
   type RecordSleeveProps,
