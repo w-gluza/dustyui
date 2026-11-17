@@ -6,6 +6,13 @@ import styles from "./Avatar.module.css";
 
 export type AvatarSize = "small" | "medium" | "large";
 
+export type AvatarRing = "neutral" | "accent";
+
+const RING_CLASS = {
+  neutral: styles.ringNeutral,
+  accent: styles.ringAccent,
+} as const;
+
 const DEFAULT_SIZE = 64;
 const ROOT_FONT_SIZE = 16;
 
@@ -22,6 +29,7 @@ export interface AvatarProps extends Omit<
   image?: ReactNode | undefined;
   fallback?: string | undefined;
   size?: AvatarSize | number | undefined;
+  ring?: AvatarRing | undefined;
   decorative?: boolean | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
@@ -33,6 +41,7 @@ export function Avatar({
   image,
   fallback,
   size = "large",
+  ring,
   decorative = false,
   className,
   style,
@@ -57,6 +66,7 @@ export function Avatar({
       className={clsx(
         styles.avatar,
         typeof size === "string" && styles[size],
+        ring && RING_CLASS[ring],
         className,
       )}
       style={sizedStyle}

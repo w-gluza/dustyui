@@ -123,4 +123,58 @@ describe("Avatar", () => {
     expect(avatar.style.outlineWidth).toBe("3px");
     expect(avatar.style.getPropertyValue("--avatar-size")).toBe("4rem");
   });
+
+  it("has no ring unless asked for one", async () => {
+    const screen = await render(<Avatar name="Wioletta Gluza" />);
+    const avatar = screen.getByRole("img").element();
+
+    expect(getComputedStyle(avatar).borderTopWidth).toBe("0px");
+    expect(screen.getByText("WG").element().getBoundingClientRect()).toEqual(
+      avatar.getBoundingClientRect(),
+    );
+  });
+
+  it.each(["neutral", "accent"] as const)(
+    "draws a %s ring inside its size, with a gap around the picture",
+    async (ring) => {
+      const screen = await render(
+        <Avatar name="Wioletta Gluza" size="medium" ring={ring} />,
+      );
+      const avatar = screen.getByRole("img").element();
+      const initials = screen.getByText("WG").element();
+      const ringWidth = Number.parseFloat(
+        getComputedStyle(avatar).borderTopWidth,
+      );
+
+      expect(size(avatar)).toEqual([48, 48]);
+      expect(ringWidth).toBeGreaterThan(0);
+      expect(size(initials)[0]).toBeLessThan(48 - 2 * ringWidth);
+      expect(size(initials)[0]).toBe(size(initials)[1]);
+    },
+  );
+
+  it("draws the accent ring thicker and in the action colour", async () => {
+    const screen = await render(
+      <>
+        <Avatar name="Neutral Ring" ring="neutral" />
+        <Avatar name="Accent Ring" ring="accent" />
+        <button style={{ color: "var(--dusty-action)" }}>Probe</button>
+      </>,
+    );
+    const neutral = getComputedStyle(
+      screen.getByRole("img", { name: "Neutral Ring" }).element(),
+    );
+    const accent = getComputedStyle(
+      screen.getByRole("img", { name: "Accent Ring" }).element(),
+    );
+    const action = getComputedStyle(
+      screen.getByRole("button", { name: "Probe" }).element(),
+    ).color;
+
+    expect(accent.borderTopColor).toBe(action);
+    expect(neutral.borderTopColor).not.toBe(action);
+    expect(Number.parseFloat(accent.borderTopWidth)).toBeGreaterThan(
+      Number.parseFloat(neutral.borderTopWidth),
+    );
+  });
 });

@@ -19,6 +19,28 @@
   --avatar-size: 4rem;
 }
 
+.ringNeutral,
+.ringAccent {
+  box-sizing: border-box;
+  padding: max(2px, calc(var(--avatar-size, 4rem) / 16));
+  border: var(--avatar-ring-width) solid var(--avatar-ring-color);
+}
+
+.ringNeutral {
+  --avatar-ring-width: 1px;
+  --avatar-ring-color: var(--dusty-border-strong);
+}
+
+.ringAccent {
+  --avatar-ring-width: max(2px, calc(var(--avatar-size, 4rem) / 24));
+  --avatar-ring-color: var(--dusty-action);
+}
+
+.ringNeutral > *,
+.ringAccent > * {
+  border-radius: inherit;
+}
+
 .avatar > * {
   grid-area: 1 / 1;
   min-inline-size: 0;
@@ -47,5 +69,9 @@
 @media (forced-colors: active) {
   .avatar {
     border: 1px solid CanvasText;
+  }
+
+  .ringAccent {
+    border: var(--avatar-ring-width) solid Highlight;
   }
 }
