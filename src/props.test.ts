@@ -4,6 +4,7 @@ import type { AvatarGroupProps } from "./AvatarGroup/AvatarGroup.js";
 import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
+import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
 import type { TreeProps } from "./Tree/Tree.js";
@@ -181,6 +182,24 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
     expectTypeOf<
       Accepts<AvatarGroupProps, { avatars: []; label: string }>
+    >().toEqualTypeOf<true>();
+  });
+
+  it("require a heading level on an expandable card and refuse two sources of expansion", () => {
+    expectTypeOf<
+      Accepts<ExpandableCardProps, { title: string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<ExpandableCardProps, { title: string; level: 2 }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<
+        ExpandableCardProps,
+        { title: string; level: 2; expanded: boolean; defaultExpanded: boolean }
+      >
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<ExpandableCardProps, { title: string; level: 2; expanded: true }>
     >().toEqualTypeOf<true>();
   });
 });

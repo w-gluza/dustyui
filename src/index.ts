@@ -48,6 +48,10 @@ export {
   type CardVariant,
 } from "./Card/Card.js";
 export { EmptyState, type EmptyStateProps } from "./EmptyState/EmptyState.js";
+export {
+  ExpandableCard,
+  type ExpandableCardProps,
+} from "./ExpandableCard/ExpandableCard.js";
 export type { HeadingLevel } from "./headingLevel.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
 export {

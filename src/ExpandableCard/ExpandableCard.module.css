@@ -1,0 +1,193 @@
+.card {
+  --expandable-card-padding: 0.5rem;
+  --expandable-card-inline: 1rem;
+
+  display: grid;
+  grid-template-rows: auto auto auto;
+  padding: var(--expandable-card-padding);
+  border: 1px solid var(--dusty-border);
+  border-radius: var(--dusty-radius-md);
+  background-color: var(--dusty-surface-raised);
+  color: var(--dusty-text);
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.card[data-expanded] {
+  visibility: hidden;
+}
+
+.media {
+  display: grid;
+  grid-area: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--dusty-radius-sm);
+}
+
+.card > .media {
+  pointer-events: none;
+}
+
+.media > :where(img, svg, video, picture) {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.heading {
+  display: grid;
+  grid-area: 1 / 1 / 4 / 2;
+  grid-template-rows: subgrid;
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.trigger {
+  display: grid;
+  grid-row: 1 / 4;
+  grid-template-rows: subgrid;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dusty-radius-sm);
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--dusty-weight-semibold);
+  text-align: start;
+  cursor: pointer;
+}
+
+.trigger:focus-visible {
+  outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
+  outline-offset: var(--dusty-focus-ring-offset);
+}
+
+.title {
+  grid-row: 2;
+  justify-self: start;
+  padding-block: 0.75rem 0.25rem;
+  padding-inline: var(--expandable-card-inline);
+  overflow-wrap: anywhere;
+}
+
+.summary {
+  grid-area: 3 / 1;
+  margin: 0;
+  padding-block-end: 0.75rem;
+  padding-inline: var(--expandable-card-inline);
+  color: var(--dusty-text-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  text-wrap: pretty;
+}
+
+.dialog {
+  inline-size: min(40rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--dusty-border);
+  border-radius: var(--dusty-radius-md);
+  background-color: var(--dusty-surface-raised);
+  color: var(--dusty-text);
+}
+
+.dialog::backdrop {
+  background-color: var(--dusty-illustration-shadow);
+  opacity: 0.6;
+}
+
+.sheet {
+  display: grid;
+  padding: var(--expandable-card-padding, 0.5rem);
+}
+
+.close {
+  grid-area: 1 / 1;
+  place-self: start end;
+  margin: 0.5rem;
+  background-color: var(--dusty-surface-raised);
+}
+
+.dialogTitle {
+  margin: 0;
+  padding-block-start: 1rem;
+  padding-inline: 1rem;
+  font-weight: var(--dusty-weight-semibold);
+  font-size: 1.75rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.dialogTitle > span {
+  display: inline-block;
+}
+
+.dialogSummary {
+  margin: 0;
+  padding-block-start: 0.5rem;
+  padding-inline: 1rem;
+  color: var(--dusty-text-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.content {
+  padding: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.content > * {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.25s + 0.07s * var(--expandable-card-order, 4));
+}
+
+.content > :nth-child(1) {
+  --expandable-card-order: 1;
+}
+
+.content > :nth-child(2) {
+  --expandable-card-order: 2;
+}
+
+.content > :nth-child(3) {
+  --expandable-card-order: 3;
+}
+
+.content > :first-child {
+  margin-block-start: 0;
+}
+
+.content > :last-child {
+  margin-block-end: 0;
+}
+
+@media (hover: hover) {
+  .card:has(.trigger:hover) {
+    border-color: var(--dusty-border-strong);
+    box-shadow: 0 0.5rem 1.25rem -0.75rem var(--dusty-illustration-shadow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+
+  .content > * {
+    animation: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 0.75rem;
+  }
+}
