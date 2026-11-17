@@ -18,4 +18,8 @@
   --dusty-syntax-number: light-dark(#1d5f8a, #7fb8e0);
   --dusty-syntax-boolean: light-dark(#7a4a9a, #c79be0);
   --dusty-syntax-function: light-dark(#2f6b3f, #8fcf9a);
+  --dusty-illustration-primary: light-dark(#8f8f8f, #8a8a8a);
+  --dusty-illustration-secondary: light-dark(#b8b8b8, #666);
+  --dusty-illustration-highlight: light-dark(#dcdcdc, #a8a8a8);
+  --dusty-illustration-shadow: light-dark(#333, #4a4a4a);
 }
