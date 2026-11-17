@@ -55,6 +55,12 @@ export {
 export type { HeadingLevel } from "./headingLevel.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
 export {
+  RecordSleeve,
+  type RecordSleeveLabels,
+  type RecordSleeveProps,
+  type RecordTrack,
+} from "./RecordSleeve/RecordSleeve.js";
+export {
   ObjectInspector,
   type ObjectInspectorProps,
 } from "./ObjectInspector/ObjectInspector.js";

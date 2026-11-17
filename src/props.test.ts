@@ -4,6 +4,7 @@ import type { AvatarGroupProps } from "./AvatarGroup/AvatarGroup.js";
 import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
+import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
@@ -201,5 +202,28 @@ describe("props", () => {
     expectTypeOf<
       Accepts<ExpandableCardProps, { title: string; level: 2; expanded: true }>
     >().toEqualTypeOf<true>();
+  });
+
+  it("require tracks and a heading level on a record sleeve and refuse two sources of playback", () => {
+    interface Sleeve {
+      title: string;
+      artist: string;
+      level: 2;
+      artwork: null;
+      tracks: [];
+    }
+    expectTypeOf<Accepts<RecordSleeveProps, Sleeve>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<RecordSleeveProps, Omit<Sleeve, "tracks">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<RecordSleeveProps, Omit<Sleeve, "level">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<
+        RecordSleeveProps,
+        Sleeve & { playing: true; defaultPlaying: true }
+      >
+    >().toEqualTypeOf<false>();
   });
 });
