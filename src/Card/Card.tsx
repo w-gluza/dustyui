@@ -4,6 +4,8 @@ import styles from "./Card.module.css";
 
 export type CardElement = "article" | "section" | "div";
 
+export type CardVariant = "plain" | "poster";
+
 export type CardTitleLevel = 2 | 3 | 4 | 5 | 6;
 
 export interface CardProps extends Omit<
@@ -11,12 +13,27 @@ export interface CardProps extends Omit<
   "dangerouslySetInnerHTML"
 > {
   as?: CardElement | undefined;
+  variant?: CardVariant | undefined;
 }
 
-export function Card({ as = "article", className, ...props }: CardProps) {
+export function Card({
+  as = "article",
+  variant = "plain",
+  className,
+  ...props
+}: CardProps) {
   const Element = as as "article";
 
-  return <Element {...props} className={clsx(styles.card, className)} />;
+  return (
+    <Element
+      {...props}
+      className={clsx(
+        styles.card,
+        variant === "poster" && styles.poster,
+        className,
+      )}
+    />
+  );
 }
 
 export interface CardMediaProps extends Omit<

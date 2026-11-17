@@ -171,4 +171,103 @@ describe("Card", () => {
 
     expect(screen.getByTestId("footer").element().children).toHaveLength(0);
   });
+
+  it("is plain unless asked to be a poster", async () => {
+    const screen = await render(
+      <>
+        <Card data-testid="plain">Plain</Card>
+        <Card variant="plain" data-testid="named">
+          Named
+        </Card>
+      </>,
+    );
+    const plain = getComputedStyle(screen.getByTestId("plain").element());
+    const named = getComputedStyle(screen.getByTestId("named").element());
+
+    expect(plain.boxShadow).toBe("none");
+    expect(named.borderTopColor).toBe(plain.borderTopColor);
+    expect(named.borderTopLeftRadius).toBe(plain.borderTopLeftRadius);
+  });
+
+  it("gives a poster a text-coloured outline, a hard shadow and rounder corners", async () => {
+    const screen = await render(
+      <>
+        <Card data-testid="plain">Plain</Card>
+        <Card variant="poster" data-testid="poster">
+          Poster
+        </Card>
+      </>,
+    );
+    const plain = getComputedStyle(screen.getByTestId("plain").element());
+    const poster = getComputedStyle(screen.getByTestId("poster").element());
+
+    expect(poster.borderTopColor).toBe(poster.color);
+    expect(poster.boxShadow).toMatch(/6px 8px 0px 0px$/u);
+    expect(Number.parseFloat(poster.borderTopLeftRadius)).toBeGreaterThan(
+      Number.parseFloat(plain.borderTopLeftRadius),
+    );
+  });
+
+  it("throws the poster shadow to the other side when the text runs right to left", async () => {
+    const screen = await render(
+      <div dir="rtl">
+        <Card variant="poster" data-testid="poster">
+          Poster
+        </Card>
+      </div>,
+    );
+
+    expect(
+      getComputedStyle(screen.getByTestId("poster").element()).boxShadow,
+    ).toMatch(/-6px 8px 0px 0px$/u);
+  });
+
+  it("sets a larger title and an unruled footer on a poster", async () => {
+    const screen = await render(
+      <>
+        <Card>
+          <CardTitle level={2}>Plain title</CardTitle>
+          <CardFooter data-testid="plain-footer">Plain footer</CardFooter>
+        </Card>
+        <Card variant="poster">
+          <CardTitle level={2}>Poster title</CardTitle>
+          <CardFooter data-testid="poster-footer">Poster footer</CardFooter>
+        </Card>
+      </>,
+    );
+    const fontSize = (name: string) =>
+      Number.parseFloat(
+        getComputedStyle(screen.getByRole("heading", { name }).element())
+          .fontSize,
+      );
+    const rule = (id: string) =>
+      getComputedStyle(screen.getByTestId(id).element()).borderTopWidth;
+
+    expect(fontSize("Poster title")).toBeGreaterThan(fontSize("Plain title"));
+    expect(rule("plain-footer")).toBe("1px");
+    expect(rule("poster-footer")).toBe("0px");
+  });
+
+  it("lets poster artwork run past the media area up to the card edge", async () => {
+    const screen = await render(
+      <>
+        <Card>
+          <CardMedia data-testid="plain-media">
+            <img alt="" src={picture} />
+          </CardMedia>
+        </Card>
+        <Card variant="poster" data-testid="poster">
+          <CardMedia data-testid="poster-media">
+            <img alt="" src={picture} />
+          </CardMedia>
+        </Card>
+      </>,
+    );
+    const overflow = (id: string) =>
+      getComputedStyle(screen.getByTestId(id).element()).overflow;
+
+    expect(overflow("plain-media")).toBe("hidden");
+    expect(overflow("poster-media")).toBe("visible");
+    expect(overflow("poster")).toBe("clip");
+  });
 });

@@ -35,6 +35,7 @@ export {
   type CardProps,
   type CardTitleLevel,
   type CardTitleProps,
+  type CardVariant,
 } from "./Card/Card.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
 export {

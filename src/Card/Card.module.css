@@ -4,6 +4,12 @@
   --card-content-inline: 1rem;
   --card-notch-radius: var(--dusty-radius-md);
   --card-notch-corner: 100% 0;
+  --card-media-radius: var(--dusty-radius-sm);
+  --card-media-overflow: hidden;
+  --card-title-size: 1.75rem;
+  --card-title-leading: 1.15;
+  --card-footer-rule: 1px solid var(--dusty-border);
+  --card-footer-inset: 1rem;
 
   display: grid;
   padding: var(--card-padding);
@@ -13,10 +19,32 @@
   color: var(--dusty-text);
 }
 
+.poster {
+  --card-radius: 1.5rem;
+  --card-padding: 1.25rem;
+  --card-content-inline: 0.25rem;
+  --card-media-radius: 0;
+  --card-media-overflow: visible;
+  --card-title-size: 2.25rem;
+  --card-title-leading: 1.05;
+  --card-footer-rule: 0;
+  --card-footer-inset: 0;
+  --card-shadow-inline: 0.375rem;
+
+  overflow: clip;
+  border-color: var(--dusty-text);
+  box-shadow: var(--card-shadow-inline) 0.5rem 0
+    var(--dusty-illustration-shadow);
+}
+
+.poster:dir(rtl) {
+  --card-shadow-inline: -0.375rem;
+}
+
 .media {
   display: grid;
-  overflow: hidden;
-  border-radius: var(--dusty-radius-sm);
+  overflow: var(--card-media-overflow);
+  border-radius: var(--card-media-radius);
 }
 
 .media:has(> .label) {
@@ -105,8 +133,8 @@
 .title {
   margin: 0;
   font-weight: var(--dusty-weight-semibold);
-  font-size: 1.75rem;
-  line-height: 1.15;
+  font-size: var(--card-title-size);
+  line-height: var(--card-title-leading);
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
   text-wrap: balance;
@@ -126,8 +154,8 @@
   gap: 0.75rem;
   align-items: center;
   margin-block-start: 0.5rem;
-  padding-block-start: 1rem;
-  border-block-start: 1px solid var(--dusty-border);
+  padding-block-start: var(--card-footer-inset);
+  border-block-start: var(--card-footer-rule);
 }
 
 .end {
