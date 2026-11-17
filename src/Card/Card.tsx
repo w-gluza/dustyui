@@ -1,12 +1,13 @@
 import type { ComponentProps, ReactNode } from "react";
 import clsx from "clsx";
+import type { HeadingLevel } from "../headingLevel.js";
 import styles from "./Card.module.css";
 
 export type CardElement = "article" | "section" | "div";
 
 export type CardVariant = "plain" | "poster";
 
-export type CardTitleLevel = 2 | 3 | 4 | 5 | 6;
+export type CardTitleLevel = HeadingLevel;
 
 export interface CardProps extends Omit<
   ComponentProps<"article">,
