@@ -5,6 +5,7 @@ import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
 import type { PlaybackControlsProps } from "./PlaybackControls/PlaybackControls.js";
+import type { ListItemProps } from "./List/List.js";
 import type { TabsProps } from "./Tabs/Tabs.js";
 import type { ProgressBarProps } from "./ProgressBar/ProgressBar.js";
 import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
@@ -282,6 +283,21 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
     expectTypeOf<
       Accepts<TabsProps, { variant: "pill" }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("let a list item be a link or a button, never both", () => {
+    expectTypeOf<
+      Accepts<ListItemProps, { title: string }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<ListItemProps, { title: string; href: string }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<
+        ListItemProps,
+        { title: string; href: string; onClick: () => void }
+      >
     >().toEqualTypeOf<false>();
   });
 });

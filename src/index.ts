@@ -78,6 +78,13 @@ export {
   type PopoverProps,
 } from "./Popover/Popover.js";
 export {
+  List,
+  ListItem,
+  type ListItemProps,
+  type ListProps,
+  type ListVariant,
+} from "./List/List.js";
+export {
   MilestoneProgress,
   type MilestoneProgressProps,
 } from "./MilestoneProgress/MilestoneProgress.js";
