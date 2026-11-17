@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { HeadingLevel } from "../headingLevel.js";
+import { CloseIcon } from "./CloseIcon.js";
 import { IconButton } from "../IconButton/IconButton.js";
 import styles from "./ExpandableCard.module.css";
 
@@ -39,10 +40,11 @@ export function ExpandedView({
       ) : null}
       <IconButton
         className={styles.close}
-        variant="secondary"
+        variant="plain"
+        shape="pill"
         size="small"
         label={closeLabel}
-        icon="×"
+        icon={<CloseIcon />}
         onClick={onClose}
       />
       <Heading id={titleId} className={styles.dialogTitle}>

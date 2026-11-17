@@ -110,7 +110,9 @@
   grid-area: 1 / 1;
   place-self: start end;
   margin: 0.5rem;
+  border-color: var(--dusty-border);
   background-color: var(--dusty-surface-raised);
+  color: var(--dusty-text);
 }
 
 .dialogTitle {
