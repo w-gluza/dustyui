@@ -9,6 +9,11 @@ export {
   type AvatarSize,
 } from "./Avatar/Avatar.js";
 export {
+  AvatarGroup,
+  type AvatarGroupItem,
+  type AvatarGroupProps,
+} from "./AvatarGroup/AvatarGroup.js";
+export {
   Badge,
   type BadgeProps,
   type BadgeTone,
@@ -20,6 +25,11 @@ export {
   type ButtonSize,
   type ButtonVariant,
 } from "./Button/Button.js";
+export {
+  Callout,
+  type CalloutProps,
+  type CalloutTone,
+} from "./Callout/Callout.js";
 export {
   Card,
   CardContent,
@@ -37,6 +47,8 @@ export {
   type CardTitleProps,
   type CardVariant,
 } from "./Card/Card.js";
+export { EmptyState, type EmptyStateProps } from "./EmptyState/EmptyState.js";
+export type { HeadingLevel } from "./headingLevel.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
 export {
   ObjectInspector,

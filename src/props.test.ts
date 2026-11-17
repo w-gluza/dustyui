@@ -1,7 +1,9 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type { AvatarProps } from "./Avatar/Avatar.js";
+import type { AvatarGroupProps } from "./AvatarGroup/AvatarGroup.js";
 import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
+import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
 import type { TreeProps } from "./Tree/Tree.js";
@@ -155,6 +157,30 @@ describe("props", () => {
     >().toEqualTypeOf<true>();
     expectTypeOf<
       Accepts<BadgeProps, { label: string; icon: string }>
+    >().toEqualTypeOf<true>();
+  });
+
+  it("require a heading level on an empty state", () => {
+    expectTypeOf<
+      Accepts<EmptyStateProps, { title: string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<EmptyStateProps, { title: string; level: 2 }>
+    >().toEqualTypeOf<true>();
+  });
+
+  it("require a label on an avatar group and refuse a second name", () => {
+    expectTypeOf<
+      Accepts<AvatarGroupProps, { avatars: [] }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<
+        AvatarGroupProps,
+        { avatars: []; label: string; "aria-label": string }
+      >
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<AvatarGroupProps, { avatars: []; label: string }>
     >().toEqualTypeOf<true>();
   });
 });

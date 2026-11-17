@@ -1,0 +1,47 @@
+.callout {
+  display: grid;
+  gap: 0.25rem;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  border-inline-start: 0.25rem solid var(--callout-marker);
+  border-radius: var(--dusty-radius-md);
+  background-color: var(--callout-tint);
+  color: var(--dusty-text);
+  line-height: 1.5;
+}
+
+.neutral {
+  --callout-marker: var(--dusty-illustration-primary);
+  --callout-tint: var(--dusty-surface-sunken);
+}
+
+.accent {
+  --callout-marker: var(--dusty-action);
+  --callout-tint: var(--dusty-surface-selected);
+}
+
+.title {
+  margin: 0;
+  font-weight: var(--dusty-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.body > :first-child {
+  margin-block-start: 0;
+}
+
+.body > :last-child {
+  margin-block-end: 0;
+}
+
+@media (forced-colors: active) {
+  .callout {
+    border: 1px solid CanvasText;
+    border-inline-start-width: 0.25rem;
+  }
+}
