@@ -1,0 +1,72 @@
+.stacked {
+  display: grid;
+  gap: 0.75rem;
+  color: var(--dusty-text);
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  block-size: 1rem;
+  overflow: hidden;
+  border-radius: var(--dusty-radius-full);
+}
+
+.segment {
+  flex: var(--segment-grow) 0 0;
+  min-inline-size: 0;
+  background-color: var(--segment-color, var(--dusty-border-strong));
+}
+
+.first {
+  --segment-color: var(--dusty-action);
+}
+
+.second {
+  --segment-color: var(--dusty-illustration-primary);
+}
+
+.third {
+  --segment-color: var(--dusty-illustration-secondary);
+}
+
+.fourth {
+  --segment-color: var(--dusty-illustration-highlight);
+}
+
+.fifth {
+  --segment-color: var(--dusty-illustration-shadow);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  color: var(--dusty-text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.dot {
+  flex-shrink: 0;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--segment-color);
+}
+
+@media (forced-colors: active) {
+  .segment,
+  .dot {
+    forced-color-adjust: none;
+  }
+}
