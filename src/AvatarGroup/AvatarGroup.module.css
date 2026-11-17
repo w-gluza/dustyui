@@ -1,0 +1,28 @@
+.group {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.small {
+  --avatar-group-overlap: -0.5rem;
+}
+
+.medium {
+  --avatar-group-overlap: -0.75rem;
+}
+
+.large {
+  --avatar-group-overlap: -1rem;
+}
+
+.item {
+  display: flex;
+  border-radius: var(--dusty-radius-full);
+  box-shadow: 0 0 0 2px var(--avatar-group-gap, var(--dusty-surface));
+}
+
+.item + .item {
+  margin-inline-start: var(--avatar-group-overlap);
+}
