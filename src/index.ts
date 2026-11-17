@@ -8,7 +8,12 @@ export {
   type AvatarRing,
   type AvatarSize,
 } from "./Avatar/Avatar.js";
-export { Badge, type BadgeProps } from "./Badge/Badge.js";
+export {
+  Badge,
+  type BadgeProps,
+  type BadgeTone,
+  type BadgeVariant,
+} from "./Badge/Badge.js";
 export {
   Button,
   type ButtonProps,

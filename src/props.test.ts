@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type { AvatarProps } from "./Avatar/Avatar.js";
+import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
@@ -134,5 +135,26 @@ describe("props", () => {
     expectTypeOf<
       Accepts<CardProps, { dangerouslySetInnerHTML: { __html: string } }>
     >().toEqualTypeOf<false>();
+  });
+
+  it("refuse an icon on an editorial badge, which has its own marker", () => {
+    expectTypeOf<
+      Accepts<BadgeProps, { label: string; variant: "editorial"; icon: string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<
+        BadgeProps,
+        { label: string; variant: "editorial"; iconPosition: "end" }
+      >
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<BadgeProps, { label: string; variant: "editorial" }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<BadgeProps, { label: string; variant: "solid"; icon: string }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<BadgeProps, { label: string; icon: string }>
+    >().toEqualTypeOf<true>();
   });
 });

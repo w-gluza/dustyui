@@ -5,9 +5,8 @@
   max-inline-size: 100%;
   padding-block: 0.125rem;
   padding-inline: 0.625rem;
-  border: 1px solid var(--dusty-border);
+  border: 1px solid transparent;
   border-radius: var(--dusty-radius-full);
-  color: var(--dusty-text);
   font-size: 0.75rem;
   font-weight: var(--dusty-weight-semibold);
   line-height: 1.33;
@@ -24,4 +23,63 @@
 
 .label {
   overflow-wrap: anywhere;
+}
+
+.neutral {
+  --badge-ink: var(--dusty-text);
+  --badge-line: var(--dusty-border);
+  --badge-tint: var(--dusty-surface-sunken);
+  --badge-fill: var(--dusty-text);
+  --badge-on-fill: var(--dusty-surface);
+  --badge-marker: var(--dusty-illustration-primary);
+}
+
+.accent {
+  --badge-ink: var(--dusty-action);
+  --badge-line: var(--dusty-action);
+  --badge-tint: var(--dusty-surface-selected);
+  --badge-fill: var(--dusty-action);
+  --badge-on-fill: var(--dusty-on-action);
+  --badge-marker: var(--dusty-action);
+}
+
+.outline {
+  border-color: var(--badge-line);
+  color: var(--badge-ink);
+}
+
+.soft {
+  background-color: var(--badge-tint);
+  color: var(--badge-ink);
+}
+
+.solid {
+  border-color: var(--badge-fill);
+  border-radius: var(--dusty-radius-md);
+  background-color: var(--badge-fill);
+  color: var(--badge-on-fill);
+}
+
+.editorial {
+  gap: 0.5rem;
+  padding-inline: 0;
+  border-radius: 0;
+  color: var(--dusty-text);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editorial::before {
+  content: "";
+  flex-shrink: 0;
+  inline-size: 0.25rem;
+  block-size: 1em;
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--badge-marker);
+}
+
+@media (forced-colors: active) {
+  .editorial::before {
+    background-color: CanvasText;
+  }
 }
