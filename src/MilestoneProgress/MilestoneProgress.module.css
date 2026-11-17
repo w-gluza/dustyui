@@ -1,0 +1,106 @@
+.milestones {
+  --milestone-marker: 1.75rem;
+  --milestone-line: 0.25rem;
+
+  display: grid;
+  color: var(--dusty-text);
+}
+
+.track,
+.list {
+  grid-area: 1 / 1;
+}
+
+.track {
+  display: block;
+  align-self: start;
+  block-size: var(--milestone-line);
+  margin-block-start: calc(
+    (var(--milestone-marker) - var(--milestone-line)) / 2
+  );
+  margin-inline: calc(50% / var(--milestone-count));
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-border-strong);
+}
+
+.fill {
+  display: block;
+  inline-size: calc(var(--milestone-share) * 100%);
+  block-size: 100%;
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-action);
+  transition: inline-size 0.2s ease;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(var(--milestone-count), minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+  justify-items: center;
+  color: var(--dusty-text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.item[data-completed],
+.item[aria-current] {
+  color: var(--dusty-text);
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  inline-size: var(--milestone-marker);
+  block-size: var(--milestone-marker);
+  border: 2px solid var(--dusty-border-strong);
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-surface-raised);
+  color: var(--dusty-on-action);
+}
+
+.item[aria-current] .marker {
+  border-color: var(--dusty-action);
+}
+
+.item[data-completed] .marker {
+  border-color: var(--dusty-action);
+  background-color: var(--dusty-action);
+}
+
+.check {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .fill {
+    background-color: Highlight;
+  }
+
+  .item[data-completed] .marker {
+    border-color: Highlight;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}
