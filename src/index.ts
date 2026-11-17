@@ -55,6 +55,11 @@ export {
 export type { HeadingLevel } from "./headingLevel.js";
 export { IconButton, type IconButtonProps } from "./IconButton/IconButton.js";
 export {
+  BarChart,
+  type BarChartProps,
+  type ChartBar,
+} from "./BarChart/BarChart.js";
+export {
   BeatPattern,
   nextBeatKind,
   type BeatKind,
@@ -92,9 +97,16 @@ export {
   type RecordSleeveProps,
 } from "./RecordSleeve/RecordSleeve.js";
 export {
+  StatList,
+  type Stat,
+  type StatListProps,
+} from "./StatList/StatList.js";
+export {
   StackedProgress,
   type ProgressSegment,
+  type StackedProgressLegend,
   type StackedProgressProps,
+  type StackedProgressSize,
 } from "./StackedProgress/StackedProgress.js";
 export {
   TrackList,

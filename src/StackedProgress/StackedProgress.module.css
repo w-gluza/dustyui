@@ -4,10 +4,18 @@
   color: var(--dusty-text);
 }
 
+.small {
+  --stacked-size: 0.5rem;
+}
+
+.medium {
+  --stacked-size: 1rem;
+}
+
 .bar {
   display: flex;
   gap: 2px;
-  block-size: 1rem;
+  block-size: var(--stacked-size);
   overflow: hidden;
   border-radius: var(--dusty-radius-full);
 }
@@ -48,6 +56,23 @@
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   list-style: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+}
+
+.name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.share {
+  color: var(--dusty-text);
+  font-weight: var(--dusty-weight-semibold);
 }
 
 .item {

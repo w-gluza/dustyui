@@ -144,4 +144,56 @@ describe("StackedProgress", () => {
 
     await expect.element(screen.getByTestId("stack")).toHaveClass("mine");
   });
+
+  it("sets a grid legend in two columns with each share at the far side", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "400px" }}>
+        <StackedProgress
+          label="Technique balance"
+          legend="grid"
+          segments={[...SEGMENTS, { label: "Other", value: 0 }]}
+        />
+      </div>,
+    );
+    const items = screen.getByRole("listitem").elements();
+    const box = (index: number) =>
+      (items[index] as Element).getBoundingClientRect();
+
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Design38%",
+      "Build26%",
+      "Review21%",
+      "Other0%",
+    ]);
+    expect(box(0).top).toBe(box(1).top);
+    expect(box(2).top).toBeGreaterThan(box(0).top);
+    expect(
+      Math.round(
+        (items[0]?.lastElementChild as Element).getBoundingClientRect().right,
+      ),
+    ).toBe(Math.round(box(0).right));
+  });
+
+  it("draws a thinner bar when small", async () => {
+    const screen = await render(
+      <>
+        <StackedProgress
+          label="Small"
+          size="small"
+          segments={SEGMENTS}
+          data-testid="small"
+        />
+        <StackedProgress
+          label="Medium"
+          segments={SEGMENTS}
+          data-testid="medium"
+        />
+      </>,
+    );
+    const height = (id: string) =>
+      barOf(screen.getByTestId(id).element()).getBoundingClientRect().height;
+
+    expect(height("small")).toBe(8);
+    expect(height("medium")).toBe(16);
+  });
 });
