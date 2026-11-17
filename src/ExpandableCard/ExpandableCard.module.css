@@ -4,6 +4,7 @@
 
   display: grid;
   grid-template-rows: auto auto auto;
+  align-content: start;
   padding: var(--expandable-card-padding);
   border: 1px solid var(--dusty-border);
   border-radius: var(--dusty-radius-md);
