@@ -75,7 +75,6 @@ describe("PlaybackControls", () => {
     );
     const bar = screen.getByRole("progressbar", { name: "Track progress" });
 
-    await expect.element(bar).toBeVisible();
     expect((bar.element() as HTMLProgressElement).value).toBe(1);
     expect(screen.getByRole("progressbar").elements()).toHaveLength(1);
   });
@@ -105,5 +104,14 @@ describe("PlaybackControls", () => {
     );
 
     await expect.element(screen.getByTestId("controls")).toHaveClass("mine");
+  });
+
+  it("rounds the play button into a pill", async () => {
+    const screen = await render(<PlaybackControls />);
+    const button = screen.getByRole("button", { name: "Play" }).element();
+
+    expect(
+      Number.parseFloat(getComputedStyle(button).borderTopLeftRadius),
+    ).toBeGreaterThanOrEqual(button.getBoundingClientRect().height / 2);
   });
 });

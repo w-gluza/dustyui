@@ -1,0 +1,161 @@
+.progress {
+  position: relative;
+  display: grid;
+  gap: 0.375rem;
+  color: var(--dusty-text);
+}
+
+.small {
+  --progress-size: 0.25rem;
+}
+
+.medium {
+  --progress-size: 0.5rem;
+}
+
+.large {
+  --progress-size: 0.75rem;
+}
+
+.accent {
+  --progress-fill: var(--dusty-action);
+}
+
+.neutral {
+  --progress-fill: var(--dusty-text);
+}
+
+.caption {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.value {
+  color: var(--dusty-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.headline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 1rem;
+  align-items: end;
+}
+
+.overline {
+  grid-column: 1 / -1;
+  color: var(--dusty-text-muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.figure {
+  font-weight: var(--dusty-weight-semibold);
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.unit {
+  color: var(--dusty-text-muted);
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.note {
+  display: flex;
+  grid-column: 2;
+  align-items: center;
+  padding-block-end: 0.375rem;
+  color: var(--dusty-text-muted);
+  font-size: 0.875rem;
+}
+
+.ends {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  color: var(--dusty-text-muted);
+  font-size: 0.875rem;
+}
+
+.track {
+  display: block;
+  box-sizing: border-box;
+  block-size: var(--progress-size);
+  overflow: hidden;
+  border: 1px solid var(--dusty-border-strong);
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-surface-sunken);
+}
+
+.editorial {
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: var(--dusty-radius-md);
+  background-color: var(--dusty-surface-sunken);
+}
+
+.editorial .track {
+  border: 0;
+  background-color: var(--dusty-border);
+}
+
+.fill {
+  display: block;
+  inline-size: calc(var(--progress-share, 0) * 100%);
+  block-size: 100%;
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--progress-fill);
+  transition: inline-size 0.2s ease;
+}
+
+.track[data-indeterminate] .fill {
+  inline-size: 40%;
+  animation: travel 1.4s ease-in-out infinite;
+}
+
+.track[data-indeterminate]:dir(rtl) .fill {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+
+  .track[data-indeterminate] .fill {
+    inline-size: 100%;
+    animation: breathe 1.6s ease-in-out infinite alternate;
+  }
+}
+
+@media (forced-colors: active) {
+  .track {
+    border-color: CanvasText;
+  }
+
+  .fill {
+    background-color: Highlight;
+  }
+}
+
+@keyframes travel {
+  from {
+    translate: -100% 0;
+  }
+
+  to {
+    translate: 250% 0;
+  }
+}
+
+@keyframes breathe {
+  from {
+    opacity: 0.35;
+  }
+}

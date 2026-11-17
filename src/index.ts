@@ -72,6 +72,17 @@ export {
   type PopoverProps,
 } from "./Popover/Popover.js";
 export {
+  MilestoneProgress,
+  type MilestoneProgressProps,
+} from "./MilestoneProgress/MilestoneProgress.js";
+export {
+  ProgressBar,
+  type ProgressBarProps,
+  type ProgressBarSize,
+  type ProgressBarTone,
+  type ProgressBarVariant,
+} from "./ProgressBar/ProgressBar.js";
+export {
   RadioGroup,
   type RadioGroupProps,
   type RadioOption,
@@ -80,6 +91,11 @@ export {
   RecordSleeve,
   type RecordSleeveProps,
 } from "./RecordSleeve/RecordSleeve.js";
+export {
+  StackedProgress,
+  type ProgressSegment,
+  type StackedProgressProps,
+} from "./StackedProgress/StackedProgress.js";
 export {
   TrackList,
   type Track,

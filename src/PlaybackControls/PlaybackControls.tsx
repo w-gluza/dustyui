@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import clsx from "clsx";
 import { Button } from "../Button/Button.js";
 import { IconButton } from "../IconButton/IconButton.js";
+import { ProgressBar } from "../ProgressBar/ProgressBar.js";
 import { useControllableState } from "../useControllableState.js";
 import { NextIcon, PauseIcon, PlayIcon, PreviousIcon } from "./icons.js";
 import styles from "./PlaybackControls.module.css";
@@ -71,6 +72,7 @@ export function PlaybackControls({
           onClick={onPrevious}
         />
         <Button
+          shape="pill"
           icon={playing ? <PauseIcon /> : <PlayIcon />}
           onClick={() => {
             setPlaying(!playing);
@@ -88,12 +90,7 @@ export function PlaybackControls({
         />
       </div>
       {progress !== undefined ? (
-        <progress
-          className={styles.progress}
-          aria-label={text.progress}
-          max={1}
-          value={Math.min(1, Math.max(0, progress))}
-        />
+        <ProgressBar label={text.progress} value={progress} />
       ) : null}
     </div>
   );

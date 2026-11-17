@@ -8,9 +8,3 @@
   gap: 0.5rem;
   align-items: center;
 }
-
-.progress {
-  inline-size: 100%;
-  block-size: 0.375rem;
-  accent-color: var(--dusty-action);
-}
