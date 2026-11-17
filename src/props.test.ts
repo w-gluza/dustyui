@@ -5,6 +5,7 @@ import type { BadgeProps } from "./Badge/Badge.js";
 import type { CardProps, CardTitleProps } from "./Card/Card.js";
 import type { EmptyStateProps } from "./EmptyState/EmptyState.js";
 import type { PlaybackControlsProps } from "./PlaybackControls/PlaybackControls.js";
+import type { TabsProps } from "./Tabs/Tabs.js";
 import type { ProgressBarProps } from "./ProgressBar/ProgressBar.js";
 import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
 import type { TempoDialProps } from "./TempoDial/TempoDial.js";
@@ -268,6 +269,19 @@ describe("props", () => {
         ProgressBarProps,
         { label: string; variant: "editorial"; showLabel: true }
       >
+    >().toEqualTypeOf<false>();
+  });
+
+  it("make tabs take a value or a starting value, never both or neither", () => {
+    expectTypeOf<
+      Accepts<TabsProps, { defaultValue: string }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<Accepts<TabsProps, { value: string }>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<TabsProps, { value: string; defaultValue: string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<TabsProps, { variant: "pill" }>
     >().toEqualTypeOf<false>();
   });
 });

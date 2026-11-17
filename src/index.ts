@@ -135,3 +135,8 @@ export {
 } from "./ObjectInspector/describe/getPath.js";
 export { Tree, type TreeProps } from "./Tree/Tree.js";
 export type { TreeNode, TreeRow } from "./Tree/treeModel.js";
+export { Tabs, type TabsProps } from "./Tabs/Tabs.js";
+export { TabsContent, type TabsContentProps } from "./Tabs/TabsContent.js";
+export { TabsList, type TabsListProps } from "./Tabs/TabsList.js";
+export { TabsTrigger, type TabsTriggerProps } from "./Tabs/TabsTrigger.js";
+export type { TabsActivation, TabsVariant } from "./Tabs/tabsContext.js";
