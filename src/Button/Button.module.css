@@ -47,6 +47,31 @@
   grid-area: 1 / 1;
 }
 
+.label {
+  display: inline-flex;
+  gap: 0.5em;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 0;
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  line-height: 0;
+}
+
+.plain .label {
+  text-decoration: underline;
+  text-decoration-color: var(--dusty-border-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+}
+
 .button[data-loading] .label {
   opacity: 0;
 }
@@ -72,15 +97,34 @@
 }
 
 .secondary {
+  border-color: var(--dusty-text);
   background-color: transparent;
-  color: var(--dusty-action);
+  color: var(--dusty-text);
 }
 
 .secondary:enabled:not([aria-disabled="true"]):active {
   background-color: var(--dusty-surface-selected);
 }
 
+.plain {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--dusty-text-muted);
+}
+
+.plain:enabled:not([aria-disabled="true"]):active {
+  color: var(--dusty-text);
+}
+
 @media (hover: hover) {
+  .plain:enabled:not([aria-disabled="true"]):hover {
+    color: var(--dusty-text);
+  }
+
+  .plain:enabled:not([aria-disabled="true"]):hover .label {
+    text-decoration-color: currentcolor;
+  }
+
   .primary:enabled:not([aria-disabled="true"]):hover:not(:active) {
     border-color: var(--dusty-action-hover);
     background-color: var(--dusty-action-hover);

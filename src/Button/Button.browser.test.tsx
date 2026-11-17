@@ -373,4 +373,107 @@ describe("Button", () => {
       await expect.element(button).toHaveFocus();
     });
   });
+
+  describe("variants", () => {
+    it("outlines a secondary button in the text colour", async () => {
+      const screen = await render(
+        <Button variant="secondary">Learn more</Button>,
+      );
+      const style = getComputedStyle(screen.getByRole("button").element());
+
+      expect(style.borderTopColor).toBe(style.color);
+      expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    });
+
+    it("shows a plain button as underlined text with no box", async () => {
+      const screen = await render(<Button variant="plain">Cancel</Button>);
+      const button = screen.getByRole("button", { name: "Cancel" }).element();
+      const style = getComputedStyle(button);
+      const label = getComputedStyle(button.firstElementChild ?? button);
+
+      expect(style.borderTopColor).toBe("rgba(0, 0, 0, 0)");
+      expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+      expect(label.textDecorationLine).toBe("underline");
+      expect(button).toHaveAttribute("data-variant", "plain");
+    });
+
+    it("keeps a plain button as tall as the others", async () => {
+      const screen = await render(
+        <>
+          <Button>Save</Button>
+          <Button variant="plain">Cancel</Button>
+        </>,
+      );
+
+      expect(
+        size(screen.getByRole("button", { name: "Cancel" }).element())[1],
+      ).toBe(size(screen.getByRole("button", { name: "Save" }).element())[1]);
+    });
+  });
+
+  describe("icon", () => {
+    it("hides the icon from assistive technology and keeps the name", async () => {
+      const screen = await render(<Button icon="→">Learn more</Button>);
+      const button = screen.getByRole("button", { name: "Learn more" });
+
+      await expect.element(button).toBeVisible();
+      await expect
+        .element(screen.getByText("→"))
+        .toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("places the icon before the text by default and after it at the end", async () => {
+      const screen = await render(
+        <>
+          <Button icon="←">Back</Button>
+          <Button icon="→" iconPosition="end">
+            Next
+          </Button>
+        </>,
+      );
+      const before = screen.getByText("←").element().getBoundingClientRect();
+      const after = screen.getByText("→").element().getBoundingClientRect();
+      const back = screen.getByRole("button", { name: "Back" }).element();
+      const next = screen.getByRole("button", { name: "Next" }).element();
+
+      expect(before.left - back.getBoundingClientRect().left).toBeLessThan(
+        back.getBoundingClientRect().right - before.right,
+      );
+      expect(next.getBoundingClientRect().right - after.right).toBeLessThan(
+        after.left - next.getBoundingClientRect().left,
+      );
+    });
+
+    it("renders no icon wrapper without an icon", async () => {
+      const screen = await render(<Button>Save</Button>);
+
+      expect(
+        screen.getByRole("button").element().querySelector("[aria-hidden]"),
+      ).toBeNull();
+    });
+
+    it("does not make the button taller", async () => {
+      const screen = await render(
+        <>
+          <Button>Save</Button>
+          <Button icon="→">Next</Button>
+        </>,
+      );
+
+      expect(
+        size(screen.getByRole("button", { name: "Next" }).element())[1],
+      ).toBe(size(screen.getByRole("button", { name: "Save" }).element())[1]);
+    });
+
+    it("hides the icon with the text while loading", async () => {
+      const screen = await render(
+        <Button icon="→" loading>
+          Next
+        </Button>,
+      );
+      const label = screen.getByText("→").element().parentElement;
+
+      expect(label && getComputedStyle(label).opacity).toBe("0");
+    });
+  });
 });

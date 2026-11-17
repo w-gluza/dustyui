@@ -23,7 +23,7 @@ const ACTIVATION_HANDLERS = {
   onTouchEnd: undefined,
 } satisfies Partial<ComponentProps<"button">>;
 
-export type ButtonVariant = "primary" | "secondary";
+export type ButtonVariant = "primary" | "secondary" | "plain";
 export type ButtonSize = "small" | "medium" | "large";
 
 export interface ButtonProps extends Omit<
@@ -33,6 +33,8 @@ export interface ButtonProps extends Omit<
   children: ReactNode;
   variant?: ButtonVariant | undefined;
   size?: ButtonSize | undefined;
+  icon?: ReactNode | undefined;
+  iconPosition?: "start" | "end" | undefined;
   loading?: boolean | undefined;
   loadingLabel?: string | undefined;
 }
@@ -40,6 +42,8 @@ export interface ButtonProps extends Omit<
 export function Button({
   variant = "primary",
   size = "medium",
+  icon,
+  iconPosition = "start",
   loading = false,
   loadingLabel = "Loading",
   className,
@@ -59,6 +63,13 @@ export function Button({
     () => (loading ? announce(loadingLabel) : undefined),
     [loading, loadingLabel],
   );
+
+  const iconNode =
+    icon != null ? (
+      <span className={styles.icon} aria-hidden="true">
+        {icon}
+      </span>
+    ) : null;
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     if (inactive) {
@@ -82,7 +93,11 @@ export function Button({
       aria-describedby={loading ? clsx(describedBy, loadingId) : describedBy}
       onClick={handleClick}
     >
-      <span className={styles.label}>{children}</span>
+      <span className={styles.label}>
+        {iconPosition === "start" ? iconNode : null}
+        {children}
+        {iconPosition === "end" ? iconNode : null}
+      </span>
       {loading ? (
         <>
           <span className={styles.spinner} aria-hidden="true" />
