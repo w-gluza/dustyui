@@ -48,6 +48,7 @@ export {
   type CardVariant,
 } from "./Card/Card.js";
 export { EmptyState, type EmptyStateProps } from "./EmptyState/EmptyState.js";
+export { CopyButton, type CopyButtonProps } from "./CopyButton/CopyButton.js";
 export {
   ExpandableCard,
   type ExpandableCardProps,

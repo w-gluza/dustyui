@@ -1,0 +1,112 @@
+.copy {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.copy[data-status="copied"]:not([data-variant="primary"]),
+.copy[data-status="copied"]:not([data-variant="primary"]):enabled:hover:not(
+    :active
+  ) {
+  border-color: var(--dusty-action);
+  background-color: var(--dusty-surface-selected);
+}
+
+.copy[data-status="failed"]:not([data-variant="primary"]) {
+  border-color: var(--dusty-status-danger);
+}
+
+.icons {
+  display: grid;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.icon {
+  grid-area: 1 / 1;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  scale: 0.85;
+  transition:
+    opacity 0.12s ease-in,
+    scale 0.12s ease-in,
+    color 0.2s ease;
+}
+
+.icon[data-shown] {
+  opacity: 1;
+  scale: 1;
+  transition: color 0.2s ease;
+}
+
+.copy[data-animated] .icon[data-shown] {
+  animation: enter 0.2s 0.06s cubic-bezier(0.34, 1.45, 0.64, 1) backwards;
+}
+
+.copy[data-status="copied"]:not([data-variant="primary"]) .icon {
+  color: var(--dusty-action);
+}
+
+.copy[data-status="failed"]:not([data-variant="primary"]) .icon {
+  color: var(--dusty-status-danger);
+}
+
+.labels {
+  display: grid;
+}
+
+.text {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  opacity: 0;
+  text-align: start;
+  transition:
+    opacity 0.12s ease-in,
+    visibility 0s 0.12s;
+}
+
+.text[data-shown] {
+  visibility: visible;
+  opacity: 1;
+  transition: none;
+}
+
+.copy[data-animated] .text[data-shown] {
+  animation: appear 0.2s 0.06s ease backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy,
+  .icon,
+  .icon[data-shown],
+  .text {
+    transition: none;
+  }
+
+  .copy[data-animated] .icon[data-shown],
+  .copy[data-animated] .text[data-shown] {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .copy[data-status="copied"]:not([data-variant="primary"]) .icon,
+  .copy[data-status="failed"]:not([data-variant="primary"]) .icon {
+    color: inherit;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    scale: 0.7;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
