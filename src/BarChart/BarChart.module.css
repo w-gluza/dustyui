@@ -1,0 +1,67 @@
+.chart {
+  --bar-chart-size: 10rem;
+  --bar-chart-bar: 0.5rem;
+  --bar-chart-value: 1.5rem;
+
+  display: grid;
+  grid-template-columns: repeat(var(--bar-chart-count), minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  color: var(--dusty-text);
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  color: var(--dusty-text-muted);
+  font-size: 0.75rem;
+}
+
+.item[aria-current] {
+  color: var(--dusty-action);
+  font-weight: var(--dusty-weight-semibold);
+}
+
+.plot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  block-size: var(--bar-chart-size);
+}
+
+.value {
+  block-size: var(--bar-chart-value);
+  color: var(--dusty-text-muted);
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  inline-size: var(--bar-chart-bar);
+  block-size: calc(var(--bar-share) * (100% - var(--bar-chart-value)));
+  min-block-size: var(--bar-chart-bar);
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-border-strong);
+}
+
+.item[data-empty] .bar {
+  inline-size: 0.375rem;
+  min-block-size: 0.375rem;
+}
+
+.item[aria-current] .bar {
+  background-color: var(--dusty-action);
+}
+
+@media (forced-colors: active) {
+  .bar {
+    background-color: CanvasText;
+  }
+
+  .item[aria-current] .bar {
+    background-color: Highlight;
+  }
+}
