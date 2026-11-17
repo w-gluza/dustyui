@@ -106,12 +106,15 @@ describe("PlaybackControls", () => {
     await expect.element(screen.getByTestId("controls")).toHaveClass("mine");
   });
 
-  it("rounds the play button into a pill", async () => {
+  it("draws the play button as a circle around its icon", async () => {
     const screen = await render(<PlaybackControls />);
     const button = screen.getByRole("button", { name: "Play" }).element();
+    const box = button.getBoundingClientRect();
 
+    expect(box.width).toBe(box.height);
     expect(
       Number.parseFloat(getComputedStyle(button).borderTopLeftRadius),
-    ).toBeGreaterThanOrEqual(button.getBoundingClientRect().height / 2);
+    ).toBeGreaterThanOrEqual(box.height / 2);
+    expect(button.querySelector("svg")).not.toBeNull();
   });
 });

@@ -2,7 +2,6 @@
 
 import type { ComponentProps } from "react";
 import clsx from "clsx";
-import { Button } from "../Button/Button.js";
 import { IconButton } from "../IconButton/IconButton.js";
 import { ProgressBar } from "../ProgressBar/ProgressBar.js";
 import { useControllableState } from "../useControllableState.js";
@@ -71,15 +70,14 @@ export function PlaybackControls({
           aria-disabled={!onPrevious}
           onClick={onPrevious}
         />
-        <Button
+        <IconButton
           shape="pill"
+          label={playing ? text.pause : text.play}
           icon={playing ? <PauseIcon /> : <PlayIcon />}
           onClick={() => {
             setPlaying(!playing);
           }}
-        >
-          {playing ? text.pause : text.play}
-        </Button>
+        />
         <IconButton
           variant="plain"
           size="small"
