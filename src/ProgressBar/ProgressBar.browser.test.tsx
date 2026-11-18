@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
+import { cdp } from "vitest/browser";
 import { ProgressBar } from "../index.js";
 
 function fillOf(root: Element): HTMLElement {
@@ -271,5 +272,184 @@ describe("ProgressBar", () => {
     await expect
       .element(screen.getByRole("link", { name: "Open" }))
       .toBeVisible();
+  });
+
+  it.each(["ltr", "rtl"] as const)(
+    "sweeps the whole track when indeterminate in %s",
+    async (dir) => {
+      const screen = await render(
+        <div dir={dir} style={wide}>
+          <ProgressBar label="Loading" data-testid="bar" />
+        </div>,
+      );
+      const fill = fillOf(screen.getByTestId("bar").element());
+      const track = (fill.parentElement as Element).getBoundingClientRect();
+      const [sweep] = fill.getAnimations();
+      const spanAt = (progress: number) => {
+        sweep?.pause();
+        if (sweep) {
+          sweep.currentTime = 1400 * progress;
+        }
+        const box = fill.getBoundingClientRect();
+
+        return [
+          Math.round(box.left - track.left),
+          Math.round(box.right - track.left),
+        ];
+      };
+      const start = spanAt(0);
+      const end = spanAt(0.999);
+      const inward = dir === "rtl" ? [end, start] : [start, end];
+
+      expect(inward[0]?.[1]).toBeLessThanOrEqual(1);
+      expect(inward[1]?.[0]).toBeGreaterThanOrEqual(
+        Math.round(track.width) - 1,
+      );
+    },
+  );
+
+  it("pulses a partial block, never a full bar, when indeterminate with motion reduced", async () => {
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    try {
+      const screen = await render(
+        <div style={wide}>
+          <ProgressBar label="Loading" data-testid="bar" />
+        </div>,
+      );
+      const fill = fillOf(screen.getByTestId("bar").element());
+      const track = (fill.parentElement as Element).getBoundingClientRect();
+      const box = fill.getBoundingClientRect();
+
+      expect(box.width).toBeLessThan(track.width * 0.6);
+      expect(Math.round(box.left - track.left)).toBe(
+        Math.round(track.right - box.right),
+      );
+      expect(getComputedStyle(fill).translate).toBe("none");
+      expect(fill.getAnimations()).toHaveLength(1);
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: "" }],
+      });
+    }
+  });
+
+  it("outlines the editorial track and panel when colours are forced", async () => {
+    const screen = await render(
+      <ProgressBar
+        variant="editorial"
+        label="Upload"
+        value={0.5}
+        data-testid="bar"
+      />,
+    );
+    const root = screen.getByTestId("bar").element();
+    const track = fillOf(root).parentElement as Element;
+    const borders = () => [
+      getComputedStyle(track).borderTopWidth,
+      getComputedStyle(root).borderTopStyle,
+    ];
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+
+    expect(borders()).toEqual(["0px", "none"]);
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "forced-colors", value: "active" }],
+    });
+    try {
+      expect(borders()).toEqual(["1px", "solid"]);
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", { features: [] });
+    }
+  });
+
+  it("describes the bar with its note and end captions", async () => {
+    const screen = await render(
+      <>
+        <p id="outside">Uploading to the shared folder</p>
+        <ProgressBar
+          variant="editorial"
+          label="Soft Transit"
+          value={78}
+          max={255}
+          valueLabel="1:18"
+          note="of 4:15"
+          startLabel="Album cover.svg"
+          endLabel="In progress"
+          aria-describedby="outside"
+          aria-details="outside"
+          data-testid="bar"
+        />
+        <ProgressBar label="Plain" value={0.2} data-testid="plain" />
+      </>,
+    );
+    const bar = screen.getByRole("progressbar", { name: "Soft Transit" });
+
+    await expect
+      .element(bar)
+      .toHaveAccessibleDescription(
+        "Uploading to the shared folder of 4:15 Album cover.svg In progress",
+      );
+    await expect.element(bar).toHaveAttribute("aria-details", "outside");
+    expect(
+      screen.getByTestId("bar").element().hasAttribute("aria-describedby"),
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole("progressbar", { name: "Plain" })
+        .element()
+        .hasAttribute("aria-describedby"),
+    ).toBe(false);
+  });
+
+  it("keeps long captions inside the bar's width", async () => {
+    const screen = await render(
+      <div style={wide}>
+        <ProgressBar
+          label="A_very_long_unbroken_file_name_for_an_upload.svg"
+          showLabel
+          value={78}
+          max={255}
+          valueLabel="1:18 of 4:15"
+          startLabel="A_very_long_unbroken_start_caption_text.svg"
+          endLabel="In progress"
+          data-testid="bar"
+        />
+      </div>,
+    );
+    const root = screen.getByTestId("bar").element();
+    const value = screen.getByText("1:18 of 4:15").element();
+    const end = screen.getByText("In progress").element();
+    const lines = (node: Element) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return new Set(
+        Array.from(range.getClientRects(), (box) => Math.round(box.top)),
+      ).size;
+    };
+
+    expect(root.scrollWidth).toBeLessThanOrEqual(200);
+    expect(root.getBoundingClientRect().width).toBe(200);
+    expect(lines(value)).toBe(1);
+    expect(lines(end)).toBe(1);
+    expect(end.getBoundingClientRect().right).toBeLessThanOrEqual(
+      root.getBoundingClientRect().right + 0.5,
+    );
+  });
+
+  it("keeps its own wording on an indeterminate bar", async () => {
+    const screen = await render(
+      <ProgressBar label="Loading" showLabel valueLabel="Starting" />,
+    );
+
+    await expect
+      .element(screen.getByRole("progressbar", { name: "Loading" }))
+      .toHaveAttribute("aria-valuetext", "Starting");
+    await expect.element(screen.getByText("Starting")).toBeVisible();
   });
 });

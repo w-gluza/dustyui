@@ -7,6 +7,7 @@ interface ProgressCaptionProps {
   percent: number | undefined;
   valueLabel: string | undefined;
   note: ReactNode | undefined;
+  noteId: string | undefined;
 }
 
 export function ProgressCaption({
@@ -15,6 +16,7 @@ export function ProgressCaption({
   percent,
   valueLabel,
   note,
+  noteId,
 }: ProgressCaptionProps) {
   const valueText =
     valueLabel ?? (percent === undefined ? undefined : `${String(percent)}%`);
@@ -43,7 +45,11 @@ export function ProgressCaption({
           )}
         </span>
       ) : null}
-      {note != null ? <span className={styles.note}>{note}</span> : null}
+      {note != null ? (
+        <span id={noteId} className={styles.note}>
+          {note}
+        </span>
+      ) : null}
     </div>
   );
 }

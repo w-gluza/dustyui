@@ -32,7 +32,21 @@
   font-size: 0.875rem;
 }
 
+.caption > :first-child,
+.ends > * {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.ends > :last-child {
+  flex-shrink: 0;
+  max-inline-size: 50%;
+  text-align: end;
+}
+
 .value {
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--dusty-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -120,7 +134,7 @@
 }
 
 .track[data-indeterminate]:dir(rtl) .fill {
-  animation-direction: reverse;
+  animation-name: travel-back;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -128,8 +142,9 @@
     transition: none;
   }
 
-  .track[data-indeterminate] .fill {
-    inline-size: 100%;
+  .track[data-indeterminate] .fill,
+  .track[data-indeterminate]:dir(rtl) .fill {
+    margin-inline: auto;
     animation: breathe 1.6s ease-in-out infinite alternate;
   }
 }
@@ -137,6 +152,11 @@
 @media (forced-colors: active) {
   .track {
     border-color: CanvasText;
+  }
+
+  .editorial,
+  .editorial .track {
+    border: 1px solid CanvasText;
   }
 
   .fill {
@@ -151,6 +171,16 @@
 
   to {
     translate: 250% 0;
+  }
+}
+
+@keyframes travel-back {
+  from {
+    translate: 100% 0;
+  }
+
+  to {
+    translate: -250% 0;
   }
 }
 

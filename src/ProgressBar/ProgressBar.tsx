@@ -1,4 +1,9 @@
-import type { ComponentProps, CSSProperties, ReactNode } from "react";
+import {
+  useId,
+  type ComponentProps,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import clsx from "clsx";
 import visuallyHidden from "../styles/visuallyHidden.module.css";
 import { ProgressCaption } from "./ProgressCaption.js";
@@ -58,8 +63,17 @@ export function ProgressBar({
   startLabel,
   endLabel,
   className,
+  "aria-describedby": describedBy,
+  "aria-details": details,
   ...props
 }: ProgressBarProps) {
+  const id = useId();
+  const hasNote = variant === "editorial" && note != null;
+  const hasEnds = Boolean(startLabel) || Boolean(endLabel);
+  const noteId = hasNote ? `${id}-note` : undefined;
+  const endsId = hasEnds ? `${id}-ends` : undefined;
+  const description =
+    [describedBy, noteId, endsId].filter(Boolean).join(" ") || undefined;
   const share = value === undefined ? undefined : shareOf(value, max);
   const percent = share === undefined ? undefined : Math.round(share * 100);
   const fill = { "--progress-share": share } as CSSProperties;
@@ -82,12 +96,15 @@ export function ProgressBar({
           percent={percent}
           valueLabel={valueLabel}
           note={note}
+          noteId={noteId}
         />
       ) : null}
       <progress
         className={visuallyHidden.visuallyHidden}
         aria-label={label}
         aria-valuetext={valueLabel}
+        aria-describedby={description}
+        aria-details={details}
         max={share === undefined ? undefined : 1}
         value={share}
       />
@@ -98,8 +115,8 @@ export function ProgressBar({
       >
         <span className={styles.fill} style={fill} />
       </span>
-      {startLabel || endLabel ? (
-        <div className={styles.ends}>
+      {hasEnds ? (
+        <div id={endsId} className={styles.ends}>
           <span>{startLabel}</span>
           <span>{endLabel}</span>
         </div>
