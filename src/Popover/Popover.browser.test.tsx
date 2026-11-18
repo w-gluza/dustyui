@@ -517,4 +517,27 @@ describe("Popover", () => {
       }
     },
   );
+
+  it("closes after a choice in a native select, but not while arrowing through it", async () => {
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <select aria-label="Meter" defaultValue="3/4">
+          <option>3/4</option>
+          <option>4/4</option>
+          <option>6/8</option>
+        </select>
+      </Popover>,
+    );
+    const select = screen.getByRole("combobox", { name: "Meter" });
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    select.element().focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(isOpen()).toBe(true);
+
+    await userEvent.selectOptions(select, "6/8");
+
+    await expect.element(select).toHaveValue("6/8");
+    expect(isOpen()).toBe(false);
+  });
 });

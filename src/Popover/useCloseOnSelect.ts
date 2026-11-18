@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from "react";
 
 const CHOICES =
   'input[type="radio"], input[type="checkbox"], [role="option"], [role="menuitemradio"], [role="menuitemcheckbox"]';
+const CHANGES = `${CHOICES}, select`;
 const ACTIONS = 'button, a[href], [role="menuitem"]';
 
 export function useCloseOnSelect<Panel extends HTMLElement>(
@@ -44,7 +45,7 @@ export function useCloseOnSelect<Panel extends HTMLElement>(
       if (
         !arrowing &&
         event.target instanceof Element &&
-        event.target.matches(CHOICES)
+        event.target.matches(CHANGES)
       ) {
         panel.hidePopover();
       }
