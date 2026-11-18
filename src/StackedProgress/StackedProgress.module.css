@@ -89,7 +89,45 @@
   background-color: var(--segment-color);
 }
 
+.separate {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.separateItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.125rem 0.5rem;
+  align-items: baseline;
+}
+
+.segmentTrack {
+  display: block;
+  grid-column: 1 / -1;
+  block-size: var(--stacked-size);
+  overflow: hidden;
+  border-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-surface-sunken);
+}
+
+.segmentFill {
+  display: block;
+  inline-size: calc(var(--segment-grow) * 100%);
+  block-size: 100%;
+  background-color: var(--dusty-action);
+}
+
 @media (forced-colors: active) {
+  .segmentTrack {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .segmentFill {
+    forced-color-adjust: none;
+    background-color: Highlight;
+  }
+
   .segment,
   .dot {
     forced-color-adjust: none;

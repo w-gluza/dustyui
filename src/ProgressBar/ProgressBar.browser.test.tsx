@@ -36,6 +36,9 @@ describe("ProgressBar", () => {
     [1.4, 1, 1],
     [-2, 1, 0],
     [5, 0, 0],
+    [Number.NaN, 1, 0],
+    [Infinity, 1, 0],
+    [0.5, Infinity, 0],
   ])("clamps %d of %d to %d", async (value, max, expected) => {
     const screen = await render(
       <ProgressBar label="Upload" value={value} max={max} />,

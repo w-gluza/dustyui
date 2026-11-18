@@ -1,8 +1,11 @@
+"use client";
+
 import type { ComponentProps } from "react";
 import clsx from "clsx";
 import styles from "./TrackList.module.css";
 
 export interface Track {
+  id?: string | undefined;
   title: string;
   duration: string;
 }
@@ -34,7 +37,13 @@ export function TrackList({
       aria-label={label}
     >
       {tracks.map((track, index) => (
-        <li key={`${String(index)}-${track.title}`}>
+        <li
+          key={
+            track.id === undefined
+              ? `index:${String(index)}-${track.title}`
+              : `id:${track.id}`
+          }
+        >
           <button
             type="button"
             className={styles.track}

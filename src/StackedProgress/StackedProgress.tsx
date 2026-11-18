@@ -49,32 +49,57 @@ export function StackedProgress({
     value: Math.max(0, segment.value),
     tone: TONES[index % TONES.length],
   }));
+  const hasMoreSegmentsThanTones = parts.length > TONES.length;
   const total = parts.reduce((sum, part) => sum + part.value, 0);
   const whole = Math.max(max, total);
   const rest = whole - total;
 
   return (
     <div {...props} className={clsx(styles.stacked, styles[size], className)}>
-      <div className={styles.bar} aria-hidden="true">
-        {parts.map((part, index) =>
-          part.value > 0 ? (
-            <span
-              key={`${String(index)}-${part.label}`}
-              className={clsx(styles.segment, part.tone)}
-              style={grow(part.value)}
-            />
-          ) : null,
-        )}
-        {rest > 0 ? (
-          <span className={styles.segment} style={grow(rest)} />
-        ) : null}
-      </div>
+      {!hasMoreSegmentsThanTones ? (
+        <div className={styles.bar} aria-hidden="true">
+          {parts.map((part, index) =>
+            part.value > 0 ? (
+              <span
+                key={`${String(index)}-${part.label}`}
+                className={clsx(styles.segment, part.tone)}
+                style={grow(part.value)}
+              />
+            ) : null,
+          )}
+          {rest > 0 ? (
+            <span className={styles.segment} style={grow(rest)} />
+          ) : null}
+        </div>
+      ) : null}
       <ul
-        className={clsx(styles.legend, legend === "grid" && styles.grid)}
+        className={clsx(
+          styles.legend,
+          legend === "grid" && styles.grid,
+          hasMoreSegmentsThanTones && styles.separate,
+        )}
         aria-label={label}
       >
         {parts.map((part, index) => {
           const percent = `${String(whole > 0 ? Math.round((part.value / whole) * 100) : 0)}%`;
+
+          if (hasMoreSegmentsThanTones) {
+            return (
+              <li
+                key={`${String(index)}-${part.label}`}
+                className={styles.separateItem}
+              >
+                <span className={styles.name}>{part.label}</span>
+                <span className={styles.share}>{percent}</span>
+                <span className={styles.segmentTrack} aria-hidden="true">
+                  <span
+                    className={styles.segmentFill}
+                    style={grow(whole > 0 ? part.value / whole : 0)}
+                  />
+                </span>
+              </li>
+            );
+          }
 
           return (
             <li key={`${String(index)}-${part.label}`} className={styles.item}>

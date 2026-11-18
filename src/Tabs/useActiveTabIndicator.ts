@@ -1,12 +1,16 @@
 import { useLayoutEffect, useRef, type RefObject } from "react";
 
+import { getEnabledTabs } from "./getEnabledTabs.js";
+
 interface IndicatorRefs {
   listRef: RefObject<HTMLDivElement | null>;
   rowRef: RefObject<HTMLDivElement | null>;
 }
 
 function place(list: HTMLElement, row: HTMLElement): boolean {
-  const active = row.querySelector<HTMLElement>('[aria-selected="true"]');
+  const active = getEnabledTabs(row).find(
+    (tab) => tab.getAttribute("aria-selected") === "true",
+  );
 
   if (!active) {
     return false;

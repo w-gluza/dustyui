@@ -948,4 +948,46 @@ describe("ObjectInspector wording and wiring", () => {
 
     expect(valueColour("(...)")).toBe(tokenColour("--dusty-text"));
   });
+
+  it("announces the new count when opening a row reveals more matches", async () => {
+    const value = Object.assign(new Uint8Array(100_001), { note: "needle" });
+    const screen = await render(
+      <ObjectInspector label="Bytes" value={value} searchable />,
+    );
+
+    await screen.getByRole("searchbox").fill("needle");
+    await expect
+      .poll(() => announcements(), { timeout: 3000 })
+      .toEqual(["No matches, searched in part"]);
+
+    await screen.getByRole("treeitem", { name: "Properties" }).click();
+
+    await expect
+      .poll(() => announcements().at(-1), { timeout: 3000 })
+      .toBe("1 match");
+  });
+
+  it("words a read failure as asked, keeping the reason", async () => {
+    const hostile = new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("refused");
+        },
+      },
+    );
+    const screen = await render(
+      <ObjectInspector
+        label="Hostile"
+        value={{ hostile }}
+        labels={{ unreadable: (reason) => `Nie mozna odczytac: ${reason}` }}
+      />,
+    );
+
+    await screen.getByRole("treeitem", { name: /^hostile/u }).click();
+
+    await expect
+      .poll(() => announcements())
+      .toEqual(["Nie mozna odczytac: refused"]);
+  });
 });

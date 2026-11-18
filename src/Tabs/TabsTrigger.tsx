@@ -2,6 +2,7 @@
 
 import type { ComponentProps, KeyboardEvent } from "react";
 import clsx from "clsx";
+import { getEnabledTabs } from "./getEnabledTabs.js";
 import { tabId, panelId, useTabs } from "./tabsContext.js";
 import styles from "./Tabs.module.css";
 
@@ -10,14 +11,6 @@ export interface TabsTriggerProps extends Omit<
   "value" | "type" | "role" | "dangerouslySetInnerHTML"
 > {
   value: string;
-}
-
-function enabledTabs(from: HTMLElement): HTMLButtonElement[] {
-  return Array.from(
-    from
-      .closest('[role="tablist"]')
-      ?.querySelectorAll<HTMLButtonElement>('[role="tab"]:enabled') ?? [],
-  );
 }
 
 function targetIndex(
@@ -58,7 +51,11 @@ export function TabsTrigger({
     if (event.defaultPrevented) {
       return;
     }
-    const all = enabledTabs(event.currentTarget);
+    const list = event.currentTarget.closest<HTMLElement>('[role="tablist"]');
+    if (!list) {
+      return;
+    }
+    const all = getEnabledTabs(list);
     const rtl = getComputedStyle(event.currentTarget).direction === "rtl";
     const index = targetIndex(
       event.key,

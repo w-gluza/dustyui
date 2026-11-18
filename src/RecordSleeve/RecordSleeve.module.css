@@ -33,7 +33,8 @@
   box-shadow: 0 0.5rem 1rem -0.5rem var(--dusty-illustration-shadow);
 }
 
-.sleeve > :where(img, svg) {
+.sleeve > :where(img, svg, picture),
+.sleeve > picture > img {
   display: block;
   inline-size: 100%;
   block-size: 100%;

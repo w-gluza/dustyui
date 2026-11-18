@@ -40,7 +40,9 @@ export type ProgressBarProps =
   PlainProgressBarProps | EditorialProgressBarProps;
 
 function shareOf(value: number, max: number): number {
-  return max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
+  return Number.isFinite(value) && Number.isFinite(max) && max > 0
+    ? Math.min(1, Math.max(0, value / max))
+    : 0;
 }
 
 export function ProgressBar({

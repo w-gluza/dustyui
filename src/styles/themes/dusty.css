@@ -15,10 +15,10 @@
   --dusty-action-active: light-dark(#193baf, #7692f2);
   --dusty-on-action: light-dark(#fff, #111827);
   --dusty-status-danger: light-dark(#b83f39, #ff9a91);
-  --dusty-syntax-string: light-dark(#b55c45, #f0a58d);
-  --dusty-syntax-number: light-dark(#315ceb, #91a9ff);
-  --dusty-syntax-boolean: light-dark(#8652a8, #c79be0);
-  --dusty-syntax-function: light-dark(#477d64, #9daf9b);
+  --dusty-syntax-string: light-dark(#9a4936, #f0a58d);
+  --dusty-syntax-number: light-dark(#2852d0, #91a9ff);
+  --dusty-syntax-boolean: light-dark(#774497, #c79be0);
+  --dusty-syntax-function: light-dark(#38664f, #9daf9b);
   --dusty-illustration-primary: light-dark(#e98973, #d98470);
   --dusty-illustration-secondary: light-dark(#9daf9b, #8fa18d);
   --dusty-illustration-highlight: light-dark(#f1c86a, #e3bd66);

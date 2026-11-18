@@ -10,6 +10,26 @@ const TRACKS = [
 ] as const;
 
 describe("TrackList", () => {
+  it("preserves focus across reorder when tracks have stable IDs", async () => {
+    const tracks = TRACKS.map((track, index) => ({
+      ...track,
+      id: String(index),
+    }));
+    const onTrackSelect = vi.fn();
+    const example = (items: typeof tracks) => (
+      <TrackList label="Tracks" tracks={items} onTrackSelect={onTrackSelect} />
+    );
+    const screen = await render(example(tracks));
+    const first = screen.getByRole("button", { name: /Dawn Static/u });
+    await userEvent.tab();
+    await expect.element(first).toHaveFocus();
+
+    await screen.rerender(example([...tracks].reverse()));
+    await expect.element(first).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(onTrackSelect).toHaveBeenCalledExactlyOnceWith(2);
+  });
+
   it("is a named, ordered list with one button per track", async () => {
     const screen = await render(
       <TrackList

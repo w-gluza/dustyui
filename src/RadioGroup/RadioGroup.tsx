@@ -35,9 +35,11 @@ export function RadioGroup({
   defaultValue = "",
   onValueChange,
   className,
+  name,
+  form,
   ...props
 }: RadioGroupProps) {
-  const name = useId();
+  const generatedName = useId();
   const [value, setValue] = useControllableState(
     controlledValue,
     defaultValue,
@@ -45,7 +47,12 @@ export function RadioGroup({
   );
 
   return (
-    <fieldset {...props} className={clsx(styles.group, className)}>
+    <fieldset
+      {...props}
+      name={name}
+      form={form}
+      className={clsx(styles.group, className)}
+    >
       <legend
         className={legendHidden ? visuallyHidden.visuallyHidden : styles.legend}
       >
@@ -56,7 +63,8 @@ export function RadioGroup({
           <input
             className={visuallyHidden.visuallyHidden}
             type="radio"
-            name={name}
+            name={name ?? generatedName}
+            form={form}
             value={option.value}
             checked={option.value === value}
             onChange={() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useId,
   useState,
   type ComponentProps,
@@ -8,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import clsx from "clsx";
+import { assignRef } from "../assignRef.js";
 import { useCloseOnSelect } from "./useCloseOnSelect.js";
 import styles from "./Popover.module.css";
 
@@ -32,12 +34,21 @@ export function Popover({
   closeOnSelect = false,
   className,
   children,
+  ref,
+  onToggle,
   ...props
 }: PopoverProps) {
   const id = useId();
   const panelId = `${id}-panel`;
   const [open, setOpen] = useState(false);
   const panelRef = useCloseOnSelect<HTMLDivElement>(closeOnSelect);
+  const setPanel = useCallback(
+    (panel: HTMLDivElement | null) => {
+      panelRef.current = panel;
+      return assignRef(ref, panel);
+    },
+    [panelRef, ref],
+  );
   const anchor = {
     "--popover-anchor": `--dusty-popover-${id.replace(/[^a-z0-9]/giu, "")}`,
   } as CSSProperties;
@@ -58,13 +69,14 @@ export function Popover({
       </button>
       <div
         {...props}
-        ref={panelRef}
+        ref={setPanel}
         id={panelId}
         popover="auto"
         className={clsx(styles.panel, className)}
         data-align={align}
         onToggle={(event) => {
           setOpen(event.newState === "open");
+          onToggle?.(event);
         }}
       >
         {children}

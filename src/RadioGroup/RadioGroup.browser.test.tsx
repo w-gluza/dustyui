@@ -11,6 +11,30 @@ const METERS = [
 ] as const;
 
 describe("RadioGroup", () => {
+  it.each([false, true])(
+    "submits the named value when outside the form is %s",
+    async (outside) => {
+      const group = (
+        <RadioGroup
+          legend="Time signature"
+          options={METERS}
+          defaultValue="4/4"
+          name="meter"
+          form={outside ? "meter-form" : undefined}
+        />
+      );
+      await render(
+        <>
+          <form id="meter-form">{outside ? null : group}</form>
+          {outside ? group : null}
+        </>,
+      );
+
+      const form = document.querySelector<HTMLFormElement>("#meter-form")!;
+      expect(new FormData(form).get("meter")).toBe("4/4");
+    },
+  );
+
   it("is a named group of radios with the chosen one checked", async () => {
     const screen = await render(
       <RadioGroup

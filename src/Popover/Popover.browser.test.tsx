@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { createRef, type ToggleEvent } from "react";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { userEvent } from "vitest/browser";
 import { Popover } from "../index.js";
@@ -17,6 +18,31 @@ function panelOf(testId = "panel"): HTMLElement {
 const isOpen = () => panelOf().matches(":popover-open");
 
 describe("Popover", () => {
+  it("forwards the panel ref and reports both native toggle events", async () => {
+    const ref = createRef<HTMLDivElement>();
+    const onToggle = vi.fn<(event: ToggleEvent<HTMLDivElement>) => void>();
+    const screen = await render(
+      <Popover
+        ref={ref}
+        onToggle={onToggle}
+        trigger="Options"
+        data-testid="panel"
+      >
+        Content
+      </Popover>,
+    );
+    expect(ref.current).toBe(panelOf());
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    await expect
+      .poll(() => onToggle.mock.calls.map(([event]) => event.newState))
+      .toEqual(["open"]);
+    await userEvent.keyboard("{Escape}");
+    await expect
+      .poll(() => onToggle.mock.calls.map(([event]) => event.newState))
+      .toEqual(["open", "closed"]);
+  });
+
   it("keeps its content hidden until the trigger is pressed", async () => {
     const screen = await render(
       <Popover trigger="Options" data-testid="panel">

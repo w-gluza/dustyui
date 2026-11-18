@@ -4,22 +4,35 @@ import { render } from "vitest-browser-react";
 import { userEvent } from "vitest/browser";
 import { TempoDial } from "../index.js";
 
-function drag(dial: Element, from: [number, number], to: [number, number]) {
+function pointer(
+  dial: Element,
+  type: string,
+  [x, y]: [number, number],
+  pointerId = 1,
+) {
   const box = dial.getBoundingClientRect();
-  const fire = (type: string, [x, y]: [number, number]) =>
-    dial.dispatchEvent(
-      new PointerEvent(type, {
-        bubbles: true,
-        button: 0,
-        pointerId: 1,
-        clientX: box.left + box.width * x,
-        clientY: box.top + box.height * y,
-      }),
-    );
+  dial.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      button: 0,
+      pointerId,
+      clientX: box.left + box.width * x,
+      clientY: box.top + box.height * y,
+    }),
+  );
+}
 
-  fire("pointerdown", from);
-  fire("pointermove", to);
-  fire("pointerup", to);
+function drag(dial: Element, from: [number, number], to: [number, number]) {
+  const capture = vi
+    .spyOn(dial, "setPointerCapture")
+    .mockImplementation(() => {});
+  try {
+    pointer(dial, "pointerdown", from);
+    pointer(dial, "pointermove", to);
+    pointer(dial, "pointerup", to);
+  } finally {
+    capture.mockRestore();
+  }
 }
 
 function Dial(props: { onValueChange?: (value: number) => void }) {
@@ -39,6 +52,31 @@ function Dial(props: { onValueChange?: (value: number) => void }) {
 }
 
 describe("TempoDial", () => {
+  it("ignores a second pointer and stops when the active pointer loses capture", async () => {
+    const onValueChange = vi.fn();
+    const screen = await render(<Dial onValueChange={onValueChange} />);
+    const dial = screen.getByTestId("dial").element();
+    const capture = vi
+      .spyOn(dial, "setPointerCapture")
+      .mockImplementation(() => {});
+    try {
+      pointer(dial, "pointerdown", [0.5, 0.05]);
+      pointer(dial, "pointerdown", [0.05, 0.5], 2);
+      pointer(dial, "pointermove", [0.95, 0.5], 2);
+      pointer(dial, "pointerup", [0.95, 0.5], 2);
+      expect(onValueChange).not.toHaveBeenCalled();
+
+      pointer(dial, "pointermove", [0.95, 0.5]);
+      expect(onValueChange).toHaveBeenCalledExactlyOnceWith(200);
+
+      pointer(dial, "lostpointercapture", [0.95, 0.5]);
+      pointer(dial, "pointermove", [0.5, 0.95]);
+      expect(onValueChange).toHaveBeenCalledTimes(1);
+    } finally {
+      capture.mockRestore();
+    }
+  });
+
   it("is a named slider that reads its value with the unit", async () => {
     const screen = await render(<Dial />);
     const slider = screen.getByRole("slider", { name: "Tempo" });

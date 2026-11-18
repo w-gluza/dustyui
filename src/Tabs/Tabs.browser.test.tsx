@@ -52,6 +52,40 @@ async function settle(root: Element): Promise<void> {
 }
 
 describe("Tabs", () => {
+  it.each(["remove", "disable"] as const)(
+    "keeps an enabled tab stop when the selected tab is changed by %s",
+    async (change) => {
+      const example = (changed: boolean) => (
+        <Tabs value="selected">
+          <TabsList label="Choices">
+            {!changed || change !== "remove" ? (
+              <TabsTrigger value="selected" disabled={changed}>
+                Selected
+              </TabsTrigger>
+            ) : null}
+            <TabsTrigger value="other">Other</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      );
+      const screen = await render(example(false));
+      const other = screen.getByRole("tab", { name: "Other" });
+      await expect.element(other).toHaveAttribute("tabindex", "-1");
+
+      await screen.rerender(example(true));
+      await expect.element(other).toHaveAttribute("tabindex", "0");
+      await userEvent.tab();
+      await expect.element(other).toHaveFocus();
+      await expect.element(other).toHaveAttribute("aria-selected", "false");
+    },
+  );
+
+  it("lets keyboard users enter a text-only panel", async () => {
+    const screen = await render(<Example />);
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect.element(screen.getByRole("tabpanel")).toHaveFocus();
+  });
+
   it("is a named tab list whose tabs and panels point at each other", async () => {
     const screen = await render(<Example />);
     const list = screen.getByRole("tablist", { name: "Account settings" });

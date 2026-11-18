@@ -56,8 +56,10 @@ function getArrayLength(value: object): number {
   }
 }
 
+export const UNREADABLE = "Could not be read: ";
+
 function getUninspectablePreview(reason: string): string {
-  return `Could not be read: ${getTruncatedText(reason, MAX_TEXT_LENGTH)}`;
+  return `${UNREADABLE}${getTruncatedText(reason, MAX_TEXT_LENGTH)}`;
 }
 
 function getFunctionPreview(value: object): string {

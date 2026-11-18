@@ -21,6 +21,8 @@
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   color: var(--dusty-text-muted);
 }
 
@@ -32,6 +34,8 @@
 }
 
 .value {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   margin: 0;
   margin-inline-start: auto;
   font-weight: var(--dusty-weight-semibold);

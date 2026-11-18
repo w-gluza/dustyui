@@ -12,13 +12,19 @@ export interface TabsContentProps extends Omit<
   value: string;
 }
 
-export function TabsContent({ value, className, ...props }: TabsContentProps) {
+export function TabsContent({
+  value,
+  className,
+  tabIndex = 0,
+  ...props
+}: TabsContentProps) {
   const tabs = useTabs("TabsContent");
 
   return (
     <div
       {...props}
       role="tabpanel"
+      tabIndex={tabIndex}
       id={panelId(tabs.baseId, value)}
       className={clsx(styles.content, className)}
       aria-labelledby={tabId(tabs.baseId, value)}

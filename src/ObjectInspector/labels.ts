@@ -14,6 +14,7 @@ export interface ObjectInspectorLabels {
   searchStatus: (status: ObjectInspectorSearchStatus) => string;
   matchAnnouncement: (status: string, path: string) => string;
   noProperties: string;
+  unreadable: (reason: string, message: string) => string;
   detailsRegion: (label: string) => string;
   path: string;
   type: string;
@@ -50,6 +51,7 @@ export const DEFAULT_LABELS: ObjectInspectorLabels = {
   },
   matchAnnouncement: (status, path) => `Match ${status}: ${path}`,
   noProperties: "No properties",
+  unreadable: (_reason, message) => message,
   detailsRegion: (label) => `Selected value in ${label}`,
   path: "Path",
   type: "Type",

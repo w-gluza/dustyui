@@ -17,7 +17,7 @@ import {
   type PathStep,
 } from "./getPath.js";
 import { getEscapedText } from "./getEscapedText.js";
-import { getPreview, type Members } from "./getPreview.js";
+import { getPreview, UNREADABLE, type Members } from "./getPreview.js";
 import { getRanges } from "./getRanges.js";
 import { getTruncatedText } from "./getTruncatedText.js";
 import { getValueKind, type ValueKind } from "./getValueKind.js";
@@ -284,7 +284,7 @@ class PropertiesNode implements InspectorNode {
     return this.#failure === undefined
       ? PROPERTIES
       : getEscapedText(
-          `${PROPERTIES}: Could not be read: ${getTruncatedText(this.#failure, FAILURE_LENGTH)}`,
+          `${PROPERTIES}: ${UNREADABLE}${getTruncatedText(this.#failure, FAILURE_LENGTH)}`,
         );
   }
 

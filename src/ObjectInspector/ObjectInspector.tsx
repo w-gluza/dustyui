@@ -23,6 +23,7 @@ import {
 import { getEscapedText } from "./describe/getEscapedText.js";
 import { getNode, getNodeTrail } from "./describe/getNode.js";
 import { isPropertiesId, ROOT_ID } from "./describe/getPath.js";
+import { UNREADABLE } from "./describe/getPreview.js";
 import { getTruncatedText } from "./describe/getTruncatedText.js";
 import { getLabelText } from "./getLabelText.js";
 import { hasValueText } from "./getValueText.js";
@@ -148,7 +149,7 @@ export function ObjectInspector({
     }
     const timer = setTimeout(() => announceStatus(), ANNOUNCE_DELAY);
     return () => clearTimeout(timer);
-  }, [searched, current]);
+  }, [searched, current, propertiesRead]);
 
   function announceEmpty(next: ReadonlySet<string>) {
     const [opened, ...others] = [...next].filter((id) => !expanded.has(id));
@@ -162,7 +163,17 @@ export function ObjectInspector({
     const isUnread =
       node.kind === "uninspectable" ||
       (node.kind === "range" && node.size === undefined);
-    announce(isUnread ? node.preview : labels.noProperties);
+    if (!isUnread) {
+      announce(labels.noProperties);
+      return;
+    }
+    const at = node.preview.indexOf(UNREADABLE);
+    announce(
+      labels.unreadable(
+        at < 0 ? node.preview : node.preview.slice(at + UNREADABLE.length),
+        node.preview,
+      ),
+    );
   }
 
   function changeExpanded(next: ReadonlySet<string>) {

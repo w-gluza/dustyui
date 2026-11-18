@@ -19,6 +19,25 @@ function segmentWidths(root: Element): number[] {
 }
 
 describe("StackedProgress", () => {
+  it("gives each share its own labeled bar when there are more than five segments", async () => {
+    const segments = Array.from({ length: 7 }, (_, index) => ({
+      label: `Segment ${String(index + 1)}`,
+      value: index + 1,
+    }));
+    const screen = await render(
+      <StackedProgress label="Storage" segments={segments} max={100} />,
+    );
+    const items = screen.getByRole("listitem").elements();
+
+    expect(items).toHaveLength(7);
+    for (const [index, item] of items.entries()) {
+      expect(item.textContent).toBe(
+        `Segment ${String(index + 1)}${String(index + 1)}%`,
+      );
+      expect(item.querySelector("[aria-hidden='true'] > span")).not.toBeNull();
+    }
+  });
+
   it("is a named list that reads each share with its label", async () => {
     const screen = await render(
       <StackedProgress label="Project time" segments={SEGMENTS} />,
