@@ -442,6 +442,26 @@ describe("ProgressBar", () => {
     );
   });
 
+  it("wraps a long value when space runs out, and leaves room for the label", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "160px" }}>
+        <ProgressBar
+          label="Upload"
+          showLabel
+          value={0.4}
+          valueLabel="12.4 megabytes of 48.0 megabytes uploaded so far"
+          data-testid="bar"
+        />
+      </div>,
+    );
+    const root = screen.getByTestId("bar").element();
+    const label = screen.getByText("Upload").element();
+
+    expect(root.scrollWidth).toBeLessThanOrEqual(160);
+    expect(root.getBoundingClientRect().width).toBe(160);
+    expect(label.getBoundingClientRect().width).toBeGreaterThanOrEqual(40);
+  });
+
   it("keeps its own wording on an indeterminate bar", async () => {
     const screen = await render(
       <ProgressBar label="Loading" showLabel valueLabel="Starting" />,

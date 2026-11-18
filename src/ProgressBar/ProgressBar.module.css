@@ -46,7 +46,9 @@
 
 .value {
   flex-shrink: 0;
-  white-space: nowrap;
+  max-inline-size: 60%;
+  overflow-wrap: anywhere;
+  text-align: end;
   color: var(--dusty-text-muted);
   font-variant-numeric: tabular-nums;
 }
