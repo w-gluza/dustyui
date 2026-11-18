@@ -1,10 +1,3 @@
-.copy {
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
-}
-
 .copy[data-status="copied"]:not([data-variant="primary"]),
 .copy[data-status="copied"]:not([data-variant="primary"]):enabled:hover:not(
     :active

@@ -477,6 +477,64 @@ describe("Button", () => {
     });
   });
 
+  it("shows a pointer when it can be pressed and says why when it cannot", async () => {
+    const screen = await render(
+      <>
+        <Button>Ready</Button>
+        <Button disabled>Off</Button>
+        <Button loading>Busy</Button>
+      </>,
+    );
+    const cursor = (name: string) =>
+      getComputedStyle(screen.getByRole("button", { name }).element()).cursor;
+
+    expect(cursor("Ready")).toBe("pointer");
+    expect(cursor("Off")).toBe("not-allowed");
+    expect(cursor("Busy")).toBe("progress");
+  });
+
+  it("fades its colours and leaves its size and position alone", async () => {
+    const screen = await render(<Button>Save</Button>);
+    const style = getComputedStyle(screen.getByRole("button").element());
+
+    expect(style.transitionProperty).toBe(
+      "background-color, border-color, color",
+    );
+    expect(style.transitionDuration).toBe("0.2s, 0.2s, 0.2s");
+  });
+
+  it("draws the spinner as large as an icon", async () => {
+    const screen = await render(
+      <Button loading icon={<svg data-testid="icon" viewBox="0 0 1 1" />}>
+        Save
+      </Button>,
+    );
+    const button = screen.getByRole("button").element();
+    const spinner = button.querySelector("[aria-hidden='true']:empty");
+    const icon = screen.getByTestId("icon").element().parentElement;
+
+    expect(spinner?.getBoundingClientRect().width).toBe(
+      icon?.getBoundingClientRect().width,
+    );
+  });
+
+  it("gives a pressed plain button a thicker underline outside any hover query", async () => {
+    await render(<Button variant="plain">Cancel</Button>);
+    const pressed = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .filter(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule &&
+          rule.selectorText.includes("plain") &&
+          rule.selectorText.includes(":active") &&
+          rule.selectorText.includes("label"),
+      );
+
+    expect(pressed.map((rule) => rule.style.textDecorationThickness)).toEqual([
+      "2px",
+    ]);
+  });
+
   it("is rounded unless asked to be a pill", async () => {
     const screen = await render(
       <>

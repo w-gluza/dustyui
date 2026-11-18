@@ -10,6 +10,11 @@
   font-weight: var(--dusty-weight-semibold);
   line-height: 1.25;
   overflow-wrap: anywhere;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .small {
@@ -82,8 +87,8 @@
 
 .spinner {
   box-sizing: border-box;
-  inline-size: 1em;
-  block-size: 1em;
+  inline-size: 1.25em;
+  block-size: 1.25em;
   border: 2px solid currentcolor;
   border-inline-end-color: transparent;
   border-radius: var(--dusty-radius-full);
@@ -120,6 +125,11 @@
   color: var(--dusty-text);
 }
 
+.plain:enabled:not([aria-disabled="true"]):active .label {
+  text-decoration-color: currentcolor;
+  text-decoration-thickness: 2px;
+}
+
 @media (hover: hover) {
   .plain:enabled:not([aria-disabled="true"]):hover {
     color: var(--dusty-text);
@@ -140,6 +150,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
   .spinner {
     animation: pulse 1.2s ease-in-out infinite alternate;
   }
