@@ -14,11 +14,7 @@ import { flushSync } from "react-dom";
 import clsx from "clsx";
 import type { HeadingLevel } from "../headingLevel.js";
 import { ExpandedView } from "./ExpandedView.js";
-import {
-  runMorph,
-  settleAnimations,
-  skipActiveMorph,
-} from "./morphTransition.js";
+import { runMorph, settleAnimations, skipMorphOf } from "./morphTransition.js";
 import { useModalDialog } from "./useModalDialog.js";
 import "./expandableCardTransition.css";
 import styles from "./ExpandableCard.module.css";
@@ -70,8 +66,14 @@ export function ExpandableCard({
     change(false);
   });
   const Heading = `h${level}` as const;
+  const Summary = typeof summary === "string" ? "p" : "div";
 
-  useEffect(() => skipActiveMorph, []);
+  useEffect(
+    () => () => {
+      skipMorphOf(cardRef);
+    },
+    [],
+  );
 
   function apply(next: boolean) {
     flushSync(() => {
@@ -83,10 +85,13 @@ export function ExpandableCard({
   }
 
   function change(next: boolean) {
-    flushSync(() => {
-      setMorphing(true);
-    });
     runMorph({
+      owner: cardRef,
+      begin: () => {
+        flushSync(() => {
+          setMorphing(true);
+        });
+      },
       update: () => {
         apply(next);
       },
@@ -148,7 +153,9 @@ export function ExpandableCard({
             </span>
           </button>
         </Heading>
-        {summary != null ? <p className={styles.summary}>{summary}</p> : null}
+        {summary != null ? (
+          <Summary className={styles.summary}>{summary}</Summary>
+        ) : null}
       </article>
       <dialog
         ref={dialogRef}

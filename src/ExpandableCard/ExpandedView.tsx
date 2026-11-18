@@ -30,6 +30,7 @@ export function ExpandedView({
   children,
 }: ExpandedViewProps) {
   const Heading = `h${level}` as const;
+  const Summary = typeof summary === "string" ? "p" : "div";
 
   return (
     <div className={styles.sheet}>
@@ -51,7 +52,7 @@ export function ExpandedView({
         <span style={titleStyle}>{title}</span>
       </Heading>
       {summary != null ? (
-        <p className={styles.dialogSummary}>{summary}</p>
+        <Summary className={styles.dialogSummary}>{summary}</Summary>
       ) : null}
       <div className={styles.content}>{children}</div>
     </div>

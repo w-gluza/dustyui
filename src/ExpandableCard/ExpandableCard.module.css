@@ -85,8 +85,18 @@
   text-wrap: pretty;
 }
 
+.summary > :first-child,
+.dialogSummary > :first-child {
+  margin-block-start: 0;
+}
+
+.summary > :last-child,
+.dialogSummary > :last-child {
+  margin-block-end: 0;
+}
+
 .dialog {
-  inline-size: min(40rem, calc(100vw - 2rem));
+  inline-size: min(40rem, calc(100dvi - 2rem));
   max-block-size: calc(100dvh - 2rem);
   padding: 0;
   overflow: auto;
@@ -106,7 +116,7 @@
   padding: var(--expandable-card-padding, 0.5rem);
 }
 
-.close {
+.sheet > .close {
   grid-area: 1 / 1;
   place-self: start end;
   margin: 0.5rem;

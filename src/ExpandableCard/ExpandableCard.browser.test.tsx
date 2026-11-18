@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { userEvent } from "vitest/browser";
+import { cdp, userEvent } from "vitest/browser";
 import { ExpandableCard } from "../index.js";
+
+function pressAndRelease(pressed: Element, released: Element): void {
+  pressed.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+  released.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
 
 function nameOf(element: Element | null): string {
   return element ? getComputedStyle(element).viewTransitionName : "";
@@ -149,8 +154,113 @@ describe("ExpandableCard", () => {
     await screen.getByText("Details").click();
     await expect.element(dialog).toBeVisible();
 
-    (dialog.element() as HTMLElement).click();
+    pressAndRelease(dialog.element(), dialog.element());
     await expect.poll(() => screen.getByRole("dialog").elements()).toEqual([]);
+  });
+
+  it("stays open when a text selection starts inside and ends on the backdrop", async () => {
+    const screen = await render(
+      <ExpandableCard title="Monument Valley" level={2}>
+        Details
+      </ExpandableCard>,
+    );
+
+    await screen.getByRole("button", { name: "Monument Valley" }).click();
+    const dialog = screen.getByRole("dialog");
+    await expect.element(dialog).toBeVisible();
+
+    pressAndRelease(screen.getByText("Details").element(), dialog.element());
+
+    await expect.element(dialog).toBeVisible();
+  });
+
+  it("morphs back into the card when closed straight after opening", async () => {
+    const screen = await render(
+      <ExpandableCard title="Monument Valley" level={2} data-testid="card">
+        Details
+      </ExpandableCard>,
+    );
+    const card = screen.getByTestId("card").element();
+    const names: string[] = [];
+    const watcher = new MutationObserver(() => {
+      names.push(nameOf(card));
+    });
+    watcher.observe(card, { attributes: true, attributeFilter: ["style"] });
+
+    await screen.getByRole("button", { name: "Monument Valley" }).click();
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => screen.getByRole("dialog").elements()).toEqual([]);
+    await expect.poll(() => nameOf(card)).toBe("none");
+    watcher.disconnect();
+
+    expect(names.filter((name) => name.endsWith("-card")).length).toBe(2);
+  });
+
+  it("leaves another card's morph running when a card is removed", async () => {
+    function Pair({ both }: { both: boolean }) {
+      return (
+        <>
+          <ExpandableCard title="Monument Valley" level={2}>
+            Details
+          </ExpandableCard>
+          {both ? (
+            <ExpandableCard title="Death Valley" level={2}>
+              Other
+            </ExpandableCard>
+          ) : null}
+        </>
+      );
+    }
+    const screen = await render(<Pair both />);
+    const skipped = vi.spyOn(ViewTransition.prototype, "skipTransition");
+
+    await screen.getByRole("button", { name: "Monument Valley" }).click();
+    await screen.rerender(<Pair both={false} />);
+
+    await expect.element(screen.getByRole("dialog")).toBeVisible();
+    expect(skipped).not.toHaveBeenCalled();
+    skipped.mockRestore();
+  });
+
+  it("opens and closes without a morph when motion is reduced", async () => {
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    const started = vi.spyOn(document, "startViewTransition");
+    const screen = await render(
+      <ExpandableCard title="Monument Valley" level={2}>
+        Details
+      </ExpandableCard>,
+    );
+
+    await screen.getByRole("button", { name: "Monument Valley" }).click();
+    await expect.element(screen.getByRole("dialog")).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => screen.getByRole("dialog").elements()).toEqual([]);
+    await session.send("Emulation.setEmulatedMedia", { features: [] });
+
+    expect(started).not.toHaveBeenCalled();
+    started.mockRestore();
+  });
+
+  it("holds a summary made of blocks without nesting them in a paragraph", async () => {
+    const screen = await render(
+      <ExpandableCard
+        title="Monument Valley"
+        level={2}
+        defaultExpanded
+        summary={<p>Sandstone buttes.</p>}
+      >
+        Details
+      </ExpandableCard>,
+    );
+
+    await expect.element(screen.getByRole("dialog")).toBeVisible();
+    expect(document.querySelector("p p")).toBeNull();
+    expect(screen.getByText("Sandstone buttes.").elements()).toHaveLength(2);
   });
 
   it("survives being closed while its details are still animating in", async () => {

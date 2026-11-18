@@ -1,24 +1,19 @@
 const TRANSITION_TYPE = "dusty-expandable-card";
 
-let activeTransition: ViewTransition | undefined;
+let active: { transition: ViewTransition; owner: object } | undefined;
 
 interface Morph {
+  owner: object;
+  begin: () => void;
   update: () => void;
   settle: () => void;
   done: () => void;
 }
 
-function startTransition(update: () => void): ViewTransition {
-  try {
-    return document.startViewTransition({ update, types: [TRANSITION_TYPE] });
-  } catch {
-    return document.startViewTransition(update);
-  }
-}
-
 function canAnimate(): boolean {
   return (
     "startViewTransition" in document &&
+    "types" in ViewTransition.prototype &&
     !matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
@@ -33,13 +28,15 @@ export function settleAnimations(root: Element | null | undefined) {
   }
 }
 
-export function skipActiveMorph() {
-  activeTransition?.skipTransition();
+export function skipMorphOf(owner: object) {
+  if (active?.owner === owner) {
+    active.transition.skipTransition();
+  }
 }
 
 export function runMorph(morph: Morph) {
-  if (activeTransition) {
-    const interrupted = activeTransition;
+  if (active) {
+    const interrupted = active.transition;
     interrupted.skipTransition();
     void interrupted.finished.finally(() => {
       requestAnimationFrame(() => {
@@ -53,13 +50,17 @@ export function runMorph(morph: Morph) {
     morph.done();
     return;
   }
+  morph.begin();
   morph.settle();
-  const transition = startTransition(morph.update);
-  activeTransition = transition;
+  const transition = document.startViewTransition({
+    update: morph.update,
+    types: [TRANSITION_TYPE],
+  });
+  active = { transition, owner: morph.owner };
   transition.ready.catch(() => undefined);
   void transition.finished.finally(() => {
-    if (activeTransition === transition) {
-      activeTransition = undefined;
+    if (active?.transition === transition) {
+      active = undefined;
     }
     morph.done();
   });
