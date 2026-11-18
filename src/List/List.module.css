@@ -148,16 +148,20 @@
 
 .actions {
   display: flex;
-  flex-shrink: 0;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
+  justify-content: end;
+  min-inline-size: 0;
 }
 
 .end {
   display: flex;
+  flex-wrap: wrap;
   grid-area: 1 / 2;
   gap: 0.75rem;
   align-items: center;
+  justify-content: end;
   align-self: center;
   min-inline-size: 0;
   margin-block: var(--list-padding-block);

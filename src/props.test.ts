@@ -12,6 +12,7 @@ import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
 import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
+import type { MilestoneProgressProps } from "./MilestoneProgress/MilestoneProgress.js";
 import type { BeatPatternProps } from "./BeatPattern/BeatPattern.js";
 import type { BeatKind } from "./BeatPattern/beatKind.js";
 import type { CalloutProps } from "./Callout/Callout.js";
@@ -89,6 +90,23 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
     expectTypeOf<
       Accepts<BeatPatternProps, Pattern & { "aria-label": string }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("require a label on milestone progress and refuse a second accessible name", () => {
+    interface Milestones {
+      label: string;
+      milestones: string[];
+      completed: number;
+    }
+    expectTypeOf<
+      Accepts<MilestoneProgressProps, Milestones>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<MilestoneProgressProps, Omit<Milestones, "label">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<MilestoneProgressProps, Milestones & { "aria-label": string }>
     >().toEqualTypeOf<false>();
   });
 

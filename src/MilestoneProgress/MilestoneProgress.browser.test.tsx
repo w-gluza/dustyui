@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cdp } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { MilestoneProgress } from "../index.js";
 
@@ -104,6 +105,10 @@ describe("MilestoneProgress", () => {
     [2, 7, 200],
     [4, 0.5, 300],
     [-3, 0, 0],
+    [9, 0, 300],
+    [Number.NaN, 0.5, 0],
+    [2, Number.NaN, 100],
+    [Infinity, 0, 0],
   ])(
     "with %d completed and %d of the way on, draws %dpx of line",
     async (completed, progress, expected) => {
@@ -213,5 +218,112 @@ describe("MilestoneProgress", () => {
     expect(
       screen.getByTestId("line").element().getBoundingClientRect().width,
     ).toBe(320);
+  });
+
+  it("keeps the list role that a list without markers loses in Safari", async () => {
+    const screen = await render(
+      <MilestoneProgress
+        label="Onboarding"
+        milestones={MILESTONES}
+        completed={1}
+      />,
+    );
+
+    await expect
+      .element(screen.getByRole("list", { name: "Onboarding" }))
+      .toHaveAttribute("role", "list");
+  });
+
+  it("says how far the current step has got when given the words", async () => {
+    const screen = await render(
+      <MilestoneProgress
+        label="Onboarding"
+        milestones={MILESTONES}
+        completed={2}
+        progress={0.4}
+        progressLabel="40% done"
+      />,
+    );
+    const items = screen.getByRole("listitem").elements();
+
+    expect(items[2]?.textContent).toBe("Build, 40% done");
+    expect(items[1]?.textContent).toBe("Design, completed");
+    expect(items[3]?.textContent).toBe("Ship");
+  });
+
+  it("lays its milestones out in one row without being told how many there are", async () => {
+    const screen = await render(
+      <div style={wide}>
+        <MilestoneProgress
+          label="Onboarding"
+          milestones={MILESTONES}
+          completed={1}
+          data-testid="line"
+        />
+      </div>,
+    );
+    const root = screen.getByTestId("line").element() as HTMLElement;
+    root.style.removeProperty("--milestone-count");
+    const tops = screen
+      .getByRole("listitem")
+      .elements()
+      .map((item) => item.getBoundingClientRect());
+
+    expect(new Set(tops.map((box) => box.top)).size).toBe(1);
+    expect(tops.map((box) => box.width)).toEqual([100, 100, 100, 100]);
+  });
+
+  it.each([[[]], [["Setup"]]] as const)(
+    "renders %j without a line to draw",
+    async (milestones) => {
+      const screen = await render(
+        <div style={wide}>
+          <MilestoneProgress
+            label="Onboarding"
+            milestones={milestones}
+            completed={1}
+            data-testid="line"
+          />
+        </div>,
+      );
+
+      expect(screen.getByRole("listitem").elements()).toHaveLength(
+        milestones.length,
+      );
+      expect(fillWidth(screen.getByTestId("line").element())).toBe(0);
+    },
+  );
+
+  it("tells the current step from the upcoming ones and draws the track in forced colours", async () => {
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "forced-colors", value: "active" }],
+    });
+    const screen = await render(
+      <MilestoneProgress
+        label="Onboarding"
+        milestones={MILESTONES}
+        completed={2}
+        data-testid="line"
+      />,
+    );
+    const markers = screen
+      .getByRole("listitem")
+      .elements()
+      .map((item) => getComputedStyle(item.firstElementChild as Element));
+    const track = getComputedStyle(
+      screen.getByTestId("line").element().firstElementChild as Element,
+    );
+    const seen = {
+      current: markers[2]?.borderTopWidth,
+      upcoming: markers[3]?.borderTopWidth,
+      track: track.borderTopWidth,
+    };
+    await session.send("Emulation.setEmulatedMedia", { features: [] });
+
+    expect(seen.current).not.toBe(seen.upcoming);
+    expect(seen.track).toBe("1px");
   });
 });

@@ -529,4 +529,45 @@ describe("List", () => {
       .element(screen.getByTestId("list"))
       .toHaveAttribute("role", "presentation");
   });
+
+  it.each([
+    ["static", {}],
+    ["linked", { href: "#paradiddle" }],
+  ] as const)(
+    "keeps every action of a %s row inside a narrow list and clickable",
+    async (_kind, action) => {
+      const screen = await render(
+        <div style={{ inlineSize: "180px" }}>
+          <List variant="contained" data-testid="list">
+            <ListItem
+              title="Paradiddle"
+              {...action}
+              actions={
+                <>
+                  <button type="button">Play</button>
+                  <button type="button">Save</button>
+                  <button type="button">Share</button>
+                </>
+              }
+            />
+          </List>
+        </div>,
+      );
+      const list = screen.getByTestId("list").element().getBoundingClientRect();
+
+      for (const name of ["Play", "Save", "Share"]) {
+        const button = screen.getByRole("button", { name }).element();
+        const box = button.getBoundingClientRect();
+
+        expect(box.left).toBeGreaterThanOrEqual(list.left);
+        expect(box.right).toBeLessThanOrEqual(list.right);
+        expect(
+          document.elementFromPoint(
+            box.left + box.width / 2,
+            box.top + box.height / 2,
+          ),
+        ).toBe(button);
+      }
+    },
+  );
 });

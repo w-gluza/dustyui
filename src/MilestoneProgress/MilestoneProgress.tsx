@@ -12,6 +12,7 @@ export interface MilestoneProgressProps extends Omit<
   completed: number;
   progress?: number | undefined;
   completedLabel?: string | undefined;
+  progressLabel?: string | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }
@@ -41,16 +42,23 @@ export function MilestoneProgress({
   completed,
   progress = 0,
   completedLabel = "completed",
+  progressLabel,
   className,
   style,
   ...props
 }: MilestoneProgressProps) {
   const count = milestones.length;
-  const reached = clamp(Math.floor(completed), 0, count);
+  const reached = Number.isFinite(completed)
+    ? clamp(Math.floor(completed), 0, count)
+    : 0;
   const layout = {
     ...style,
     "--milestone-count": count,
-    "--milestone-share": lineShare(reached, progress, count),
+    "--milestone-share": lineShare(
+      reached,
+      Number.isFinite(progress) ? progress : 0,
+      count,
+    ),
   } as CSSProperties;
 
   return (
@@ -62,16 +70,17 @@ export function MilestoneProgress({
       <span className={styles.track} aria-hidden="true">
         <span className={styles.fill} />
       </span>
-      <ol className={styles.list} aria-label={label}>
+      <ol role="list" className={styles.list} aria-label={label}>
         {milestones.map((name, index) => {
           const done = index < reached;
+          const current = index === reached;
 
           return (
             <li
               key={`${String(index)}-${name}`}
               className={styles.item}
               data-completed={done || undefined}
-              aria-current={index === reached ? "step" : undefined}
+              aria-current={current ? "step" : undefined}
             >
               <span className={styles.marker} aria-hidden="true">
                 {done ? <CheckIcon /> : null}
@@ -81,6 +90,11 @@ export function MilestoneProgress({
                 {done ? (
                   <span className={visuallyHidden.visuallyHidden}>
                     , {completedLabel}
+                  </span>
+                ) : null}
+                {current && progressLabel ? (
+                  <span className={visuallyHidden.visuallyHidden}>
+                    , {progressLabel}
                   </span>
                 ) : null}
               </span>
