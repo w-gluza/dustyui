@@ -213,6 +213,81 @@ describe("BarChart", () => {
     expect(shown("D4")).toBe("visible");
   });
 
+  it("keeps the current bar centred and as wide as the others in a crowded chart", async () => {
+    const many = Array.from({ length: 30 }, (_, index) => ({
+      label: `Day ${String(index)}`,
+      value: 1000 + index,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "240px" }}>
+        <BarChart label="This month" bars={many} current={17} />
+      </div>,
+    );
+    const list = screen.getByRole("list").element();
+    const boxes = bars(list);
+    const column = list.children[17]?.getBoundingClientRect();
+    const bar = boxes[17];
+
+    expect(bar?.width).toBe(boxes[16]?.width);
+    expect((bar?.left ?? 0) + (bar?.width ?? 0) / 2).toBeCloseTo(
+      (column?.left ?? 0) + (column?.width ?? 0) / 2,
+      0,
+    );
+  });
+
+  it.each([
+    ["first", 0],
+    ["last", 5],
+  ] as const)(
+    "keeps long labels of a current bar in the %s column inside the chart",
+    async (_, index) => {
+      const long = Array.from({ length: 6 }, (__, position) => ({
+        label: `Quarter number ${String(position)}`,
+        value: 10 + position,
+        valueLabel: `${String(position)} thousand units sold`,
+      }));
+      const screen = await render(
+        <div style={{ inlineSize: "320px" }}>
+          <BarChart label="Sales" bars={long} current={index} />
+        </div>,
+      );
+      const chart = screen.getByRole("list").element().getBoundingClientRect();
+      const item = screen.getByRole("listitem").elements()[index];
+      const labels = Array.from(
+        item?.querySelectorAll(
+          "[aria-hidden='true'] span, [aria-hidden='true']",
+        ) ?? [],
+      )
+        .filter((element) => element.childElementCount === 0)
+        .filter((element) => element.textContent !== "")
+        .map((element) => element.getBoundingClientRect());
+
+      expect(labels).toHaveLength(2);
+      expect(labels.every((box) => box.left >= chart.left)).toBe(true);
+      expect(labels.every((box) => box.right <= chart.right)).toBe(true);
+    },
+  );
+
+  it("leaves a gap between the dots of empty bars in a dense chart", async () => {
+    const empty = Array.from({ length: 60 }, (_, index) => ({
+      label: String(index),
+      value: 0,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="This quarter" bars={empty} />
+      </div>,
+    );
+    const boxes = bars(screen.getByRole("list").element());
+
+    expect(
+      boxes.every(
+        (box, index) =>
+          index === 0 || box.left > (boxes[index - 1]?.right ?? 0),
+      ),
+    ).toBe(true);
+  });
+
   it("leaves a gap between crowded bars", async () => {
     const many = Array.from({ length: 40 }, (_, index) => ({
       label: String(index),

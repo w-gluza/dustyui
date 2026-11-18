@@ -12,6 +12,7 @@ import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
 import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
+import type { BeatPatternProps } from "./BeatPattern/BeatPattern.js";
 import type { BarChartProps } from "./BarChart/BarChart.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
@@ -70,6 +71,21 @@ describe("props", () => {
   it("refuse an icon position on an icon button, which has nothing to place", () => {
     expectTypeOf<
       Accepts<IconButtonProps, IconButtonBase & { iconPosition: "end" }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("require a label on a beat pattern and refuse a second accessible name", () => {
+    interface Pattern {
+      label: string;
+      beats: [];
+      onBeatChange: () => void;
+    }
+    expectTypeOf<Accepts<BeatPatternProps, Pattern>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<BeatPatternProps, Omit<Pattern, "label">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<BeatPatternProps, Pattern & { "aria-label": string }>
     >().toEqualTypeOf<false>();
   });
 

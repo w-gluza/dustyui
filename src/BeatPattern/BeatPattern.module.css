@@ -1,6 +1,6 @@
 .pattern {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 2.5rem);
   gap: 0.5rem;
   justify-content: center;
   margin: 0;
@@ -57,12 +57,16 @@
 }
 
 .playhead {
-  block-size: 0.125rem;
+  block-size: 0.1875rem;
   border-radius: var(--dusty-radius-full);
 }
 
 .beat[data-playing] .playhead {
-  background-color: var(--dusty-illustration-primary);
+  background-color: var(--dusty-text);
+}
+
+.beat:active {
+  background-color: var(--dusty-surface-hover);
 }
 
 @media (hover: hover) {
@@ -72,6 +76,21 @@
 }
 
 @media (forced-colors: active) {
+  .pill {
+    forced-color-adjust: none;
+    border-color: ButtonText;
+    background-color: ButtonText;
+  }
+
+  .beat[data-kind="accent"] .pill {
+    border-color: ButtonText;
+    background-color: ButtonText;
+  }
+
+  .beat[data-kind="skipped"] .pill {
+    background-color: Canvas;
+  }
+
   .beat[data-playing] .playhead {
     background-color: Highlight;
   }

@@ -1,5 +1,8 @@
-import type { ComponentProps } from "react";
+"use client";
+
+import { useEffect, type ComponentProps } from "react";
 import clsx from "clsx";
+import { announce, readyAnnouncer } from "../announcer/announcer.js";
 import styles from "./BeatPattern.module.css";
 
 export type BeatKind = "normal" | "accent" | "skipped";
@@ -36,9 +39,12 @@ export function BeatPattern({
   className,
   ...props
 }: BeatPatternProps) {
+  useEffect(readyAnnouncer, []);
+
   return (
     <ol
       {...props}
+      role="list"
       className={clsx(styles.pattern, className)}
       aria-label={label}
     >
@@ -51,7 +57,9 @@ export function BeatPattern({
             data-playing={index === playingBeat || undefined}
             aria-label={beatLabel(index + 1, kind)}
             onClick={() => {
-              onBeatChange(index, nextBeatKind(kind));
+              const next = nextBeatKind(kind);
+              onBeatChange(index, next);
+              announce(beatLabel(index + 1, next));
             }}
           >
             <span className={styles.accentMark} aria-hidden="true">
