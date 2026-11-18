@@ -12,6 +12,7 @@ import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
 import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
+import type { BarChartProps } from "./BarChart/BarChart.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
 import type { TreeProps } from "./Tree/Tree.js";
@@ -69,6 +70,19 @@ describe("props", () => {
   it("refuse an icon position on an icon button, which has nothing to place", () => {
     expectTypeOf<
       Accepts<IconButtonProps, IconButtonBase & { iconPosition: "end" }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("refuse a second accessible name on a bar chart", () => {
+    interface BarChartBase {
+      label: string;
+      bars: [];
+    }
+    expectTypeOf<
+      Accepts<BarChartProps, BarChartBase & { "aria-label": string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<BarChartProps, BarChartBase & { "aria-labelledby": string }>
     >().toEqualTypeOf<false>();
   });
 

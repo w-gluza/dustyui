@@ -20,6 +20,12 @@ function bars(root: Element): DOMRect[] {
   );
 }
 
+function barColour(item: Element | undefined): string {
+  const bar = item?.querySelector("span:first-child > span:last-child");
+
+  return bar ? getComputedStyle(bar).backgroundColor : "";
+}
+
 describe("BarChart", () => {
   it("is a named list that reads each bar in words", async () => {
     const screen = await render(<BarChart label="This week" bars={WEEK} />);
@@ -83,29 +89,206 @@ describe("BarChart", () => {
     ).toBe(true);
   });
 
-  it("marks the highlighted bar as current and colours it with the action colour", async () => {
+  it("marks the current bar for assistive technology and colours it with the action colour", async () => {
     const screen = await render(
-      <BarChart
-        label="This week"
-        bars={WEEK}
-        highlighted={1}
-        data-testid="chart"
-      />,
+      <BarChart label="This week" bars={WEEK} current={1} />,
     );
     const items = screen.getByRole("listitem").elements();
-    const colour = (index: number) =>
-      getComputedStyle(
-        items[index]?.querySelector(
-          "span:first-child > span:last-child",
-        ) as Element,
-      ).backgroundColor;
 
     expect(items.map((item) => item.getAttribute("aria-current"))).toEqual([
       null,
       "true",
       null,
     ]);
-    expect(colour(1)).not.toBe(colour(0));
+    expect(barColour(items[1])).not.toBe(barColour(items[0]));
+  });
+
+  it("emphasises a highlighted bar without calling it current", async () => {
+    const screen = await render(
+      <BarChart label="This week" bars={WEEK} highlighted={1} />,
+    );
+    const items = screen.getByRole("listitem").elements();
+
+    expect(items.every((item) => !item.hasAttribute("aria-current"))).toBe(
+      true,
+    );
+    expect(barColour(items[1])).not.toBe(barColour(items[0]));
+  });
+
+  it("emphasises the value of the highlighted bar along with the bar", async () => {
+    const screen = await render(
+      <BarChart label="This week" bars={WEEK} highlighted={1} />,
+    );
+    const weight = (text: string) =>
+      Number(getComputedStyle(screen.getByText(text).element()).fontWeight);
+
+    expect(weight("15")).toBeGreaterThan(weight("30"));
+  });
+
+  it("highlights nothing when the index is outside the bars", async () => {
+    const screen = await render(
+      <BarChart label="This week" bars={WEEK} highlighted={9} current={-1} />,
+    );
+
+    expect(
+      screen.getByRole("list").element().querySelector("[data-highlighted]"),
+    ).toBeNull();
+  });
+
+  it("is an empty named list without bars", async () => {
+    const screen = await render(<BarChart label="This week" bars={[]} />);
+
+    expect(
+      screen.getByRole("list", { name: "This week" }).element().children,
+    ).toHaveLength(0);
+  });
+
+  it("keeps the list role that a list without markers loses in Safari", async () => {
+    const screen = await render(<BarChart label="This week" bars={WEEK} />);
+
+    await expect
+      .element(screen.getByRole("list", { name: "This week" }))
+      .toHaveAttribute("role", "list");
+  });
+
+  it("treats a value that is not a number as empty and never prints NaN", async () => {
+    const screen = await render(
+      <BarChart
+        label="This week"
+        bars={[
+          { label: "M", value: Number.NaN },
+          { label: "T", value: 10 },
+        ]}
+      />,
+    );
+    const list = screen.getByRole("list").element();
+    const [broken, full] = bars(list);
+
+    expect(list.textContent).not.toContain("NaN");
+    expect(full?.height).toBeGreaterThan((broken?.height ?? 0) * 5);
+  });
+
+  it("lays the bars out in columns without an inline style on the list", async () => {
+    const screen = await render(<BarChart label="This week" bars={WEEK} />);
+    const list = screen.getByRole("list").element();
+    const tops = Array.from(list.children, (item) =>
+      Math.round(item.getBoundingClientRect().top),
+    );
+
+    expect(list.getAttribute("style")).toBeNull();
+    expect(new Set(tops).size).toBe(1);
+  });
+
+  it("runs the bars from the right when the text runs right to left", async () => {
+    const screen = await render(
+      <div dir="rtl">
+        <BarChart label="This week" bars={WEEK} />
+      </div>,
+    );
+    const [first, second] = screen
+      .getByRole("listitem")
+      .elements()
+      .map((item) => item.getBoundingClientRect().left);
+
+    expect(first).toBeGreaterThan(second ?? 0);
+  });
+
+  it("hides the values and then the axis labels of crowded bars, keeping the highlighted axis label", async () => {
+    const many = Array.from({ length: 30 }, (_, index) => ({
+      label: `D${String(index)}`,
+      value: 1000 + index,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="This month" bars={many} highlighted={4} />
+      </div>,
+    );
+    const shown = (text: string) =>
+      getComputedStyle(screen.getByText(text, { exact: true }).element())
+        .visibility;
+
+    expect(shown("1000")).toBe("hidden");
+    expect(shown("D0")).toBe("hidden");
+    expect(shown("1004")).toBe("hidden");
+    expect(shown("D4")).toBe("visible");
+  });
+
+  it("leaves a gap between crowded bars", async () => {
+    const many = Array.from({ length: 40 }, (_, index) => ({
+      label: String(index),
+      value: 10 + index,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="This month" bars={many} />
+      </div>,
+    );
+    const boxes = bars(screen.getByRole("list").element());
+
+    expect(
+      boxes.every(
+        (box, index) =>
+          index === 0 || box.left > (boxes[index - 1]?.right ?? 0),
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps long labels of neighbouring bars from running into each other", async () => {
+    const long = Array.from({ length: 6 }, (_, index) => ({
+      label: `Quarter ${String(index)}`,
+      value: 1_000_000 + index,
+      valueLabel: `1,000,00${String(index)} units`,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="Sales" bars={long} />
+      </div>,
+    );
+    const edges = (prefix: string) =>
+      screen
+        .getByText(prefix, { exact: false })
+        .elements()
+        .filter((element) => element.getAttribute("class") !== null)
+        .filter((element) => element.closest("[aria-hidden='true']"))
+        .map((element) => element.getBoundingClientRect());
+    const apart = (boxes: DOMRect[]) =>
+      boxes.every(
+        (box, index) =>
+          index === 0 || box.left >= (boxes[index - 1]?.right ?? 0),
+      );
+
+    expect(apart(edges("Quarter"))).toBe(true);
+    expect(apart(edges("units"))).toBe(true);
+  });
+
+  it("keeps only the current bar's labels when a highlighted bar sits next to it in a crowded chart", async () => {
+    const many = Array.from({ length: 30 }, (_, index) => ({
+      label: `D${String(index)}`,
+      value: 1000 + index,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="This month" bars={many} current={4} highlighted={5} />
+      </div>,
+    );
+    const shown = (text: string) =>
+      getComputedStyle(screen.getByText(text, { exact: true }).element())
+        .visibility;
+
+    expect(shown("D4")).toBe("visible");
+    expect(shown("D5")).toBe("hidden");
+  });
+
+  it("shows every value when the bars have room", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="This week" bars={WEEK} />
+      </div>,
+    );
+
+    expect(getComputedStyle(screen.getByText("30").element()).visibility).toBe(
+      "visible",
+    );
   });
 
   it("keeps a consumer class name and style and forwards native attributes", async () => {
