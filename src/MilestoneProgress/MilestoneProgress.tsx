@@ -12,7 +12,7 @@ export interface MilestoneProgressProps extends Omit<
   completed: number;
   progress?: number | undefined;
   completedLabel?: string | undefined;
-  progressLabel?: string | undefined;
+  progressLabel?: string | ((percent: number) => string) | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }
@@ -26,6 +26,10 @@ function lineShare(reached: number, progress: number, count: number): number {
     return 0;
   }
   return clamp((reached - 1 + clamp(progress, 0, 1)) / (count - 1), 0, 1);
+}
+
+function defaultProgressLabel(percent: number): string {
+  return `${String(percent)}% done`;
 }
 
 function CheckIcon() {
@@ -42,7 +46,7 @@ export function MilestoneProgress({
   completed,
   progress = 0,
   completedLabel = "completed",
-  progressLabel,
+  progressLabel = defaultProgressLabel,
   className,
   style,
   ...props
@@ -51,14 +55,17 @@ export function MilestoneProgress({
   const reached = Number.isFinite(completed)
     ? clamp(Math.floor(completed), 0, count)
     : 0;
+  const partDone = Number.isFinite(progress) ? clamp(progress, 0, 1) : 0;
+  const progressText =
+    typeof progressLabel === "string"
+      ? progressLabel
+      : reached > 0 && partDone > 0
+        ? progressLabel(Math.round(partDone * 100))
+        : "";
   const layout = {
     ...style,
     "--milestone-count": count,
-    "--milestone-share": lineShare(
-      reached,
-      Number.isFinite(progress) ? progress : 0,
-      count,
-    ),
+    "--milestone-share": lineShare(reached, partDone, count),
   } as CSSProperties;
 
   return (
@@ -92,9 +99,9 @@ export function MilestoneProgress({
                     , {completedLabel}
                   </span>
                 ) : null}
-                {current && progressLabel ? (
+                {current && progressText ? (
                   <span className={visuallyHidden.visuallyHidden}>
-                    , {progressLabel}
+                    , {progressText}
                   </span>
                 ) : null}
               </span>

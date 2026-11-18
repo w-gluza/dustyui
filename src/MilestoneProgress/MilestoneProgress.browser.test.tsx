@@ -234,21 +234,69 @@ describe("MilestoneProgress", () => {
       .toHaveAttribute("role", "list");
   });
 
-  it("says how far the current step has got when given the words", async () => {
+  it.each([
+    [0.4, "Build, 40% done"],
+    [7, "Build, 100% done"],
+    [0, "Build"],
+    [Number.NaN, "Build"],
+  ])(
+    "puts progress of %d on the current step as %j",
+    async (progress, expected) => {
+      const screen = await render(
+        <MilestoneProgress
+          label="Onboarding"
+          milestones={MILESTONES}
+          completed={2}
+          progress={progress}
+        />,
+      );
+      const items = screen.getByRole("listitem").elements();
+
+      expect(items[2]?.textContent).toBe(expected);
+      expect(items[1]?.textContent).toBe("Design, completed");
+      expect(items[3]?.textContent).toBe("Ship");
+    },
+  );
+
+  it("says nothing about progress before the first milestone, where no line is drawn", async () => {
     const screen = await render(
       <MilestoneProgress
         label="Onboarding"
         milestones={MILESTONES}
-        completed={2}
-        progress={0.4}
-        progressLabel="40% done"
+        completed={0}
+        progress={0.5}
       />,
     );
-    const items = screen.getByRole("listitem").elements();
 
-    expect(items[2]?.textContent).toBe("Build, 40% done");
-    expect(items[1]?.textContent).toBe("Design, completed");
-    expect(items[3]?.textContent).toBe("Ship");
+    expect(screen.getByRole("listitem").elements()[0]?.textContent).toBe(
+      "Setup",
+    );
+  });
+
+  it("words the progress as asked, from the percentage or as fixed text", async () => {
+    const screen = await render(
+      <>
+        <MilestoneProgress
+          label="Counted"
+          milestones={MILESTONES}
+          completed={2}
+          progress={0.4}
+          progressLabel={(percent) => `${String(percent)}% gotowe`}
+        />
+        <MilestoneProgress
+          label="Fixed"
+          milestones={MILESTONES}
+          completed={2}
+          progressLabel="nearly there"
+        />
+      </>,
+    );
+    const third = (name: string) =>
+      screen.getByRole("list", { name }).getByRole("listitem").elements()[2]
+        ?.textContent;
+
+    expect(third("Counted")).toBe("Build, 40% gotowe");
+    expect(third("Fixed")).toBe("Build, nearly there");
   });
 
   it("lays its milestones out in one row without being told how many there are", async () => {

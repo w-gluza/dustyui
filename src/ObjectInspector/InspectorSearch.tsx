@@ -1,9 +1,11 @@
 import { useId, type KeyboardEvent } from "react";
 import { IconButton } from "../IconButton/IconButton.js";
+import type { ObjectInspectorLabels } from "./labels.js";
 import styles from "./InspectorSearch.module.css";
 
 interface InspectorSearchProps {
   label: string;
+  labels: ObjectInspectorLabels;
   query: string;
   status: string;
   hasMatches: boolean;
@@ -13,6 +15,7 @@ interface InspectorSearchProps {
 
 export function InspectorSearch({
   label,
+  labels,
   query,
   status,
   hasMatches,
@@ -30,9 +33,9 @@ export function InspectorSearch({
   }
 
   return (
-    <search aria-label={`Search ${label}`} className={styles.search}>
+    <search aria-label={labels.searchRegion(label)} className={styles.search}>
       <div className={styles.field}>
-        <label htmlFor={inputId}>Search</label>
+        <label htmlFor={inputId}>{labels.search}</label>
         <input
           id={inputId}
           type="search"
@@ -51,7 +54,7 @@ export function InspectorSearch({
       <IconButton
         variant="secondary"
         size="small"
-        label="Previous match"
+        label={labels.previousMatch}
         icon="↑"
         aria-disabled={!hasMatches}
         onClick={() => onMove(-1)}
@@ -59,7 +62,7 @@ export function InspectorSearch({
       <IconButton
         variant="secondary"
         size="small"
-        label="Next match"
+        label={labels.nextMatch}
         icon="↓"
         aria-disabled={!hasMatches}
         onClick={() => onMove(1)}

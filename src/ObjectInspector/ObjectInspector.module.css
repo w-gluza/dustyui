@@ -50,6 +50,21 @@
   unicode-bidi: isolate;
 }
 
+.tree
+  [aria-selected="true"]
+  :is(
+    .separator,
+    .value:is(
+      [data-kind="getter"],
+      [data-kind="circular"],
+      [data-kind="uninspectable"],
+      [data-kind="hole"],
+      [data-kind="range"]
+    )
+  ) {
+  color: var(--dusty-text);
+}
+
 .match {
   background-color: transparent;
   color: inherit;
@@ -58,7 +73,7 @@
   text-decoration-thickness: 0.125em;
 }
 
-[aria-selected="true"] .match {
+.tree [aria-selected="true"] .match {
   border-radius: var(--dusty-radius-sm);
   background-color: var(--dusty-action);
   color: var(--dusty-on-action);
@@ -66,7 +81,7 @@
 }
 
 @media (forced-colors: active) {
-  [aria-selected="true"] .match {
+  .tree [aria-selected="true"] .match {
     forced-color-adjust: none;
     background-color: Highlight;
     color: HighlightText;

@@ -7,6 +7,7 @@ import { getCopyText, type CopyText } from "./getCopyText.js";
 import { getShownValue } from "./getShownValue.js";
 import { getTypeText } from "./getTypeText.js";
 import { getValueText, hasValueText } from "./getValueText.js";
+import type { ObjectInspectorLabels } from "./labels.js";
 import { Highlighted } from "./search/Highlighted.js";
 import styles from "./InspectorDetails.module.css";
 
@@ -14,6 +15,7 @@ const FEEDBACK_DURATION = 5000;
 
 interface InspectorDetailsProps {
   label: string;
+  labels: ObjectInspectorLabels;
   node: InspectorNode;
   query: string;
 }
@@ -25,10 +27,10 @@ interface Feedback {
 }
 
 const NO_FEEDBACK: Feedback = { node: undefined, text: "", hasFailed: false };
-const FAILURE = "Could not copy. Select the text and copy it by hand.";
 
 export function InspectorDetails({
   label,
+  labels,
   node,
   query,
 }: InspectorDetailsProps) {
@@ -49,17 +51,15 @@ export function InspectorDetails({
     return () => clearTimeout(timer);
   }, [feedback]);
 
-  async function copy(name: "Path" | "Value", read: () => CopyText) {
+  async function copy(whole: string, part: string, read: () => CopyText) {
     let result: string;
     let hasFailed = false;
     try {
       const { text: copied, isComplete } = read();
       await navigator.clipboard.writeText(copied);
-      result = isComplete
-        ? `${name} copied`
-        : `Part of the ${name.toLowerCase()} copied. It is too large to copy whole.`;
+      result = isComplete ? whole : part;
     } catch {
-      result = FAILURE;
+      result = labels.copyFailed;
       hasFailed = true;
     }
     setFeedback({ node, text: result, hasFailed });
@@ -68,26 +68,24 @@ export function InspectorDetails({
 
   return (
     <section
-      aria-label={`Selected value in ${label}`}
+      aria-label={labels.detailsRegion(label)}
       className={styles.details}
     >
       <dl className={styles.facts}>
-        <dt>Path</dt>
+        <dt>{labels.path}</dt>
         <dd>{getEscapedText(getShownValue(node.path).text)}</dd>
-        <dt>Type</dt>
-        <dd>{getTypeText(node)}</dd>
+        <dt>{labels.type}</dt>
+        <dd>{labels.typeName(node.kind, getTypeText(node))}</dd>
         {isLeaf ? (
           <>
-            <dt>Value</dt>
+            <dt>{labels.value}</dt>
             <dd>
               <span className={styles.value}>
                 <Highlighted text={shown.text} query={query} />
               </span>
               {shown.isWhole ? null : (
                 <p className={styles.note}>
-                  Showing {shown.text.length.toLocaleString("en-GB")} of{" "}
-                  {text.length.toLocaleString("en-GB")} characters. Copy value
-                  copies all of it.
+                  {labels.shownCharacters(shown.text.length, text.length)}
                 </p>
               )}
             </dd>
@@ -99,18 +97,25 @@ export function InspectorDetails({
           variant="secondary"
           size="small"
           onClick={() =>
-            void copy("Path", () => ({ text: node.path, isComplete: true }))
+            void copy(labels.pathCopied, labels.pathPartCopied, () => ({
+              text: node.path,
+              isComplete: true,
+            }))
           }
         >
-          Copy path
+          {labels.copyPath}
         </Button>
         {node.kind === "range" ? null : (
           <Button
             variant="secondary"
             size="small"
-            onClick={() => void copy("Value", () => getCopyText(node))}
+            onClick={() =>
+              void copy(labels.valueCopied, labels.valuePartCopied, () =>
+                getCopyText(node),
+              )
+            }
           >
-            Copy value
+            {labels.copyValue}
           </Button>
         )}
         <span

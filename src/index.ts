@@ -126,6 +126,10 @@ export {
   ObjectInspector,
   type ObjectInspectorProps,
 } from "./ObjectInspector/ObjectInspector.js";
+export type {
+  ObjectInspectorLabels,
+  ObjectInspectorSearchStatus,
+} from "./ObjectInspector/labels.js";
 export {
   describeValue,
   type InspectorNode,

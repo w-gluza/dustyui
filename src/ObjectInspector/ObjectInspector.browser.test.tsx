@@ -815,3 +815,137 @@ describe("ObjectInspector with lazy rows and ranges", () => {
       .toEqual(["Could not be read: refused"]);
   });
 });
+
+describe("ObjectInspector wording and wiring", () => {
+  beforeEach(resetAnnouncer);
+
+  it("takes its interface text from the labels it is given", async () => {
+    const screen = await render(
+      <ObjectInspector
+        label="Park"
+        value={park}
+        searchable
+        showDetails
+        labels={{
+          search: "Szukaj",
+          searchRegion: (label) => `Szukaj w: ${label}`,
+          previousMatch: "Poprzedni wynik",
+          nextMatch: "Nastepny wynik",
+          searchStatus: ({ count, current }) =>
+            current >= 0
+              ? `${String(current + 1)} z ${String(count)}`
+              : `Wyniki: ${String(count)}`,
+          matchAnnouncement: (status, path) => `Wynik ${status}: ${path}`,
+          detailsRegion: (label) => `Wybrana wartosc w: ${label}`,
+          path: "Sciezka",
+          type: "Typ",
+          typeName: (kind, name) => (kind === "object" ? "Obiekt" : name),
+          copyPath: "Kopiuj sciezke",
+          copyValue: "Kopiuj wartosc",
+        }}
+      />,
+    );
+
+    expect(document.querySelector("search")?.getAttribute("aria-label")).toBe(
+      "Szukaj w: Park",
+    );
+    await expect.element(screen.getByLabelText("Szukaj")).toBeVisible();
+    await expect
+      .element(screen.getByRole("button", { name: "Poprzedni wynik" }))
+      .toBeVisible();
+    const details = document.querySelector("section");
+    expect(details?.getAttribute("aria-label")).toBe("Wybrana wartosc w: Park");
+    expect(details?.textContent).toContain("Sciezka");
+    expect(details?.textContent).toContain("Typ");
+    await expect.element(screen.getByText("Obiekt")).toBeVisible();
+    await expect
+      .element(screen.getByRole("button", { name: "Kopiuj wartosc" }))
+      .toBeVisible();
+
+    await screen.getByRole("searchbox").fill("bison");
+    await expect.element(screen.getByText("Wyniki: 1")).toBeVisible();
+    await userEvent.keyboard("{Enter}");
+    await expect.element(screen.getByText("1 z 1")).toBeVisible();
+    await expect
+      .poll(() => announcements().at(-1), { timeout: 3000 })
+      .toBe("Wynik 1 z 1: $.animals[0]");
+  });
+
+  it("keeps the English text for any label left out", async () => {
+    const screen = await render(
+      <ObjectInspector
+        label="Park"
+        value={park}
+        searchable
+        labels={{ search: "Find" }}
+      />,
+    );
+
+    await expect.element(screen.getByLabelText("Find")).toBeVisible();
+    await expect
+      .element(screen.getByRole("button", { name: "Next match" }))
+      .toBeVisible();
+  });
+
+  it("describes the tree, not the wrapper, with a description it is given", async () => {
+    const screen = await render(
+      <>
+        <p id="hint">Read only</p>
+        <ObjectInspector
+          label="Park"
+          value={park}
+          aria-describedby="hint"
+          data-testid="inspector"
+        />
+      </>,
+    );
+
+    await expect
+      .element(screen.getByRole("tree", { name: "Park" }))
+      .toHaveAttribute("aria-describedby", "hint");
+    expect(
+      screen
+        .getByTestId("inspector")
+        .element()
+        .hasAttribute("aria-describedby"),
+    ).toBe(false);
+  });
+
+  it("styles the current match only inside its own tree", async () => {
+    const selectedAncestor = {
+      role: "option",
+      "aria-selected": true,
+      tabIndex: -1,
+    } as const;
+    const screen = await render(
+      <div {...selectedAncestor}>
+        <ObjectInspector label="Park" value={park} searchable />
+      </div>,
+    );
+
+    await screen.getByRole("searchbox").fill("Yellowstone");
+    await expect.poll(() => document.querySelector("mark")).not.toBeNull();
+
+    expect(
+      getComputedStyle(document.querySelector("mark") as Element)
+        .textDecorationLine,
+    ).toBe("underline");
+  });
+
+  it("sets the quiet text of a selected row in the full text colour", async () => {
+    const screen = await render(
+      <ObjectInspector
+        label="Tricky"
+        value={{
+          get expensive() {
+            return 1;
+          },
+        }}
+      />,
+    );
+
+    await screen.getByRole("treeitem", { name: /^expensive/u }).click();
+
+    expect(valueColour("(...)")).toBe(tokenColour("--dusty-text"));
+  });
+});

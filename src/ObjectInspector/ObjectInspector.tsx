@@ -28,6 +28,7 @@ import { getLabelText } from "./getLabelText.js";
 import { hasValueText } from "./getValueText.js";
 import { InspectorDetails } from "./InspectorDetails.js";
 import { InspectorSearch } from "./InspectorSearch.js";
+import { DEFAULT_LABELS, type ObjectInspectorLabels } from "./labels.js";
 import { getMatches, type Matches } from "./search/getMatches.js";
 import { getSearchStatus } from "./search/getSearchStatus.js";
 import { Highlighted } from "./search/Highlighted.js";
@@ -40,6 +41,7 @@ interface InspectorOwnProps extends Omit<
   value: unknown;
   searchable?: boolean | undefined;
   showDetails?: boolean | undefined;
+  labels?: Partial<ObjectInspectorLabels> | undefined;
 }
 
 export type ObjectInspectorProps = InspectorOwnProps & TreeExpansionProps;
@@ -49,7 +51,6 @@ const SEARCH_LIMIT = 500_000;
 const ANNOUNCE_DELAY = 700;
 const LABEL_LIMIT = 80;
 const ANNOUNCED_PATH_LIMIT = 120;
-const NOTHING_INSIDE = "No properties";
 
 function getShownLabel(label: NodeLabel): string {
   return getEscapedText(getTruncatedText(getLabelText(label), LABEL_LIMIT));
@@ -64,14 +65,20 @@ export function ObjectInspector({
   label,
   searchable = false,
   showDetails = false,
+  labels: givenLabels,
   expanded: controlledExpanded,
   defaultExpanded = ROOT_OPEN,
   onExpandedChange,
   selected: controlledSelected,
   onSelectedChange,
   className,
+  "aria-describedby": describedBy,
   ...props
 }: ObjectInspectorProps) {
+  const labels = useMemo(
+    () => ({ ...DEFAULT_LABELS, ...givenLabels }),
+    [givenLabels],
+  );
   const root = useMemo(() => describeValue(value), [value]);
   const [ownExpanded, setOwnExpanded] = useState<ReadonlySet<string>>(
     () => new Set(defaultExpanded),
@@ -106,7 +113,12 @@ export function ObjectInspector({
     position.matches === matches && matches.ids[position.index] === selected
       ? position.index
       : -1;
-  const status = getSearchStatus(searched, matches, current);
+  const status = getSearchStatus(
+    searched,
+    matches,
+    current,
+    labels.searchStatus,
+  );
   const selectedNode = useMemo(
     () =>
       showDetails && selected !== undefined
@@ -122,7 +134,10 @@ export function ObjectInspector({
     const match = id === undefined ? undefined : getNode(root, id);
     announce(
       match
-        ? `Match ${status}: ${getEscapedText(getTruncatedText(match.path, ANNOUNCED_PATH_LIMIT))}`
+        ? labels.matchAnnouncement(
+            status,
+            getEscapedText(getTruncatedText(match.path, ANNOUNCED_PATH_LIMIT)),
+          )
         : status,
     );
   });
@@ -147,7 +162,7 @@ export function ObjectInspector({
     const isUnread =
       node.kind === "uninspectable" ||
       (node.kind === "range" && node.size === undefined);
-    announce(isUnread ? node.preview : NOTHING_INSIDE);
+    announce(isUnread ? node.preview : labels.noProperties);
   }
 
   function changeExpanded(next: ReadonlySet<string>) {
@@ -211,6 +226,7 @@ export function ObjectInspector({
       {searchable ? (
         <InspectorSearch
           label={label}
+          labels={labels}
           query={query}
           status={status}
           hasMatches={matches.ids.length > 0}
@@ -222,6 +238,7 @@ export function ObjectInspector({
         root={root}
         label={label}
         className={styles.tree}
+        aria-describedby={describedBy}
         expanded={expanded}
         onExpandedChange={changeExpanded}
         selected={selected}
@@ -230,7 +247,12 @@ export function ObjectInspector({
         getRowText={getRowText}
       />
       {showDetails ? (
-        <InspectorDetails label={label} node={selectedNode} query={searched} />
+        <InspectorDetails
+          label={label}
+          labels={labels}
+          node={selectedNode}
+          query={searched}
+        />
       ) : null}
     </div>
   );
