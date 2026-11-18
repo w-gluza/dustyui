@@ -327,6 +327,34 @@ describe("BeatPattern", () => {
     },
   );
 
+  it("announces nothing when the promise resolves after the pattern is gone", async () => {
+    resetAnnouncer();
+    let accept: () => void = () => undefined;
+    const saved = new Promise<void>((resolve) => {
+      accept = resolve;
+    });
+    const onBeatChange = () => saved;
+    const screen = await render(
+      <BeatPattern label="Beats" beats={BEATS} onBeatChange={onBeatChange} />,
+    );
+
+    await screen.getByRole("button", { name: "Beat 2, normal" }).click();
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={["accent", "accent", "skipped", "normal"]}
+        onBeatChange={onBeatChange}
+      />,
+    );
+    await screen.rerender(<p>Gone</p>);
+    accept();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 500);
+    });
+
+    expect(announcements()).toEqual([]);
+  });
+
   it("keeps the list role that a list without markers loses in Safari", async () => {
     const screen = await render(
       <BeatPattern

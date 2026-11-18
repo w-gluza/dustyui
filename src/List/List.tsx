@@ -1,6 +1,6 @@
 import type { ComponentProps, MouseEventHandler, ReactNode } from "react";
 import clsx from "clsx";
-import visuallyHidden from "../styles/visuallyHidden.module.css";
+import { ListLoadingAnnouncement } from "./ListLoadingAnnouncement.js";
 import styles from "./List.module.css";
 
 export type ListVariant = "plain" | "divided" | "contained";
@@ -26,42 +26,47 @@ export function List({
   children,
   ...props
 }: ListProps) {
-  const Element = (numbered ? "ol" : "ul") as "ul";
+  const listProps = {
+    ...props,
+    className: clsx(
+      styles.list,
+      styles[variant],
+      numbered && styles.numbered,
+      className,
+    ),
+    "aria-busy": loading || undefined,
+  };
+  const content = loading ? (
+    <>
+      <ListLoadingAnnouncement label={loadingLabel} />
+      {Array.from({ length: loadingRows }, (_, index) => (
+        <li key={index} className={styles.item} aria-hidden="true">
+          <span className={clsx(styles.row, styles.skeleton)}>
+            <span className={styles.bone} />
+            <span className={styles.content}>
+              <span className={styles.bone} />
+              <span className={styles.bone} />
+            </span>
+          </span>
+        </li>
+      ))}
+    </>
+  ) : (
+    children
+  );
 
-  return (
-    <Element
-      {...props}
-      className={clsx(
-        styles.list,
-        styles[variant],
-        numbered && styles.numbered,
-        className,
-      )}
-      aria-busy={loading || undefined}
-    >
-      {loading ? (
-        <>
-          <li className={visuallyHidden.visuallyHidden}>
-            <output>{loadingLabel}</output>
-          </li>
-          {Array.from({ length: loadingRows }, (_, index) => (
-            <li key={index} className={styles.item} aria-hidden="true">
-              <span className={clsx(styles.row, styles.skeleton)}>
-                <span className={styles.bone} />
-                <span className={styles.content}>
-                  <span className={styles.bone} />
-                  <span className={styles.bone} />
-                </span>
-              </span>
-            </li>
-          ))}
-        </>
-      ) : (
-        children
-      )}
-    </Element>
+  return numbered ? (
+    <ol role="list" {...(listProps as ComponentProps<"ol">)}>
+      {content}
+    </ol>
+  ) : (
+    <ul role="list" {...listProps}>
+      {content}
+    </ul>
   );
 }
+
+export type ListItemSelected = boolean | "page" | "step" | "location";
 
 interface ListItemBaseProps extends Omit<
   ComponentProps<"li">,
@@ -72,7 +77,8 @@ interface ListItemBaseProps extends Omit<
   description?: ReactNode | undefined;
   leading?: ReactNode | undefined;
   trailing?: ReactNode | undefined;
-  selected?: boolean | undefined;
+  actions?: ReactNode | undefined;
+  selected?: ListItemSelected | undefined;
 }
 
 export type ListItemProps = ListItemBaseProps &
@@ -88,14 +94,16 @@ export function ListItem({
   description,
   leading,
   trailing,
+  actions,
   selected = false,
   href,
   onClick,
   className,
   ...props
 }: ListItemProps) {
-  const current = selected ? "true" : undefined;
-  const body = (
+  const current = selected === true ? "true" : selected || undefined;
+  const interactive = href !== undefined || onClick !== undefined;
+  const main = (
     <>
       {leading != null ? (
         <span className={styles.leading}>{leading}</span>
@@ -109,34 +117,45 @@ export function ListItem({
           <span className={styles.description}>{description}</span>
         ) : null}
       </span>
-      {trailing != null ? (
-        <span className={styles.trailing}>{trailing}</span>
-      ) : null}
     </>
   );
+  const trailingSlot =
+    trailing != null ? (
+      <span className={styles.trailing}>{trailing}</span>
+    ) : null;
+  const actionsSlot =
+    actions != null ? <span className={styles.actions}>{actions}</span> : null;
 
   return (
     <li {...props} className={clsx(styles.item, className)}>
-      {href !== undefined ? (
-        <a
-          className={clsx(styles.row, styles.action)}
-          href={href}
-          aria-current={current}
-        >
-          {body}
-        </a>
-      ) : onClick ? (
-        <button
-          type="button"
-          className={clsx(styles.row, styles.action)}
-          aria-current={current}
-          onClick={onClick}
-        >
-          {body}
-        </button>
+      {interactive ? (
+        <span className={styles.interactive}>
+          {href !== undefined ? (
+            <a className={styles.action} href={href} aria-current={current}>
+              <span className={styles.main}>{main}</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              className={styles.action}
+              aria-current={current}
+              onClick={onClick}
+            >
+              <span className={styles.main}>{main}</span>
+            </button>
+          )}
+          {trailingSlot || actionsSlot ? (
+            <span className={styles.end}>
+              {trailingSlot}
+              {actionsSlot}
+            </span>
+          ) : null}
+        </span>
       ) : (
         <span className={styles.row} aria-current={current}>
-          {body}
+          {main}
+          {trailingSlot}
+          {actionsSlot}
         </span>
       )}
     </li>

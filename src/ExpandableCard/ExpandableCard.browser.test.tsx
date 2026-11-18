@@ -256,6 +256,31 @@ describe("ExpandableCard", () => {
     expect(onExpandedChange).not.toHaveBeenCalled();
   });
 
+  it("does not report a change for a card removed while its own morph is starting", async () => {
+    const onExpandedChange = vi.fn();
+    const screen = await render(
+      <ExpandableCard
+        title="Monument Valley"
+        level={2}
+        onExpandedChange={onExpandedChange}
+      >
+        Details
+      </ExpandableCard>,
+    );
+
+    (
+      screen
+        .getByRole("button", { name: "Monument Valley" })
+        .element() as HTMLElement
+    ).click();
+    await screen.rerender(<p>Gone</p>);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 300);
+    });
+
+    expect(onExpandedChange).not.toHaveBeenCalled();
+  });
+
   it("opens and closes without a morph when motion is reduced", async () => {
     const session = cdp() as unknown as {
       send: (method: string, params: object) => Promise<unknown>;

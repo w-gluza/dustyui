@@ -52,6 +52,13 @@ export function BeatPattern({
 
   useEffect(readyAnnouncer, []);
 
+  useEffect(
+    () => () => {
+      requested.current = null;
+    },
+    [],
+  );
+
   useEffect(() => {
     latestBeatLabel.current = beatLabel;
     const request = requested.current;

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
+import { cdp, userEvent } from "vitest/browser";
 import { List, ListItem } from "../index.js";
+import { announcements, resetAnnouncer } from "../test/announcements.js";
 
 const wide = { inlineSize: "320px" };
 
@@ -25,6 +26,7 @@ describe("List", () => {
       <List numbered data-testid="list">
         <ListItem title="Single Stroke Roll" />
         <ListItem title="Paradiddle" />
+        <ListItem title="Flam" href="#flam" />
       </List>,
     );
     const list = screen.getByTestId("list").element();
@@ -33,15 +35,20 @@ describe("List", () => {
         list.querySelectorAll("li > *")[index] as Element,
         "::before",
       ).content;
+    const linkNumber = getComputedStyle(
+      list.querySelector("a > span") as Element,
+      "::before",
+    ).content;
 
     expect(list.tagName).toBe("OL");
     expect(number(0)).toContain("decimal-leading-zero");
+    expect(linkNumber).toContain("decimal-leading-zero");
     expect(
       Array.from(
         list.children,
         (item) => getComputedStyle(item).counterIncrement,
       ),
-    ).toEqual(["dusty-list 1", "dusty-list 1"]);
+    ).toEqual(["dusty-list 1", "dusty-list 1", "dusty-list 1"]);
     expect(
       getComputedStyle(list.querySelector("li > *") as Element, "::before")
         .display,
@@ -195,6 +202,7 @@ describe("List", () => {
   });
 
   it("shows placeholder rows and says it is loading, in place of its items", async () => {
+    resetAnnouncer();
     const screen = await render(
       <List
         loading
@@ -210,10 +218,9 @@ describe("List", () => {
     await expect
       .element(screen.getByTestId("list"))
       .toHaveAttribute("aria-busy", "true");
-    await expect
-      .element(screen.getByRole("status"))
-      .toHaveTextContent("Loading rudiments");
+    await expect.poll(() => announcements()).toEqual(["Loading rudiments"]);
     expect(list.querySelectorAll("li[aria-hidden='true']")).toHaveLength(2);
+    expect(list.children).toHaveLength(2);
     expect(screen.getByText("Hidden while loading").elements()).toHaveLength(0);
   });
 
@@ -243,5 +250,283 @@ describe("List", () => {
     expect(getComputedStyle(screen.getByText("Quiet").element()).color).toBe(
       getComputedStyle(screen.getByText("A", { exact: true }).element()).color,
     );
+  });
+
+  it("keeps the list role that a list without markers loses in Safari", async () => {
+    const screen = await render(
+      <>
+        <List data-testid="plain">
+          <ListItem title="A" />
+        </List>
+        <List numbered data-testid="numbered">
+          <ListItem title="A" />
+        </List>
+      </>,
+    );
+
+    await expect
+      .element(screen.getByTestId("plain"))
+      .toHaveAttribute("role", "list");
+    await expect
+      .element(screen.getByTestId("numbered"))
+      .toHaveAttribute("role", "list");
+  });
+
+  it.each(["page", "step", "location"] as const)(
+    "marks a selected link as the current %s",
+    async (kind) => {
+      const screen = await render(
+        <List>
+          <ListItem title="Paradiddle" href="#paradiddle" selected={kind} />
+        </List>,
+      );
+
+      await expect
+        .element(screen.getByRole("link", { name: "Paradiddle" }))
+        .toHaveAttribute("aria-current", kind);
+    },
+  );
+
+  it("keeps a trailing control beside the row's link or button, never inside it", async () => {
+    const onRow = vi.fn();
+    const onPlay = vi.fn();
+    const screen = await render(
+      <div style={wide}>
+        <List data-testid="list">
+          <ListItem
+            title="Paradiddle"
+            onClick={onRow}
+            trailing={
+              <button type="button" onClick={onPlay}>
+                Play
+              </button>
+            }
+          />
+          <ListItem
+            title="Flam"
+            href="#flam"
+            trailing={
+              <button type="button" onClick={onPlay}>
+                Play flam
+              </button>
+            }
+          />
+        </List>
+      </div>,
+    );
+    const list = screen.getByTestId("list").element();
+
+    expect(list.querySelector("button button, a button")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+
+    expect(onPlay).toHaveBeenCalledOnce();
+    expect(onRow).not.toHaveBeenCalled();
+  });
+
+  it("opens the row from a click on its trailing text", async () => {
+    const onRow = vi.fn();
+    const screen = await render(
+      <div style={wide}>
+        <List>
+          <ListItem title="Paradiddle" onClick={onRow} trailing="80 BPM" />
+        </List>
+      </div>,
+    );
+
+    const end = screen.getByText("80 BPM").element().getBoundingClientRect();
+    const target = document.elementFromPoint(
+      end.left + end.width / 2,
+      end.top + end.height / 2,
+    );
+
+    expect(target).toBe(screen.getByRole("button").element());
+    (target as HTMLElement).click();
+    expect(onRow).toHaveBeenCalledOnce();
+  });
+
+  it("lays an interactive row out exactly like a static one", async () => {
+    const screen = await render(
+      <div style={wide}>
+        <List variant="contained" numbered>
+          <ListItem
+            leading={<span>L</span>}
+            title="Static"
+            description="70 BPM"
+            trailing={<span data-testid="static-end">T</span>}
+            data-testid="static"
+          />
+          <ListItem
+            leading={<span>L</span>}
+            title="Linked"
+            description="70 BPM"
+            trailing={<span data-testid="linked-end">T</span>}
+            href="#linked"
+            data-testid="linked"
+          />
+          <ListItem title="Bare" data-testid="bare" />
+          <ListItem title="Open" href="#open" data-testid="open" />
+          <ListItem title="Last" />
+        </List>
+      </div>,
+    );
+    const box = (id: string) =>
+      screen.getByTestId(id).element().getBoundingClientRect();
+    const text = (name: string) =>
+      screen.getByText(name, { exact: true }).element().getBoundingClientRect();
+
+    expect(box("linked").height).toBe(box("static").height);
+    expect(box("open").height).toBe(box("bare").height);
+    expect(text("Linked").left).toBe(text("Static").left);
+    expect(text("Linked").top - box("linked").top).toBe(
+      text("Static").top - box("static").top,
+    );
+    expect(text("Open").left).toBe(text("Bare").left);
+    expect(text("Open").width).toBe(text("Bare").width);
+    expect(box("linked-end").right).toBe(box("static-end").right);
+    expect(box("linked-end").top - box("linked").top).toBe(
+      box("static-end").top - box("static").top,
+    );
+  });
+
+  it("keeps a long trailing value inside the row and leaves the title room", async () => {
+    const screen = await render(
+      <div style={wide}>
+        <List variant="contained" data-testid="list">
+          <ListItem
+            title="Single Stroke Roll"
+            trailing="Seventy beats per minute for the first three minutes, then eighty"
+          />
+          <ListItem
+            title="Double Stroke Roll"
+            href="#double"
+            trailing="Sixty beats per minute for the first three minutes, then seventy"
+          />
+        </List>
+      </div>,
+    );
+    const list = screen.getByTestId("list").element();
+
+    expect(list.scrollWidth).toBe(list.clientWidth);
+    for (const title of ["Single Stroke Roll", "Double Stroke Roll"]) {
+      expect(
+        screen.getByText(title).element().getBoundingClientRect().width,
+      ).toBeGreaterThan(120);
+    }
+  });
+
+  it("does not number the rows of a plain list nested in a numbered one", async () => {
+    const screen = await render(
+      <List numbered>
+        <ListItem
+          title="Outer"
+          trailing={
+            <List data-testid="inner">
+              <ListItem title="Inner" />
+            </List>
+          }
+        />
+      </List>,
+    );
+
+    expect(
+      getComputedStyle(
+        screen
+          .getByTestId("inner")
+          .element()
+          .querySelector("li > *") as Element,
+        "::before",
+      ).content,
+    ).toBe("none");
+  });
+
+  it("shows focus on the selected row in forced colours", async () => {
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "forced-colors", value: "active" }],
+    });
+    const screen = await render(
+      <List>
+        <ListItem title="A" onClick={() => undefined} />
+        <ListItem title="B" onClick={() => undefined} selected />
+      </List>,
+    );
+    const selected = screen.getByRole("button", { name: "B" }).element();
+    const resting = getComputedStyle(selected).outlineStyle;
+
+    await userEvent.keyboard("{Tab}{Tab}");
+    const focused = getComputedStyle(selected).outlineStyle;
+    await session.send("Emulation.setEmulatedMedia", { features: [] });
+
+    expect(document.activeElement).toBe(selected);
+    expect(resting).toBe("none");
+    expect(focused).not.toBe("none");
+  });
+
+  it("leaves the row alone when anything in its actions is clicked", async () => {
+    const onRow = vi.fn();
+    const onPlay = vi.fn();
+    const screen = await render(
+      <div style={wide}>
+        <List>
+          <ListItem
+            title="Paradiddle"
+            onClick={onRow}
+            trailing="80 BPM"
+            actions={<span>Play</span>}
+          />
+        </List>
+      </div>,
+    );
+    const play = screen.getByText("Play").element();
+    const box = play.getBoundingClientRect();
+    const target = document.elementFromPoint(
+      box.left + box.width / 2,
+      box.top + box.height / 2,
+    );
+
+    play.addEventListener("click", onPlay);
+
+    expect(target).toBe(play);
+    (target as HTMLElement).click();
+    expect(onPlay).toHaveBeenCalledOnce();
+    expect(onRow).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("80 BPM").element().getBoundingClientRect().right,
+    ).toBeLessThan(box.left);
+  });
+
+  it("shows actions on a static row after its trailing content", async () => {
+    const screen = await render(
+      <div style={wide}>
+        <List>
+          <ListItem
+            title="Paradiddle"
+            trailing="80 BPM"
+            actions={<button type="button">Play</button>}
+          />
+        </List>
+      </div>,
+    );
+
+    expect(
+      screen.getByText("80 BPM").element().getBoundingClientRect().right,
+    ).toBeLessThan(
+      screen.getByRole("button").element().getBoundingClientRect().left,
+    );
+  });
+
+  it("keeps a role its owner asks for", async () => {
+    const asked = { role: "presentation" } as const;
+    const screen = await render(
+      <List {...asked} data-testid="list">
+        <ListItem title="A" />
+      </List>,
+    );
+
+    await expect
+      .element(screen.getByTestId("list"))
+      .toHaveAttribute("role", "presentation");
   });
 });

@@ -81,6 +81,7 @@ export {
   List,
   ListItem,
   type ListItemProps,
+  type ListItemSelected,
   type ListProps,
   type ListVariant,
 } from "./List/List.js";

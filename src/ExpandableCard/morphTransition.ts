@@ -63,7 +63,11 @@ export function runMorph(morph: Morph) {
   morph.begin();
   morph.settle();
   const transition = document.startViewTransition({
-    update: morph.update,
+    update: () => {
+      if (!retired.has(morph.owner)) {
+        morph.update();
+      }
+    },
     types: [TRANSITION_TYPE],
   });
   active = { transition, owner: morph.owner };

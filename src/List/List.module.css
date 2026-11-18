@@ -43,7 +43,23 @@
   padding-inline: var(--list-padding-inline);
 }
 
-.numbered .row::before {
+.interactive {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(50%);
+}
+
+.main {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.action:only-child > .main {
+  padding-inline-end: var(--list-padding-inline);
+}
+
+.numbered > .item > .row::before,
+.numbered > .item > .interactive > .action > .main::before {
   content: counter(dusty-list, decimal-leading-zero);
   flex-shrink: 0;
   color: var(--dusty-text-muted);
@@ -52,8 +68,11 @@
 }
 
 .action {
-  box-sizing: border-box;
-  inline-size: 100%;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-area: 1 / 1 / auto / -1;
+  padding-block: var(--list-padding-block);
+  padding-inline: var(--list-padding-inline) 0;
   border: 0;
   background: none;
   color: inherit;
@@ -69,12 +88,13 @@
   outline-offset: calc(var(--dusty-focus-ring-width) * -1);
 }
 
-.row[aria-current] {
+.row[aria-current],
+.action[aria-current] {
   background-color: var(--dusty-surface-selected);
 }
 
-.plain .action,
-.divided .action,
+.plain .interactive,
+.divided .interactive,
 .plain .row[aria-current],
 .divided .row[aria-current] {
   --list-padding-inline: 0.5rem;
@@ -118,8 +138,43 @@
   flex-shrink: 0;
   gap: 0.5rem;
   align-items: center;
+  min-inline-size: 0;
+  max-inline-size: 50%;
   color: var(--dusty-text-muted);
   font-size: 0.875rem;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.end {
+  display: flex;
+  grid-area: 1 / 2;
+  gap: 0.75rem;
+  align-items: center;
+  align-self: center;
+  min-inline-size: 0;
+  margin-block: var(--list-padding-block);
+  margin-inline: 0.75rem var(--list-padding-inline);
+  pointer-events: none;
+}
+
+.end > .trailing {
+  flex-shrink: 1;
+  max-inline-size: none;
+}
+
+.end > .actions,
+.end
+  > .trailing
+  :is(a, button, input, select, textarea, label, summary, [tabindex]) {
+  pointer-events: auto;
 }
 
 .bone {
@@ -135,7 +190,9 @@
   inline-size: 35%;
 }
 
-.row[aria-current] :is(.leading, .overline, .description, .trailing) {
+.row[aria-current] :is(.leading, .overline, .description, .trailing),
+.action[aria-current] :is(.leading, .overline, .description),
+.action[aria-current] + .end > .trailing {
   color: inherit;
 }
 
@@ -165,9 +222,9 @@
 }
 
 @media (forced-colors: active) {
-  .row[aria-current] {
-    outline: 2px solid Highlight;
-    outline-offset: -2px;
+  .row[aria-current],
+  .action[aria-current] {
+    border-inline-start: 0.25rem solid Highlight;
   }
 
   .bone {
