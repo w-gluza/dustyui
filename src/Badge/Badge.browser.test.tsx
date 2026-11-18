@@ -189,6 +189,29 @@ describe("Badge", () => {
     expect(screen.getByTestId("badge").element().textContent).toBe("Editorial");
   });
 
+  it.each(["outline", "soft", "solid"] as const)(
+    "keeps a %s badge that may not shrink inside a narrow container",
+    async (variant) => {
+      const screen = await render(
+        <div data-testid="box" style={{ display: "flex", inlineSize: "5rem" }}>
+          <Badge
+            label="Supercalifragilisticexpialidocious"
+            variant={variant}
+            style={{ flexShrink: 0 }}
+          />
+        </div>,
+      );
+      const box = screen.getByTestId("box").element().getBoundingClientRect();
+      const badge = screen
+        .getByText("Supercalifragilisticexpialidocious")
+        .element()
+        .parentElement?.getBoundingClientRect();
+
+      expect(badge?.width).toBe(box.width);
+      expect(badge?.right).toBe(box.right);
+    },
+  );
+
   it("keeps the icon at its size when a long label wraps", async () => {
     const screen = await render(
       <div style={{ inlineSize: "7rem" }}>
