@@ -6,6 +6,12 @@ import { announce, readyAnnouncer } from "../announcer/announcer.js";
 import { nextBeatKind, type BeatKind } from "./beatKind.js";
 import styles from "./BeatPattern.module.css";
 
+interface BeatRequest {
+  index: number;
+  kind: BeatKind;
+  awaiting: boolean;
+}
+
 function defaultBeatLabel(beat: number, kind: BeatKind): string {
   return `Beat ${String(beat)}, ${kind}`;
 }
@@ -18,7 +24,7 @@ export interface BeatPatternProps extends Omit<
   beats: readonly BeatKind[];
   playingBeat?: number | undefined;
   beatLabel?: ((beat: number, kind: BeatKind) => string) | undefined;
-  onBeatChange: (index: number, kind: BeatKind) => void;
+  onBeatChange: (index: number, kind: BeatKind) => void | Promise<unknown>;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }
@@ -32,15 +38,25 @@ export function BeatPattern({
   className,
   ...props
 }: BeatPatternProps) {
-  const requested = useRef<{ index: number; kind: BeatKind }>(null);
+  const requested = useRef<BeatRequest>(null);
+
+  function forgetSoon(request: BeatRequest) {
+    setTimeout(() => {
+      if (requested.current === request) {
+        requested.current = null;
+      }
+    });
+  }
 
   useEffect(readyAnnouncer, []);
 
   useEffect(() => {
     const request = requested.current;
-    requested.current = null;
     if (request && beats[request.index] === request.kind) {
+      requested.current = null;
       announce(beatLabel(request.index + 1, request.kind));
+    } else if (request && !request.awaiting) {
+      requested.current = null;
     }
   }, [beats, beatLabel]);
 
@@ -61,14 +77,29 @@ export function BeatPattern({
             aria-label={beatLabel(index + 1, kind)}
             onClick={() => {
               const next = nextBeatKind(kind);
-              const request = { index, kind: next };
+              const request: BeatRequest = {
+                index,
+                kind: next,
+                awaiting: false,
+              };
               requested.current = request;
-              onBeatChange(index, next);
-              setTimeout(() => {
-                if (requested.current === request) {
-                  requested.current = null;
-                }
-              });
+              const answer = onBeatChange(index, next);
+              if (answer instanceof Promise) {
+                request.awaiting = true;
+                answer.then(
+                  () => {
+                    request.awaiting = false;
+                    forgetSoon(request);
+                  },
+                  () => {
+                    if (requested.current === request) {
+                      requested.current = null;
+                    }
+                  },
+                );
+              } else {
+                forgetSoon(request);
+              }
             }}
           >
             <span className={styles.accentMark} aria-hidden="true">

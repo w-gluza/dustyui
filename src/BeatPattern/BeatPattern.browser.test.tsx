@@ -231,6 +231,59 @@ describe("BeatPattern", () => {
     expect(announcements()).toEqual([]);
   });
 
+  it("announces a change its owner accepts later, once the returned promise settles", async () => {
+    resetAnnouncer();
+    let accept: () => void = () => undefined;
+    const saved = new Promise<void>((resolve) => {
+      accept = resolve;
+    });
+    const onBeatChange = () => saved;
+    const screen = await render(
+      <BeatPattern label="Beats" beats={BEATS} onBeatChange={onBeatChange} />,
+    );
+
+    await screen.getByRole("button", { name: "Beat 2, normal" }).click();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(announcements()).toEqual([]);
+    accept();
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={["accent", "accent", "skipped", "normal"]}
+        onBeatChange={onBeatChange}
+      />,
+    );
+
+    await expect.poll(() => announcements()).toEqual(["Beat 2, accent"]);
+  });
+
+  it("announces nothing when the returned promise is rejected, even if a later update matches", async () => {
+    resetAnnouncer();
+    const onBeatChange = () => Promise.reject(new Error("not saved"));
+    const screen = await render(
+      <BeatPattern label="Beats" beats={BEATS} onBeatChange={onBeatChange} />,
+    );
+
+    await screen.getByRole("button", { name: "Beat 2, normal" }).click();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={["accent", "accent", "skipped", "normal"]}
+        onBeatChange={onBeatChange}
+      />,
+    );
+
+    await expect
+      .element(screen.getByRole("button", { name: "Beat 2, accent" }))
+      .toBeVisible();
+    expect(announcements()).toEqual([]);
+  });
+
   it("keeps the list role that a list without markers loses in Safari", async () => {
     const screen = await render(
       <BeatPattern

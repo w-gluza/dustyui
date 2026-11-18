@@ -80,4 +80,34 @@ describe("EmptyState", () => {
 
     await expect.element(screen.getByTestId("empty")).toHaveClass("mine");
   });
+
+  it("keeps a plain text description in a paragraph", async () => {
+    const screen = await render(
+      <EmptyState title="Nothing here" level={2} description="Add a trip." />,
+    );
+
+    expect(screen.getByText("Add a trip.").element().tagName).toBe("P");
+  });
+
+  it("holds a description made of blocks without nesting them in a paragraph", async () => {
+    const screen = await render(
+      <EmptyState
+        title="Nothing here"
+        level={2}
+        description={
+          <>
+            <p>Add a trip.</p>
+            <ul>
+              <li>Pick a park</li>
+            </ul>
+          </>
+        }
+      />,
+    );
+    const paragraph = screen.getByText("Add a trip.").element();
+
+    expect(paragraph.parentElement?.tagName).toBe("DIV");
+    expect(paragraph.parentElement?.querySelector("ul")).not.toBeNull();
+    expect(getComputedStyle(paragraph).marginTop).toBe("0px");
+  });
 });

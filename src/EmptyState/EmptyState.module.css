@@ -28,6 +28,14 @@
   text-wrap: balance;
 }
 
+.description > :first-child {
+  margin-block-start: 0;
+}
+
+.description > :last-child {
+  margin-block-end: 0;
+}
+
 .description {
   max-inline-size: 45ch;
   margin: 0;

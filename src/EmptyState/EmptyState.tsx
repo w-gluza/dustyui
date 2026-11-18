@@ -24,13 +24,17 @@ export function EmptyState({
   ...props
 }: EmptyStateProps) {
   const Heading = `h${level}` as const;
+  const Description =
+    typeof description === "string" || typeof description === "number"
+      ? "p"
+      : "div";
 
   return (
     <div {...props} className={clsx(styles.emptyState, className)}>
       {media != null ? <div className={styles.media}>{media}</div> : null}
       <Heading className={styles.title}>{title}</Heading>
       {description != null ? (
-        <p className={styles.description}>{description}</p>
+        <Description className={styles.description}>{description}</Description>
       ) : null}
       {actions != null ? <div className={styles.actions}>{actions}</div> : null}
     </div>
