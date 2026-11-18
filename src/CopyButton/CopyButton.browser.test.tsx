@@ -82,6 +82,36 @@ describe("CopyButton", () => {
     expect(onCopied).not.toHaveBeenCalled();
   });
 
+  it("still reports success when the consumer's success handler throws", async () => {
+    clipboard().mockResolvedValue();
+    const broken = new Error("handler broke");
+    const reported: unknown[] = [];
+    const collect = (event: ErrorEvent) => {
+      event.preventDefault();
+      reported.push(event.error);
+    };
+    window.addEventListener("error", collect);
+    const onCopyError = vi.fn();
+    const screen = await render(
+      <CopyButton
+        value="abc"
+        onCopied={() => {
+          throw broken;
+        }}
+        onCopyError={onCopyError}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await expect
+      .element(screen.getByRole("button", { name: "Copied" }))
+      .toHaveAttribute("data-status", "copied");
+    await expect.poll(() => reported).toEqual([broken]);
+    expect(onCopyError).not.toHaveBeenCalled();
+    window.removeEventListener("error", collect);
+  });
+
   it("keeps its width when the label changes", async () => {
     clipboard().mockResolvedValue();
     const screen = await render(<CopyButton value="abc" />);

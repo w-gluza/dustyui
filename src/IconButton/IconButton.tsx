@@ -6,10 +6,15 @@ import styles from "./IconButton.module.css";
 
 export interface IconButtonProps extends Omit<
   ButtonProps,
-  "children" | "dangerouslySetInnerHTML" | "aria-label" | "aria-labelledby"
+  | "children"
+  | "dangerouslySetInnerHTML"
+  | "iconPosition"
+  | "aria-label"
+  | "aria-labelledby"
 > {
   label: string;
   icon: ReactNode;
+  iconPosition?: never;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }

@@ -66,6 +66,12 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
   });
 
+  it("refuse an icon position on an icon button, which has nothing to place", () => {
+    expectTypeOf<
+      Accepts<IconButtonProps, IconButtonBase & { iconPosition: "end" }>
+    >().toEqualTypeOf<false>();
+  });
+
   it("refuse a name or a hidden state that contradicts the avatar", () => {
     expectTypeOf<
       Accepts<AvatarProps, AvatarBase & { "aria-label": string }>

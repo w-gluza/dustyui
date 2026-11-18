@@ -130,6 +130,16 @@
   text-decoration-thickness: 2px;
 }
 
+.secondary[aria-pressed="true"],
+.plain[aria-pressed="true"] {
+  background-color: var(--dusty-surface-selected);
+  color: var(--dusty-action);
+}
+
+.secondary[aria-pressed="true"] {
+  border-color: var(--dusty-action);
+}
+
 @media (hover: hover) {
   .plain:enabled:not([aria-disabled="true"]):hover {
     color: var(--dusty-text);

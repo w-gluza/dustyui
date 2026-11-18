@@ -37,6 +37,7 @@ export function CopyButton({
   iconOnly = false,
   feedbackDuration = 2000,
   variant = "secondary",
+  iconPosition,
   onCopied,
   onCopyError,
   onClick,
@@ -68,21 +69,22 @@ export function CopyButton({
   async function copy() {
     try {
       await navigator.clipboard.writeText(value);
-      setFeedback({ status: "copied" });
-      announce(copiedLabel);
-      onCopied?.(value);
     } catch (error) {
       setFeedback({ status: "failed" });
       announce(failedLabel, "assertive");
       onCopyError?.(error);
+      return;
     }
+    setFeedback({ status: "copied" });
+    announce(copiedLabel);
+    onCopied?.(value);
   }
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     onClick?.(event);
     if (!event.defaultPrevented) {
       setAnimated(true);
-      void copy();
+      copy().catch(reportError);
     }
   }
 
@@ -106,6 +108,7 @@ export function CopyButton({
       {...props}
       className={clsx(styles.copy, className)}
       variant={variant}
+      iconPosition={iconPosition}
       icon={<CopyStatusIcon status={status} />}
       data-status={status}
       data-animated={animated || undefined}
