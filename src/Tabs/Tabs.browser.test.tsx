@@ -875,4 +875,51 @@ describe("Tabs", () => {
       expect(look("Inner tab")).toEqual(look("Lone tab"));
     },
   );
+
+  it.each(["connected", "underline", "pill"] as const)(
+    "keeps the stand-in %s selection of a nested list whose selected tab is disabled",
+    async (variant) => {
+      const inner = (
+        <Tabs defaultValue="x" variant={variant}>
+          <TabsList label="Inner" data-testid="inner">
+            <TabsTrigger value="x" disabled>
+              Inner tab
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      );
+      const screen = await render(
+        <>
+          <Tabs defaultValue="a" variant={variant}>
+            <TabsList label="Outer" data-testid="outer">
+              <TabsTrigger value="a">Outer tab</TabsTrigger>
+              {inner}
+            </TabsList>
+          </Tabs>
+          <Tabs defaultValue="x" variant={variant}>
+            <TabsList label="Alone">
+              <TabsTrigger value="x" disabled>
+                Lone tab
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </>,
+      );
+      const look = (name: string) => {
+        const style = getComputedStyle(
+          screen.getByRole("tab", { name }).element(),
+        );
+
+        return [style.backgroundColor, style.boxShadow, style.borderTopWidth];
+      };
+
+      await expect
+        .element(screen.getByTestId("outer"))
+        .toHaveAttribute("data-placed");
+      await expect
+        .element(screen.getByTestId("inner"))
+        .not.toHaveAttribute("data-placed");
+      expect(look("Inner tab")).toEqual(look("Lone tab"));
+    },
+  );
 });
