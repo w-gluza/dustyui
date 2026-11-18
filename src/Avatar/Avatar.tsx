@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import clsx from "clsx";
 import { getStyle } from "../styles/getStyle.js";
-import { getInitials } from "./getInitials.js";
+import { countGraphemes, getInitials } from "./getInitials.js";
 import styles from "./Avatar.module.css";
 
 export type AvatarSize = "small" | "medium" | "large";
@@ -55,9 +55,12 @@ export function Avatar({
           "--avatar-size": `${(Number.isFinite(size) && size > 0 ? size : DEFAULT_SIZE) / ROOT_FONT_SIZE}rem`,
         });
 
-  const accessibility = decorative
-    ? { "aria-hidden": true }
-    : { role: "img", "aria-label": name };
+  const label = name.trim();
+  const accessibility =
+    decorative || label === ""
+      ? { "aria-hidden": true }
+      : { role: "img", "aria-label": label };
+  const text = fallback ?? getInitials(name);
 
   return (
     <span
@@ -71,7 +74,12 @@ export function Avatar({
       )}
       style={sizedStyle}
     >
-      <span className={styles.fallback}>{fallback ?? getInitials(name)}</span>
+      <span
+        className={styles.fallback}
+        data-long={countGraphemes(text) > 2 || undefined}
+      >
+        {text}
+      </span>
       {image}
     </span>
   );

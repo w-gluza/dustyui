@@ -1,15 +1,28 @@
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
-function firstGrapheme(word: string): string {
+const BRACKETED = /\([^)]*\)|\[[^\]]*\]/gu;
+const INITIAL = /[\p{L}\p{N}\p{Extended_Pictographic}]/u;
+
+function firstInitial(word: string): string {
   for (const { segment } of graphemes.segment(word)) {
-    return segment;
+    if (INITIAL.test(segment)) {
+      return segment.toLocaleUpperCase();
+    }
   }
   return "";
 }
 
 export function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/u).filter(Boolean);
-  const first = words[0] ?? "";
-  const last = words.length > 1 ? (words.at(-1) ?? "") : "";
-  return firstGrapheme(first) + firstGrapheme(last);
+  const initials = name
+    .replace(BRACKETED, " ")
+    .split(/\s+/u)
+    .map(firstInitial)
+    .filter(Boolean);
+  const first = initials[0] ?? "";
+  const last = initials.length > 1 ? (initials.at(-1) ?? "") : "";
+  return first + last;
+}
+
+export function countGraphemes(text: string): number {
+  return [...graphemes.segment(text)].length;
 }

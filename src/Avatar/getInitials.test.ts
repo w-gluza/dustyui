@@ -23,8 +23,16 @@ describe("getInitials", () => {
     expect(getInitials("   ")).toBe("");
   });
 
-  it("keeps the original letter case", () => {
-    expect(getInitials("bell hooks")).toBe("bh");
+  it("capitalises the initials", () => {
+    expect(getInitials("bell hooks")).toBe("BH");
+  });
+
+  it("skips punctuation and words without a letter", () => {
+    expect(getInitials("Ada Lovelace (she/her)")).toBe("AL");
+    expect(getInitials("Ada Lovelace [admin]")).toBe("AL");
+    expect(getInitials("- Ada")).toBe("A");
+    expect(getInitials("Ada Lovelace -")).toBe("AL");
+    expect(getInitials('"Grace" O\'Neil')).toBe("GO");
   });
 
   it("keeps an accented letter whole when it is written as two code points", () => {

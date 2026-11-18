@@ -1,6 +1,8 @@
 .avatar {
+  position: relative;
   display: inline-grid;
   flex-shrink: 0;
+  box-sizing: border-box;
   inline-size: var(--avatar-size, 4rem);
   block-size: var(--avatar-size, 4rem);
   overflow: hidden;
@@ -21,7 +23,6 @@
 
 .ringNeutral,
 .ringAccent {
-  box-sizing: border-box;
   padding: max(2px, calc(var(--avatar-size, 4rem) / 16));
   border: var(--avatar-ring-width) solid var(--avatar-ring-color);
 }
@@ -47,7 +48,9 @@
   min-block-size: 0;
 }
 
-.avatar > img {
+.avatar > :where(img, picture, svg, video),
+.avatar > picture > img {
+  display: block;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
@@ -62,8 +65,12 @@
   background-color: var(--dusty-surface-sunken);
   color: var(--dusty-text-muted);
   font-weight: var(--dusty-weight-semibold);
-  font-size: calc(var(--avatar-size, 4rem) / 3);
-  text-transform: uppercase;
+  font-size: max(0.75rem, calc(var(--avatar-size, 4rem) / 3));
+  box-shadow: inset 0 0 0 1px var(--dusty-border);
+}
+
+.fallback[data-long] {
+  font-size: max(0.625rem, calc(var(--avatar-size, 4rem) / 4));
 }
 
 @media (forced-colors: active) {

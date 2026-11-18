@@ -177,4 +177,115 @@ describe("Avatar", () => {
       Number.parseFloat(neutral.borderTopWidth),
     );
   });
+
+  it("keeps an absolutely positioned image inside the circle", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "300px", blockSize: "200px" }}>
+        <Avatar
+          name="Wioletta Gluza"
+          image={
+            <img
+              alt=""
+              src={portrait}
+              style={{ position: "absolute", inset: 0 }}
+            />
+          }
+        />
+      </div>,
+    );
+    const avatar = screen.getByRole("img", { name: "Wioletta Gluza" });
+    const image = avatar.element().querySelector("img");
+
+    expect(size(image ?? avatar.element())).toEqual([64, 64]);
+  });
+
+  it("fills the circle with an image wrapped in a picture or drawn as svg", async () => {
+    const screen = await render(
+      <>
+        <Avatar
+          name="Picture"
+          image={
+            <picture>
+              <img alt="" src={portrait} />
+            </picture>
+          }
+        />
+        <Avatar name="Drawing" image={<svg viewBox="0 0 1 1" />} />
+      </>,
+    );
+    const inner = (name: string, selector: string) =>
+      screen.getByRole("img", { name }).element().querySelector(selector);
+
+    expect(size(inner("Picture", "img")!)).toEqual([64, 64]);
+    expect(size(inner("Drawing", "svg")!)).toEqual([64, 64]);
+  });
+
+  it("is hidden from assistive technology when it has no name", async () => {
+    const screen = await render(
+      <>
+        <Avatar name="" data-testid="empty" />
+        <Avatar name="   " data-testid="blank" />
+      </>,
+    );
+
+    expect(screen.getByRole("img").elements()).toHaveLength(0);
+    await expect
+      .element(screen.getByTestId("empty"))
+      .toHaveAttribute("aria-hidden", "true");
+    await expect
+      .element(screen.getByTestId("blank"))
+      .toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("shows a custom fallback in the case it was given", async () => {
+    const screen = await render(<Avatar name="Team" fallback="dev" />);
+    const text = screen.getByText("dev").element();
+
+    expect(getComputedStyle(text).textTransform).toBe("none");
+  });
+
+  it("never sets the initials smaller than 12 pixels", async () => {
+    const screen = await render(<Avatar name="Wioletta Gluza" size="small" />);
+
+    expect(getComputedStyle(screen.getByText("WG").element()).fontSize).toBe(
+      "12px",
+    );
+  });
+
+  it("sets a fallback of three or more characters smaller so it fits", async () => {
+    const screen = await render(
+      <>
+        <Avatar name="Two" fallback="+9" size="small" />
+        <Avatar name="Four" fallback="+100" size="small" />
+      </>,
+    );
+    const fontSize = (text: string) =>
+      Number.parseFloat(
+        getComputedStyle(screen.getByText(text).element()).fontSize,
+      );
+    const long = screen.getByText("+100").element();
+    const range = document.createRange();
+    range.selectNodeContents(long);
+
+    expect(fontSize("+100")).toBeLessThan(fontSize("+9"));
+    expect(range.getBoundingClientRect().width).toBeLessThan(28);
+  });
+
+  it("draws an edge around the initials so they stand out from the page", async () => {
+    const screen = await render(<Avatar name="Wioletta Gluza" />);
+
+    expect(
+      getComputedStyle(screen.getByText("WG").element()).boxShadow,
+    ).toContain("inset");
+  });
+
+  it("keeps its size when forced colours add a border", async () => {
+    const screen = await render(<Avatar name="Wioletta Gluza" />);
+    const avatar = screen
+      .getByRole("img", { name: "Wioletta Gluza" })
+      .element();
+    avatar.style.border = "1px solid";
+
+    expect(size(avatar)).toEqual([64, 64]);
+  });
 });
