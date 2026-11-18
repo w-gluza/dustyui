@@ -447,4 +447,33 @@ describe("TempoDial", () => {
       await session.send("Emulation.setEmulatedMedia", { features: [] });
     }
   });
+
+  it("ends the gesture even when a consumer cancels its end, so the next press still works", async () => {
+    const onValueChange = vi.fn();
+    const veto = (event: { preventDefault: () => void }) => {
+      event.preventDefault();
+    };
+    const screen = await render(
+      <div style={{ inlineSize: "200px" }}>
+        <TempoDial
+          label="Tempo"
+          min={40}
+          max={240}
+          defaultValue={140}
+          data-testid="dial"
+          onValueChange={onValueChange}
+          onPointerUp={veto}
+          onPointerCancel={veto}
+          onLostPointerCapture={veto}
+        />
+      </div>,
+    );
+    const dial = screen.getByTestId("dial").element();
+
+    drag(dial, [0.95, 0.5], [0.95, 0.5]);
+    expect(onValueChange).not.toHaveBeenCalled();
+
+    drag(dial, [0.5, 0.05], [0.95, 0.5]);
+    expect(onValueChange).toHaveBeenLastCalledWith(200);
+  });
 });

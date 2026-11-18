@@ -69,13 +69,11 @@ export function snapValue(value: number, range: DialRange): number {
   if (!(step > 0)) {
     return clampValue(value, range);
   }
-  const lastStep = Math.max(0, Math.floor((max - min) / step + 1e-9));
-  const steps = Math.min(
-    lastStep,
-    Math.max(0, Math.round((value - min) / step)),
-  );
   const decimals = Math.min(100, Math.max(decimalsOf(min), decimalsOf(step)));
-  return Number((min + steps * step).toFixed(decimals));
+  const at = (steps: number) => Number((min + steps * step).toFixed(decimals));
+  const reach = Math.max(0, Math.floor((max - min) / step + 1e-9));
+  const lastStep = at(reach) > max ? Math.max(0, reach - 1) : reach;
+  return at(Math.min(lastStep, Math.max(0, Math.round((value - min) / step))));
 }
 
 export function valueAngle(value: number, range: DialRange): number {

@@ -45,6 +45,16 @@ function after<Event extends { defaultPrevented: boolean }>(
   };
 }
 
+function always<Event>(
+  theirs: ((event: Event) => void) | undefined,
+  ours: (event: Event) => void,
+): (event: Event) => void {
+  return (event) => {
+    theirs?.(event);
+    ours(event);
+  };
+}
+
 export function TempoDial({
   label,
   min,
@@ -88,9 +98,9 @@ export function TempoDial({
       className={clsx(styles.dial, className)}
       onPointerDown={after(onPointerDown, ring.onPointerDown)}
       onPointerMove={after(onPointerMove, ring.onPointerMove)}
-      onPointerUp={after(onPointerUp, ring.onPointerUp)}
-      onPointerCancel={after(onPointerCancel, ring.onPointerCancel)}
-      onLostPointerCapture={after(
+      onPointerUp={always(onPointerUp, ring.onPointerUp)}
+      onPointerCancel={always(onPointerCancel, ring.onPointerCancel)}
+      onLostPointerCapture={always(
         onLostPointerCapture,
         ring.onLostPointerCapture,
       )}

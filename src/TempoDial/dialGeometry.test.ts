@@ -61,6 +61,10 @@ describe("dial geometry", () => {
     expect(snapValue(Number.NaN, range)).toBe(40);
     expect(snapValue(120.4, { min: 40, max: 240, step: 0 })).toBe(120.4);
     expect(snapValue(5, { min: 5, max: 5, step: 1 })).toBe(5);
+    expect(
+      snapValue(0.299999999999, { min: 0, max: 0.299999999999, step: 0.1 }),
+    ).toBe(0.2);
+    expect(snapValue(0.3, { min: 0, max: 0.3, step: 0.1 })).toBe(0.3);
   });
 
   it("places the marker along the arc", () => {

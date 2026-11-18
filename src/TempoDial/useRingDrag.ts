@@ -89,7 +89,11 @@ export function useRingDrag<Dial extends HTMLElement>({
     },
     onPointerUp(event) {
       const pressed = drag.current;
-      if (pressed?.pointerId === event.pointerId && pressed.turned < TAP_SLOP) {
+      if (
+        pressed?.pointerId === event.pointerId &&
+        pressed.turned < TAP_SLOP &&
+        !event.defaultPrevented
+      ) {
         onChange(snapValue(angleValue(pressed.angle, range), range));
       }
       end(event);
