@@ -1,6 +1,7 @@
-import type { ComponentProps, ReactNode } from "react";
+import { isValidElement, type ComponentProps, type ReactNode } from "react";
 import clsx from "clsx";
 import { getStyle } from "../styles/getStyle.js";
+import { AvatarImage } from "./AvatarImage.js";
 import { countGraphemes, getInitials } from "./getInitials.js";
 import styles from "./Avatar.module.css";
 
@@ -61,6 +62,7 @@ export function Avatar({
       ? { "aria-hidden": true }
       : { role: "img", "aria-label": label };
   const text = fallback ?? getInitials(name);
+  const staticArtwork = isValidElement(image) && image.type === "svg";
 
   return (
     <span
@@ -80,7 +82,11 @@ export function Avatar({
       >
         {text}
       </span>
-      {image}
+      {image == null || staticArtwork ? (
+        image
+      ) : (
+        <AvatarImage>{image}</AvatarImage>
+      )}
     </span>
   );
 }

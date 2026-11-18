@@ -37,23 +37,32 @@
   --avatar-ring-color: var(--dusty-action);
 }
 
-.ringNeutral > *,
-.ringAccent > * {
-  border-radius: inherit;
-}
-
-.avatar > * {
+.avatar > :not(.image),
+.image > * {
   grid-area: 1 / 1;
   min-inline-size: 0;
   min-block-size: 0;
 }
 
-.avatar > :where(img, picture, svg, video),
-.avatar > picture > img {
+:is(.ringNeutral, .ringAccent) > :not(.image),
+:is(.ringNeutral, .ringAccent) > .image > * {
+  border-radius: inherit;
+}
+
+:is(.avatar, .image) > :where(img, picture, svg, video),
+.image > picture > img {
   display: block;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
+}
+
+.image {
+  display: contents;
+}
+
+.image img[data-image-failed] {
+  visibility: hidden;
 }
 
 .fallback {

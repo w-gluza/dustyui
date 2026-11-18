@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createRef } from "react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { render } from "vitest-browser-react";
 import { Avatar } from "../index.js";
 
@@ -46,19 +49,126 @@ describe("Avatar", () => {
     ).toBeTruthy();
   });
 
-  it("still shows the initials when the image cannot be loaded", async () => {
+  it("hides an image that cannot be loaded so only the initials show", async () => {
+    const screen = await render(
+      <Avatar
+        name="Wioletta Gluza"
+        image={<img alt="Broken portrait" src="/missing-portrait.png" />}
+      />,
+    );
+    const image = document.querySelector("img");
+
+    await expect
+      .poll(() => image && getComputedStyle(image).visibility)
+      .toBe("hidden");
+    await expect.element(screen.getByText("WG")).toBeVisible();
+  });
+
+  it("shows the portrait again when a failed image gets a working source", async () => {
     const screen = await render(
       <Avatar
         name="Wioletta Gluza"
         image={<img alt="" src="/missing-portrait.png" />}
       />,
     );
-    const image = document.querySelector("img");
+    const visibility = () => {
+      const image = document.querySelector("img");
+      return image && getComputedStyle(image).visibility;
+    };
+    await expect.poll(visibility).toBe("hidden");
 
+    await screen.rerender(
+      <Avatar name="Wioletta Gluza" image={<img alt="" src={portrait} />} />,
+    );
+
+    await expect.poll(visibility).toBe("visible");
+  });
+
+  it("hides an image that failed before the page became interactive", async () => {
+    const avatar = (
+      <Avatar
+        name="Wioletta Gluza"
+        image={<img alt="" src="/missing-portrait.png" />}
+      />
+    );
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(avatar);
+    document.body.append(host);
+    const image = host.querySelector("img");
     await expect.poll(() => image?.complete).toBe(true);
+    expect(image && getComputedStyle(image).visibility).toBe("visible");
 
-    expect(image?.naturalWidth).toBe(0);
-    await expect.element(screen.getByText("WG")).toBeVisible();
+    const root = hydrateRoot(host, avatar);
+
+    await expect
+      .poll(() => image && getComputedStyle(image).visibility)
+      .toBe("hidden");
+    root.unmount();
+    host.remove();
+  });
+
+  it("shows replacement artwork after an image failed", async () => {
+    const screen = await render(
+      <Avatar
+        name="Wioletta Gluza"
+        image={<img alt="" src="/missing-portrait.png" />}
+      />,
+    );
+    await expect
+      .poll(() => {
+        const image = document.querySelector("img");
+        return image && getComputedStyle(image).visibility;
+      })
+      .toBe("hidden");
+
+    await screen.rerender(
+      <Avatar name="Wioletta Gluza" image={<svg viewBox="0 0 1 1" />} />,
+    );
+
+    await expect
+      .poll(() => {
+        const drawing = screen.container.querySelector("svg");
+        return drawing && getComputedStyle(drawing).visibility;
+      })
+      .toBe("visible");
+  });
+
+  it("gives the caller its root element through an object or a function ref", async () => {
+    const objectRef = createRef<HTMLSpanElement>();
+    let fromFunction: HTMLSpanElement | null = null;
+    const screen = await render(
+      <>
+        <Avatar name="Object" ref={objectRef} />
+        <Avatar
+          name="Function"
+          ref={(node) => {
+            fromFunction = node;
+          }}
+        />
+      </>,
+    );
+
+    expect(objectRef.current).toBe(
+      screen.getByRole("img", { name: "Object" }).element(),
+    );
+    expect(fromFunction).toBe(
+      screen.getByRole("img", { name: "Function" }).element(),
+    );
+  });
+
+  it("still calls a consumer error handler", async () => {
+    let errors = 0;
+    await render(
+      <Avatar
+        name="Wioletta Gluza"
+        onErrorCapture={() => {
+          errors += 1;
+        }}
+        image={<img alt="" src="/missing-portrait.png" />}
+      />,
+    );
+
+    await expect.poll(() => errors).toBe(1);
   });
 
   it("is hidden from assistive technology when decorative", async () => {
