@@ -13,6 +13,7 @@ import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { BeatPatternProps } from "./BeatPattern/BeatPattern.js";
+import type { BeatKind } from "./BeatPattern/beatKind.js";
 import type { CalloutProps } from "./Callout/Callout.js";
 import type { CopyButtonProps } from "./CopyButton/CopyButton.js";
 import type { BarChartProps } from "./BarChart/BarChart.js";
@@ -98,6 +99,29 @@ describe("props", () => {
     expectTypeOf<
       Accepts<CalloutProps, { title: string }>
     >().toEqualTypeOf<false>();
+  });
+
+  it("accept a beat handler that returns a value or a promise", () => {
+    expectTypeOf<
+      Accepts<
+        BeatPatternProps,
+        {
+          label: string;
+          beats: readonly BeatKind[];
+          onBeatChange: (index: number) => number;
+        }
+      >
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<
+        BeatPatternProps,
+        {
+          label: string;
+          beats: readonly BeatKind[];
+          onBeatChange: () => Promise<void>;
+        }
+      >
+    >().toEqualTypeOf<true>();
   });
 
   it("refuse an icon position on an icon-only copy button", () => {

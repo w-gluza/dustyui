@@ -28,13 +28,23 @@ export function settleAnimations(root: Element | null | undefined) {
   }
 }
 
-export function skipMorphOf(owner: object) {
+const retired = new WeakSet<object>();
+
+export function reviveMorphsOf(owner: object) {
+  retired.delete(owner);
+}
+
+export function retireMorphsOf(owner: object) {
+  retired.add(owner);
   if (active?.owner === owner) {
     active.transition.skipTransition();
   }
 }
 
 export function runMorph(morph: Morph) {
+  if (retired.has(morph.owner)) {
+    return;
+  }
   if (active) {
     const interrupted = active.transition;
     interrupted.skipTransition();

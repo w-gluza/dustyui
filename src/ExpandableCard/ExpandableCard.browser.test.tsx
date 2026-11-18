@@ -222,6 +222,40 @@ describe("ExpandableCard", () => {
     skipped.mockRestore();
   });
 
+  it("drops a queued change when its card is removed while another card is still morphing", async () => {
+    const onExpandedChange = vi.fn();
+    function Pair({ both }: { both: boolean }) {
+      return (
+        <>
+          <ExpandableCard title="Monument Valley" level={2}>
+            Details
+          </ExpandableCard>
+          {both ? (
+            <ExpandableCard
+              title="Death Valley"
+              level={2}
+              onExpandedChange={onExpandedChange}
+            >
+              Other
+            </ExpandableCard>
+          ) : null}
+        </>
+      );
+    }
+    const screen = await render(<Pair both />);
+    const first = screen.getByRole("button", { name: "Monument Valley" });
+    const second = screen.getByRole("button", { name: "Death Valley" });
+
+    (first.element() as HTMLElement).click();
+    (second.element() as HTMLElement).click();
+    await screen.rerender(<Pair both={false} />);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 300);
+    });
+
+    expect(onExpandedChange).not.toHaveBeenCalled();
+  });
+
   it("opens and closes without a morph when motion is reduced", async () => {
     const session = cdp() as unknown as {
       send: (method: string, params: object) => Promise<unknown>;

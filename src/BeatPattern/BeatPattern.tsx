@@ -10,6 +10,7 @@ interface BeatRequest {
   index: number;
   kind: BeatKind;
   awaiting: boolean;
+  shown: boolean;
 }
 
 function defaultBeatLabel(beat: number, kind: BeatKind): string {
@@ -24,7 +25,7 @@ export interface BeatPatternProps extends Omit<
   beats: readonly BeatKind[];
   playingBeat?: number | undefined;
   beatLabel?: ((beat: number, kind: BeatKind) => string) | undefined;
-  onBeatChange: (index: number, kind: BeatKind) => void | Promise<unknown>;
+  onBeatChange: (index: number, kind: BeatKind) => unknown;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }
@@ -39,6 +40,7 @@ export function BeatPattern({
   ...props
 }: BeatPatternProps) {
   const requested = useRef<BeatRequest>(null);
+  const latestBeatLabel = useRef(beatLabel);
 
   function forgetSoon(request: BeatRequest) {
     setTimeout(() => {
@@ -51,12 +53,18 @@ export function BeatPattern({
   useEffect(readyAnnouncer, []);
 
   useEffect(() => {
+    latestBeatLabel.current = beatLabel;
     const request = requested.current;
-    if (request && beats[request.index] === request.kind) {
-      requested.current = null;
+    if (!request) {
+      return;
+    }
+    request.shown = beats[request.index] === request.kind;
+    if (request.awaiting) {
+      return;
+    }
+    requested.current = null;
+    if (request.shown) {
       announce(beatLabel(request.index + 1, request.kind));
-    } else if (request && !request.awaiting) {
-      requested.current = null;
     }
   }, [beats, beatLabel]);
 
@@ -81,6 +89,7 @@ export function BeatPattern({
                 index,
                 kind: next,
                 awaiting: false,
+                shown: false,
               };
               requested.current = request;
               const answer = onBeatChange(index, next);
@@ -89,7 +98,15 @@ export function BeatPattern({
                 answer.then(
                   () => {
                     request.awaiting = false;
-                    forgetSoon(request);
+                    if (requested.current !== request) {
+                      return;
+                    }
+                    if (request.shown) {
+                      requested.current = null;
+                      announce(latestBeatLabel.current(index + 1, next));
+                    } else {
+                      forgetSoon(request);
+                    }
                   },
                   () => {
                     if (requested.current === request) {

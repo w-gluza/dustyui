@@ -14,7 +14,12 @@ import { flushSync } from "react-dom";
 import clsx from "clsx";
 import type { HeadingLevel } from "../headingLevel.js";
 import { ExpandedView } from "./ExpandedView.js";
-import { runMorph, settleAnimations, skipMorphOf } from "./morphTransition.js";
+import {
+  retireMorphsOf,
+  reviveMorphsOf,
+  runMorph,
+  settleAnimations,
+} from "./morphTransition.js";
 import { useModalDialog } from "./useModalDialog.js";
 import "./expandableCardTransition.css";
 import styles from "./ExpandableCard.module.css";
@@ -68,12 +73,12 @@ export function ExpandableCard({
   const Heading = `h${level}` as const;
   const Summary = typeof summary === "string" ? "p" : "div";
 
-  useEffect(
-    () => () => {
-      skipMorphOf(cardRef);
-    },
-    [],
-  );
+  useEffect(() => {
+    reviveMorphsOf(cardRef);
+    return () => {
+      retireMorphsOf(cardRef);
+    };
+  }, []);
 
   function apply(next: boolean) {
     flushSync(() => {
