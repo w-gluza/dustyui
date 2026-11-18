@@ -18,8 +18,11 @@ function createRegion(politeness: Politeness): HTMLElement {
 }
 
 function getHost(): HTMLElement {
+  const modals = [...document.querySelectorAll<HTMLElement>("dialog:modal")];
+
   return (
-    [...document.querySelectorAll<HTMLElement>("dialog:modal")].at(-1) ??
+    modals.findLast((modal) => modal.contains(document.activeElement)) ??
+    modals.at(-1) ??
     document.body
   );
 }
@@ -63,15 +66,32 @@ export function announce(
     return ignore;
   }
 
-  const region = ensureRegions()[politeness];
+  ensureRegions();
   const delay = Math.max(0, regionsReadyAt - performance.now());
+  let entry: HTMLElement | undefined;
+  let removal: ReturnType<typeof setTimeout> | undefined;
 
-  const timer = setTimeout(() => {
-    const entry = document.createElement("div");
-    entry.textContent = message;
-    region.append(entry);
-    setTimeout(() => entry.remove(), MESSAGE_LIFETIME);
-  }, delay);
+  function insert(): void {
+    const readyAt = regionsReadyAt;
+    const region = ensureRegions()[politeness];
+    if (regionsReadyAt !== readyAt) {
+      timer = setTimeout(insert, REGION_READY_DELAY);
+      return;
+    }
+    const added = document.createElement("div");
+    added.textContent = message;
+    region.append(added);
+    entry = added;
+    removal = setTimeout(() => {
+      added.remove();
+    }, MESSAGE_LIFETIME);
+  }
 
-  return () => clearTimeout(timer);
+  let timer = setTimeout(insert, delay);
+
+  return () => {
+    clearTimeout(timer);
+    clearTimeout(removal);
+    entry?.remove();
+  };
 }
