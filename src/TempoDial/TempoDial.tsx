@@ -2,9 +2,8 @@
 
 import { useRef, type ComponentProps } from "react";
 import clsx from "clsx";
-import visuallyHidden from "../styles/visuallyHidden.module.css";
 import { useControllableState } from "../useControllableState.js";
-import { clampValue, valueAngle } from "./dialGeometry.js";
+import { snapValue, valueAngle } from "./dialGeometry.js";
 import { DialTicks } from "./DialTicks.js";
 import { useRingDrag } from "./useRingDrag.js";
 import styles from "./TempoDial.module.css";
@@ -34,6 +33,18 @@ export type TempoDialProps = TempoDialBaseProps &
     | { value?: undefined; defaultValue?: number | undefined }
   );
 
+function after<Event extends { defaultPrevented: boolean }>(
+  theirs: ((event: Event) => void) | undefined,
+  ours: (event: Event) => void,
+): (event: Event) => void {
+  return (event) => {
+    theirs?.(event);
+    if (!event.defaultPrevented) {
+      ours(event);
+    }
+  };
+}
+
 export function TempoDial({
   label,
   min,
@@ -45,6 +56,13 @@ export function TempoDial({
   defaultValue = min,
   onValueChange,
   className,
+  "aria-describedby": describedBy,
+  "aria-details": details,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onLostPointerCapture,
   ...props
 }: TempoDialProps) {
   const range = { min, max, step };
@@ -54,8 +72,8 @@ export function TempoDial({
     defaultValue,
     onValueChange,
   );
-  const value = clampValue(rawValue, range);
-  const dialRef = useRingDrag<HTMLDivElement>({
+  const value = snapValue(rawValue, range);
+  const ring = useRingDrag<HTMLDivElement>({
     value,
     range,
     onChange: setValue,
@@ -65,7 +83,18 @@ export function TempoDial({
   });
 
   return (
-    <div {...props} ref={dialRef} className={clsx(styles.dial, className)}>
+    <div
+      {...props}
+      className={clsx(styles.dial, className)}
+      onPointerDown={after(onPointerDown, ring.onPointerDown)}
+      onPointerMove={after(onPointerMove, ring.onPointerMove)}
+      onPointerUp={after(onPointerUp, ring.onPointerUp)}
+      onPointerCancel={after(onPointerCancel, ring.onPointerCancel)}
+      onLostPointerCapture={after(
+        onLostPointerCapture,
+        ring.onLostPointerCapture,
+      )}
+    >
       <DialTicks markerAngle={valueAngle(value, range)} />
       <div className={styles.readout} aria-hidden="true">
         <span className={styles.value}>{value}</span>
@@ -73,9 +102,11 @@ export function TempoDial({
       </div>
       <input
         ref={inputRef}
-        className={clsx(visuallyHidden.visuallyHidden, styles.input)}
+        className={styles.input}
         type="range"
         aria-label={label}
+        aria-describedby={describedBy}
+        aria-details={details}
         aria-valuetext={
           valueText?.(value) ?? [String(value), unit].filter(Boolean).join(" ")
         }

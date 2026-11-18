@@ -55,9 +55,27 @@ export function angleValue(degrees: number, range: DialRange): number {
   return range.min + share * (range.max - range.min);
 }
 
+function decimalsOf(value: number): number {
+  const [, fraction = "", exponent = "0"] =
+    /^-?\d+(?:\.(\d+))?(?:e([+-]\d+))?$/u.exec(String(value)) ?? [];
+  return Math.max(0, fraction.length - Number(exponent));
+}
+
 export function snapValue(value: number, range: DialRange): number {
-  const steps = Math.round((value - range.min) / range.step);
-  return clampValue(range.min + steps * range.step, range);
+  const { min, max, step } = range;
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  if (!(step > 0)) {
+    return clampValue(value, range);
+  }
+  const lastStep = Math.max(0, Math.floor((max - min) / step + 1e-9));
+  const steps = Math.min(
+    lastStep,
+    Math.max(0, Math.round((value - min) / step)),
+  );
+  const decimals = Math.min(100, Math.max(decimalsOf(min), decimalsOf(step)));
+  return Number((min + steps * step).toFixed(decimals));
 }
 
 export function valueAngle(value: number, range: DialRange): number {

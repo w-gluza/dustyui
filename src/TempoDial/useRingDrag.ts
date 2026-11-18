@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
+import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import {
   angleValue,
   isOnRing,
@@ -19,13 +19,28 @@ interface RingDrag {
   onStart: () => void;
 }
 
+export interface RingDragHandlers<Dial extends HTMLElement> {
+  onPointerDown: (event: ReactPointerEvent<Dial>) => void;
+  onPointerMove: (event: ReactPointerEvent<Dial>) => void;
+  onPointerUp: (event: ReactPointerEvent<Dial>) => void;
+  onPointerCancel: (event: ReactPointerEvent<Dial>) => void;
+  onLostPointerCapture: (event: ReactPointerEvent<Dial>) => void;
+}
+
+function locate(event: ReactPointerEvent<HTMLElement>): [DialPoint, number] {
+  const box = event.currentTarget.getBoundingClientRect();
+  return [
+    { x: event.clientX - box.left, y: event.clientY - box.top },
+    box.width,
+  ];
+}
+
 export function useRingDrag<Dial extends HTMLElement>({
   value,
   range,
   onChange,
   onStart,
-}: RingDrag): RefObject<Dial | null> {
-  const dialRef = useRef<Dial>(null);
+}: RingDrag): RingDragHandlers<Dial> {
   const drag = useRef<{
     pointerId: number;
     angle: number;
@@ -33,89 +48,53 @@ export function useRingDrag<Dial extends HTMLElement>({
     turned: number;
   } | null>(null);
 
-  const start = useEffectEvent(
-    (point: DialPoint, size: number, pointerId: number) => {
-      if (drag.current || !isOnRing(point, size)) {
+  function end(event: ReactPointerEvent<Dial>) {
+    if (drag.current?.pointerId === event.pointerId) {
+      drag.current = null;
+    }
+  }
+
+  return {
+    onPointerDown(event) {
+      const [point, size] = locate(event);
+      if (event.button !== 0 || drag.current || !isOnRing(point, size)) {
         return;
       }
       drag.current = {
-        pointerId,
+        pointerId: event.pointerId,
         angle: pointAngle(point, size),
         value,
         turned: 0,
       };
-      dialRef.current?.setPointerCapture(pointerId);
+      event.currentTarget.setPointerCapture(event.pointerId);
+      event.preventDefault();
       onStart();
     },
-  );
-
-  const turn = useEffectEvent(
-    (point: DialPoint, size: number, pointerId: number) => {
-      if (drag.current?.pointerId !== pointerId || !isOnRing(point, size)) {
+    onPointerMove(event) {
+      const [point, size] = locate(event);
+      const pressed = drag.current;
+      if (pressed?.pointerId !== event.pointerId || !isOnRing(point, size)) {
         return;
       }
       const angle = pointAngle(point, size);
-      const degrees = turnBetween(drag.current.angle, angle);
-      const turned = turnedValue(drag.current.value, degrees, range);
+      const degrees = turnBetween(pressed.angle, angle);
+      const turned = turnedValue(pressed.value, degrees, range);
       drag.current = {
-        pointerId,
+        pointerId: event.pointerId,
         angle,
         value: turned,
-        turned: drag.current.turned + Math.abs(degrees),
+        turned: pressed.turned + Math.abs(degrees),
       };
       onChange(snapValue(turned, range));
     },
-  );
-
-  const release = useEffectEvent((pointerId: number) => {
-    const pressed = drag.current;
-    if (pressed?.pointerId === pointerId && pressed.turned < TAP_SLOP) {
-      onChange(snapValue(angleValue(pressed.angle, range), range));
-    }
-  });
-
-  useEffect(() => {
-    const dial = dialRef.current;
-    if (!dial) {
-      return;
-    }
-    const locate = (event: PointerEvent): [DialPoint, number] => {
-      const box = dial.getBoundingClientRect();
-      return [
-        { x: event.clientX - box.left, y: event.clientY - box.top },
-        box.width,
-      ];
-    };
-    const handleDown = (event: PointerEvent) => {
-      if (event.button === 0) {
-        start(...locate(event), event.pointerId);
+    onPointerUp(event) {
+      const pressed = drag.current;
+      if (pressed?.pointerId === event.pointerId && pressed.turned < TAP_SLOP) {
+        onChange(snapValue(angleValue(pressed.angle, range), range));
       }
-    };
-    const handleMove = (event: PointerEvent) => {
-      turn(...locate(event), event.pointerId);
-    };
-    const handleEnd = (event: PointerEvent) => {
-      if (drag.current?.pointerId === event.pointerId) {
-        drag.current = null;
-      }
-    };
-    dial.addEventListener("pointerdown", handleDown);
-    dial.addEventListener("pointermove", handleMove);
-    const handleUp = (event: PointerEvent) => {
-      release(event.pointerId);
-      handleEnd(event);
-    };
-    dial.addEventListener("pointerup", handleUp);
-    dial.addEventListener("pointercancel", handleEnd);
-    dial.addEventListener("lostpointercapture", handleEnd);
-    return () => {
-      dial.removeEventListener("pointerdown", handleDown);
-      dial.removeEventListener("pointermove", handleMove);
-      dial.removeEventListener("pointerup", handleUp);
-      dial.removeEventListener("pointercancel", handleEnd);
-      dial.removeEventListener("lostpointercapture", handleEnd);
-    };
-  }, []);
-
-  return dialRef;
+      end(event);
+    },
+    onPointerCancel: end,
+    onLostPointerCapture: end,
+  };
 }

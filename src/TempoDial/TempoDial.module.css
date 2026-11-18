@@ -19,6 +19,17 @@
   outline-offset: var(--dusty-focus-ring-offset);
 }
 
+.input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  appearance: none;
+  pointer-events: none;
+}
+
 .ticks {
   display: block;
   grid-area: 1 / 1;
@@ -63,6 +74,10 @@
 }
 
 @media (forced-colors: active) {
+  .tick {
+    stroke: CanvasText;
+  }
+
   .tick[data-active] {
     stroke: Highlight;
   }
