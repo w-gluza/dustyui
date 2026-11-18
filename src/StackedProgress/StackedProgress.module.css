@@ -14,7 +14,6 @@
 
 .bar {
   display: flex;
-  gap: 2px;
   block-size: var(--stacked-size);
   overflow: hidden;
   border-radius: var(--dusty-radius-full);
@@ -23,7 +22,29 @@
 .segment {
   flex: var(--segment-grow) 0 0;
   min-inline-size: 0;
-  background-color: var(--segment-color, var(--dusty-border-strong));
+  background-color: var(--segment-color);
+  transition:
+    flex-grow 0.2s ease,
+    margin-inline-start 0.2s ease;
+}
+
+.segment + .segment {
+  margin-inline-start: 2px;
+}
+
+.segment.rest[data-empty] {
+  margin-inline-start: 0;
+}
+
+.rest {
+  border-start-end-radius: var(--dusty-radius-full);
+  border-end-end-radius: var(--dusty-radius-full);
+  background-color: var(--dusty-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--dusty-border-strong);
+}
+
+.rest:only-child {
+  border-radius: var(--dusty-radius-full);
 }
 
 .first {
@@ -117,6 +138,12 @@
   background-color: var(--dusty-action);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .segment {
+    transition: none;
+  }
+}
+
 @media (forced-colors: active) {
   .segmentTrack {
     outline: 1px solid CanvasText;
@@ -133,5 +160,10 @@
     forced-color-adjust: none;
     outline: 1px solid CanvasText;
     outline-offset: -1px;
+  }
+
+  .rest {
+    forced-color-adjust: auto;
+    background-color: Canvas;
   }
 }

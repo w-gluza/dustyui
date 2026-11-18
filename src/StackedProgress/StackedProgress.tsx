@@ -73,9 +73,12 @@ export function StackedProgress({
               />
             ) : null,
           )}
-          {rest > 0 ? (
-            <span className={styles.segment} style={grow(share(rest))} />
-          ) : null}
+          <span
+            key="rest"
+            className={clsx(styles.segment, styles.rest)}
+            data-empty={rest > 0 ? undefined : true}
+            style={grow(share(rest))}
+          />
         </div>
       ) : null}
       <ul

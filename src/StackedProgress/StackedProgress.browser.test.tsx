@@ -107,7 +107,7 @@ describe("StackedProgress", () => {
     );
 
     expect(segmentWidths(screen.getByTestId("stack").element())).toEqual([
-      300, 100,
+      300, 100, 0,
     ]);
     await expect.element(screen.getByText("75% Photos")).toBeVisible();
   });
@@ -365,5 +365,109 @@ describe("StackedProgress", () => {
     } finally {
       await session.send("Emulation.setEmulatedMedia", { features: [] });
     }
+  });
+
+  it.each([
+    ["dusty", "light"],
+    ["dusty", "dark"],
+    ["mono", "light"],
+    ["mono", "dark"],
+  ])(
+    "draws the unfilled rest as a track, apart from every segment, in %s %s",
+    async (theme, scheme) => {
+      const screen = await render(
+        <div data-theme={theme} data-color-scheme={scheme}>
+          <StackedProgress
+            label="Storage"
+            max={10}
+            segments={[1, 1, 1, 1, 1].map((value, index) => ({
+              label: `Part ${String(index + 1)}`,
+              value,
+            }))}
+            data-testid="stack"
+          />
+        </div>,
+      );
+      const pieces = Array.from(
+        barOf(screen.getByTestId("stack").element()).children,
+      );
+      const rest = getComputedStyle(pieces.at(-1) as Element);
+      const colours = pieces
+        .slice(0, -1)
+        .map((piece) => getComputedStyle(piece).backgroundColor);
+
+      expect(colours).toHaveLength(5);
+      expect(colours).not.toContain(rest.backgroundColor);
+      expect(rest.boxShadow).not.toBe("none");
+    },
+  );
+
+  it("eases a change of share and skips the easing when motion is reduced", async () => {
+    const screen = await render(
+      <StackedProgress
+        label="Project time"
+        segments={SEGMENTS}
+        data-testid="stack"
+      />,
+    );
+    const segment = barOf(screen.getByTestId("stack").element())
+      .firstElementChild as Element;
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+
+    expect(getComputedStyle(segment).transitionProperty).toContain("flex-grow");
+    expect(getComputedStyle(segment).transitionDuration).toBe("0.2s, 0.2s");
+
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    try {
+      expect(getComputedStyle(segment).transitionDuration).toBe("0s");
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: "" }],
+      });
+    }
+  });
+
+  it("closes the unfilled rest gradually when the bar becomes full", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "400px" }}>
+        <StackedProgress
+          label="Upload"
+          segments={[{ label: "Sent", value: 0.5 }]}
+          data-testid="stack"
+        />
+      </div>,
+    );
+    const bar = barOf(screen.getByTestId("stack").element());
+    const rest = bar.lastElementChild as HTMLElement;
+    for (const piece of bar.children) {
+      (piece as HTMLElement).style.transitionDuration = "5s";
+    }
+    expect(rest.getBoundingClientRect().width).toBe(199);
+
+    await screen.rerender(
+      <div style={{ inlineSize: "400px" }}>
+        <StackedProgress
+          label="Upload"
+          segments={[{ label: "Sent", value: 1 }]}
+          data-testid="stack"
+        />
+      </div>,
+    );
+
+    expect(bar.lastElementChild).toBe(rest);
+    expect(rest.getBoundingClientRect().width).toBeGreaterThan(0);
+    expect(rest.getAnimations().length).toBeGreaterThan(0);
+
+    for (const piece of bar.children) {
+      (piece as HTMLElement).style.transitionDuration = "";
+      for (const animation of piece.getAnimations()) {
+        animation.finish();
+      }
+    }
+    expect(segmentWidths(bar.parentElement as Element)).toEqual([400, 0]);
   });
 });
