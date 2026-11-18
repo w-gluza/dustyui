@@ -71,11 +71,11 @@
   justify-content: center;
   inline-size: 100%;
   block-size: 100%;
-  background-color: var(--dusty-surface-sunken);
-  color: var(--dusty-text-muted);
+  background-color: var(--avatar-fallback-surface, var(--dusty-surface-sunken));
+  color: var(--avatar-fallback-text, var(--dusty-text-muted));
   font-weight: var(--dusty-weight-semibold);
   font-size: max(0.75rem, calc(var(--avatar-size, 4rem) / 3));
-  box-shadow: inset 0 0 0 1px var(--dusty-border);
+  box-shadow: inset 0 0 0 1px var(--avatar-fallback-edge, var(--dusty-border));
 }
 
 .fallback[data-long] {

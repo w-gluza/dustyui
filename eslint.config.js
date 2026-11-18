@@ -27,6 +27,10 @@ export default defineConfig([
       ],
       "jsx-a11y/no-aria-hidden-on-focusable": "error",
       "jsx-a11y/prefer-tag-over-role": "error",
+      "jsx-a11y/no-redundant-roles": [
+        "error",
+        { nav: ["navigation"], ul: ["list"], ol: ["list"] },
+      ],
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/switch-exhaustiveness-check": [
         "error",

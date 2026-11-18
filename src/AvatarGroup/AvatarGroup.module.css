@@ -6,23 +6,29 @@
 }
 
 .small {
-  --avatar-group-overlap: -0.5rem;
+  --avatar-group-overlap: -0.375rem;
 }
 
 .medium {
-  --avatar-group-overlap: -0.75rem;
+  --avatar-group-overlap: -0.5625rem;
 }
 
 .large {
-  --avatar-group-overlap: -1rem;
+  --avatar-group-overlap: -0.75rem;
 }
 
 .item {
   display: flex;
   border-radius: var(--dusty-radius-full);
-  box-shadow: 0 0 0 2px var(--avatar-group-gap, var(--dusty-surface));
+  box-shadow: 0 0 0 2px var(--dusty-avatar-group-gap, var(--dusty-surface));
 }
 
 .item + .item {
   margin-inline-start: var(--avatar-group-overlap);
+}
+
+.overflow {
+  --avatar-fallback-surface: var(--dusty-surface-raised);
+  --avatar-fallback-text: var(--dusty-text);
+  --avatar-fallback-edge: var(--dusty-border-strong);
 }

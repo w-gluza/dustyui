@@ -13,15 +13,23 @@ export interface AvatarGroupProps extends Omit<
   avatars: readonly AvatarGroupItem[];
   size?: AvatarSize | undefined;
   max?: number | undefined;
+  overflowLabel?:
+    ((count: number, hidden: readonly AvatarGroupItem[]) => string) | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }
+
+const MAX_SHOWN_COUNT = 99;
 
 function getVisibleCount(total: number, max: number | undefined): number {
   if (max === undefined || !Number.isInteger(max) || max < 1 || max >= total) {
     return total;
   }
-  return max;
+  return max - 1;
+}
+
+function defaultOverflowLabel(count: number): string {
+  return `${count} more`;
 }
 
 export function AvatarGroup({
@@ -29,15 +37,17 @@ export function AvatarGroup({
   avatars,
   size = "medium",
   max,
+  overflowLabel = defaultOverflowLabel,
   className,
   ...props
 }: AvatarGroupProps) {
   const visibleCount = getVisibleCount(avatars.length, max);
-  const hiddenCount = avatars.length - visibleCount;
+  const hidden = avatars.slice(visibleCount);
 
   return (
     <ul
       {...props}
+      role="list"
       aria-label={label}
       className={clsx(styles.group, styles[size], className)}
     >
@@ -46,12 +56,17 @@ export function AvatarGroup({
           <Avatar {...avatar} size={size} />
         </li>
       ))}
-      {hiddenCount > 0 ? (
+      {hidden.length > 0 ? (
         <li className={styles.item}>
           <Avatar
-            name={`${hiddenCount} more`}
-            fallback={`+${hiddenCount}`}
+            name={overflowLabel(hidden.length, hidden)}
+            fallback={
+              hidden.length > MAX_SHOWN_COUNT
+                ? `${MAX_SHOWN_COUNT}+`
+                : `+${hidden.length}`
+            }
             size={size}
+            className={styles.overflow}
           />
         </li>
       ) : null}
