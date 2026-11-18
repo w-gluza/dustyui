@@ -67,8 +67,13 @@
   visibility: visible;
 }
 
+.option:has(:disabled) {
+  color: var(--dusty-text-muted);
+  cursor: not-allowed;
+}
+
 @media (hover: hover) {
-  .option:hover {
+  .option:not(:has(:disabled)):hover {
     background-color: var(--dusty-surface-hover);
   }
 }
@@ -76,5 +81,11 @@
 @media (forced-colors: active) {
   .check {
     border-color: Highlight;
+  }
+
+  .option:has(:disabled),
+  .option:has(:disabled) .check {
+    border-color: GrayText;
+    color: GrayText;
   }
 }

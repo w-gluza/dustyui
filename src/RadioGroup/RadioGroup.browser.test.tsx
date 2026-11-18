@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { userEvent } from "vitest/browser";
+import { cdp, userEvent } from "vitest/browser";
 import { RadioGroup } from "../index.js";
 
 const METERS = [
@@ -238,5 +238,136 @@ describe("RadioGroup", () => {
 
     expect(tick("Right to left")).toEqual(tick("Left to right"));
     expect(tick("Left to right").drawnOnTheRight).toBe(true);
+  });
+
+  it("asks for a choice before its form can be submitted when required", async () => {
+    const screen = await render(
+      <form data-testid="form">
+        <RadioGroup legend="Time signature" options={METERS} required />
+      </form>,
+    );
+    const form = screen.getByTestId("form").element() as HTMLFormElement;
+
+    expect(form.checkValidity()).toBe(false);
+    await screen.getByText("6/8").click();
+    expect(form.checkValidity()).toBe(true);
+  });
+
+  it("looks and acts switched off when the whole group is disabled", async () => {
+    const onValueChange = vi.fn();
+    const screen = await render(
+      <>
+        <RadioGroup legend="Live" options={METERS} defaultValue="4/4" />
+        <RadioGroup
+          legend="Off"
+          options={METERS}
+          defaultValue="4/4"
+          disabled
+          onValueChange={onValueChange}
+        />
+      </>,
+    );
+    const row = (legend: string) =>
+      screen
+        .getByRole("group", { name: legend })
+        .getByText("3/4")
+        .element()
+        .closest("label") as Element;
+
+    await userEvent.hover(row("Off"));
+    const off = getComputedStyle(row("Off"));
+    const live = getComputedStyle(row("Live"));
+
+    expect(off.cursor).toBe("not-allowed");
+    expect(off.backgroundColor).toBe(live.backgroundColor);
+    expect(off.color).not.toBe(live.color);
+    await userEvent.click(row("Off"), { force: true });
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("switches off a single option and steps over it with the arrow keys", async () => {
+    const onValueChange = vi.fn();
+    const screen = await render(
+      <RadioGroup
+        legend="Time signature"
+        options={[
+          { value: "3/4", label: "3/4" },
+          { value: "4/4", label: "4/4", disabled: true },
+          { value: "6/8", label: "6/8" },
+        ]}
+        defaultValue="3/4"
+        onValueChange={onValueChange}
+      />,
+    );
+    const rowOf = (name: string) =>
+      screen.getByText(name).element().closest("label") as Element;
+
+    await expect
+      .element(screen.getByRole("radio", { name: "4/4" }))
+      .toBeDisabled();
+    expect(getComputedStyle(rowOf("4/4")).cursor).toBe("not-allowed");
+    expect(getComputedStyle(rowOf("6/8")).cursor).toBe("pointer");
+    await userEvent.click(rowOf("4/4"), { force: true });
+    expect(onValueChange).not.toHaveBeenCalled();
+
+    (
+      screen.getByRole("radio", { name: "3/4" }).element() as HTMLElement
+    ).focus();
+    await userEvent.keyboard("{ArrowDown}");
+
+    expect(onValueChange).toHaveBeenCalledExactlyOnceWith("6/8");
+  });
+
+  it("rings the row whose radio has keyboard focus", async () => {
+    const screen = await render(
+      <RadioGroup
+        legend="Time signature"
+        options={METERS}
+        defaultValue="4/4"
+      />,
+    );
+    const rowOf = (name: string) =>
+      getComputedStyle(
+        screen.getByText(name).element().closest("label") as Element,
+      ).outlineStyle;
+
+    expect(rowOf("4/4")).toBe("none");
+    await userEvent.tab();
+
+    expect(rowOf("4/4")).toBe("solid");
+    expect(rowOf("3/4")).toBe("none");
+  });
+
+  it("draws the tick in a system colour, and greys a disabled row, when colours are forced", async () => {
+    const screen = await render(
+      <RadioGroup
+        legend="Time signature"
+        options={[
+          { value: "3/4", label: "3/4" },
+          { value: "4/4", label: "4/4", disabled: true },
+        ]}
+        defaultValue="3/4"
+      />,
+    );
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    const group = screen.getByRole("group").element();
+    const tick = group.querySelector("[aria-hidden]") as Element;
+    const rowOf = (name: string) =>
+      getComputedStyle(
+        screen.getByText(name).element().closest("label") as Element,
+      ).color;
+    const before = getComputedStyle(tick).borderBottomColor;
+
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "forced-colors", value: "active" }],
+    });
+    try {
+      expect(getComputedStyle(tick).borderBottomColor).not.toBe(before);
+      expect(rowOf("4/4")).not.toBe(rowOf("3/4"));
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", { features: [] });
+    }
   });
 });

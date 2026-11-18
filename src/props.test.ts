@@ -9,6 +9,7 @@ import type { ListItemProps } from "./List/List.js";
 import type { TabsProps } from "./Tabs/Tabs.js";
 import type { ProgressBarProps } from "./ProgressBar/ProgressBar.js";
 import type { RecordSleeveProps } from "./RecordSleeve/RecordSleeve.js";
+import type { RadioGroupProps } from "./RadioGroup/RadioGroup.js";
 import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
@@ -335,6 +336,23 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
     expectTypeOf<
       Accepts<RecordSleeveProps, { revealed: true }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("require a legend and options on a radio group and refuse two sources of its value", () => {
+    interface Group {
+      legend: string;
+      options: { value: string; label: string; disabled?: boolean }[];
+    }
+    expectTypeOf<Accepts<RadioGroupProps, Group>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<RadioGroupProps, Group & { name: string; required: boolean }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<RadioGroupProps, Omit<Group, "legend">>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<RadioGroupProps, Group & { value: string; defaultValue: string }>
     >().toEqualTypeOf<false>();
   });
 

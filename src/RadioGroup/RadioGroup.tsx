@@ -9,6 +9,7 @@ import styles from "./RadioGroup.module.css";
 export interface RadioOption {
   value: string;
   label: string;
+  disabled?: boolean | undefined;
 }
 
 interface RadioGroupBaseProps extends Omit<
@@ -18,6 +19,7 @@ interface RadioGroupBaseProps extends Omit<
   legend: string;
   legendHidden?: boolean | undefined;
   options: readonly RadioOption[];
+  required?: boolean | undefined;
   onValueChange?: ((value: string) => void) | undefined;
 }
 
@@ -37,6 +39,7 @@ export function RadioGroup({
   className,
   name,
   form,
+  required,
   ...props
 }: RadioGroupProps) {
   const generatedName = useId();
@@ -65,6 +68,8 @@ export function RadioGroup({
             type="radio"
             name={name ?? generatedName}
             form={form}
+            required={required}
+            disabled={option.disabled}
             value={option.value}
             checked={option.value === value}
             onChange={() => {
