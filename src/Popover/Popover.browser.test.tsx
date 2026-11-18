@@ -322,4 +322,199 @@ describe("Popover", () => {
 
     expect(isOpen()).toBe(true);
   });
+
+  it("closes after a choice made with no pointer or key, as assistive technology does", async () => {
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <label>
+          <input type="radio" name="meter" defaultChecked /> 3/4
+        </label>
+        <label>
+          <input type="radio" name="meter" /> 4/4
+        </label>
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(isOpen()).toBe(true);
+    await userEvent.keyboard("{ArrowUp}");
+    expect(isOpen()).toBe(true);
+
+    (
+      screen.getByRole("radio", { name: "4/4" }).element() as HTMLElement
+    ).click();
+
+    expect(isOpen()).toBe(false);
+  });
+
+  it("closes when a checkbox is ticked with Space", async () => {
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <label>
+          <input type="checkbox" /> Accent the first beat
+        </label>
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    await userEvent.tab();
+    await userEvent.keyboard(" ");
+
+    await expect.element(screen.getByRole("checkbox")).toBeChecked();
+    expect(isOpen()).toBe(false);
+  });
+
+  it("reports opening and closing as a boolean", async () => {
+    const onOpenChange = vi.fn();
+    const screen = await render(
+      <Popover trigger="Options" onOpenChange={onOpenChange}>
+        Content
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    await expect.poll(() => onOpenChange.mock.calls).toEqual([[true]]);
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => onOpenChange.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it("passes native props to the trigger and keeps its own wiring", async () => {
+    const onClick = vi.fn();
+    const screen = await render(
+      <Popover
+        trigger="Options"
+        data-testid="panel"
+        triggerProps={{
+          id: "opener",
+          className: "mine",
+          "data-testid": "trigger",
+          onClick,
+        }}
+      >
+        Content
+      </Popover>,
+    );
+    const trigger = screen.getByTestId("trigger");
+
+    await expect.element(trigger).toHaveAttribute("id", "opener");
+    await expect.element(trigger).toHaveClass("mine");
+    await expect.element(trigger).toHaveAttribute("type", "button");
+    expect(trigger.element().className).not.toBe("mine");
+
+    await trigger.click();
+
+    expect(onClick).toHaveBeenCalledOnce();
+    expect(isOpen()).toBe(true);
+    await expect.element(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("cannot be opened while its trigger is disabled", async () => {
+    const screen = await render(
+      <Popover
+        trigger="Options"
+        data-testid="panel"
+        triggerProps={{ disabled: true }}
+      >
+        Content
+      </Popover>,
+    );
+    const trigger = screen.getByRole("button", { name: "Options" });
+
+    await expect.element(trigger).toBeDisabled();
+    await trigger.click({ force: true });
+
+    expect(isOpen()).toBe(false);
+  });
+
+  it("points the chevron down whichever way the text runs", async () => {
+    const screen = await render(
+      <>
+        <Popover trigger="Left to right">Content</Popover>
+        <div dir="rtl">
+          <Popover trigger="Right to left">Content</Popover>
+        </div>
+      </>,
+    );
+    const corner = (name: string) => {
+      const style = getComputedStyle(
+        screen
+          .getByRole("button", { name })
+          .element()
+          .querySelector("[aria-hidden]") as Element,
+      );
+      const drawnOnTheRight = Number.parseFloat(style.borderRightWidth) > 0;
+
+      return drawnOnTheRight === (style.rotate === "45deg")
+        ? "down"
+        : "sideways";
+    };
+
+    expect(corner("Left to right")).toBe("down");
+    expect(corner("Right to left")).toBe("down");
+  });
+
+  it("lines up with the trigger's starting edge when the text runs right to left", async () => {
+    const screen = await render(
+      <div dir="rtl" style={{ padding: "40px 200px" }}>
+        <Popover trigger="Options" data-testid="panel">
+          Content
+        </Popover>
+      </div>,
+    );
+    const trigger = screen.getByRole("button", { name: "Options" });
+
+    await trigger.click();
+
+    expect(Math.round(panelOf().getBoundingClientRect().right)).toBe(
+      Math.round(trigger.element().getBoundingClientRect().right),
+    );
+  });
+
+  it("scrolls content taller than the viewport inside the panel", async () => {
+    const screen = await render(
+      <Popover trigger="Options" data-testid="panel">
+        <div style={{ blockSize: "3000px" }}>Tall content</div>
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    const panel = panelOf();
+
+    expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(
+      window.innerHeight,
+    );
+    expect(panel.scrollHeight).toBeGreaterThan(panel.clientHeight);
+  });
+
+  it.each(["ltr", "rtl"] as const)(
+    "lines up with the far edge when aligned to the end in %s, on a page of either direction",
+    async (dir) => {
+      for (const page of ["ltr", "rtl"]) {
+        document.documentElement.dir = page;
+        try {
+          const screen = await render(
+            <div dir={dir} style={{ padding: "40px 200px" }}>
+              <Popover trigger="Options" align="end" data-testid="panel">
+                Some wider content
+              </Popover>
+            </div>,
+          );
+          const trigger = screen.getByRole("button", { name: "Options" });
+
+          await trigger.click();
+          const button = trigger.element().getBoundingClientRect();
+          const panel = panelOf().getBoundingClientRect();
+
+          expect(Math.round(dir === "rtl" ? panel.left : panel.right)).toBe(
+            Math.round(dir === "rtl" ? button.left : button.right),
+          );
+          await screen.unmount();
+        } finally {
+          document.documentElement.removeAttribute("dir");
+        }
+      }
+    },
+  );
 });

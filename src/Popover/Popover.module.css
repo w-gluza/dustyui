@@ -33,9 +33,13 @@
   translate: 0 -25%;
 }
 
+.chevron:dir(rtl) {
+  rotate: -45deg;
+}
+
 .panel {
   position-anchor: var(--popover-anchor);
-  position-area: block-end span-inline-end;
+  position-area: bottom span-right;
   position-try-fallbacks:
     flip-block,
     flip-inline,
@@ -43,6 +47,7 @@
   inset: auto;
   min-inline-size: anchor-size(inline);
   max-inline-size: calc(100vw - 1rem);
+  max-block-size: calc(100dvb - 1rem);
   margin: 0;
   margin-block: 0.5rem;
   padding: 0;
@@ -61,8 +66,13 @@
     display 0.15s allow-discrete;
 }
 
-.panel[data-align="end"] {
-  position-area: block-end span-inline-start;
+.panel:dir(rtl),
+.panel[data-align="end"]:dir(ltr) {
+  position-area: bottom span-left;
+}
+
+.panel[data-align="end"]:dir(rtl) {
+  position-area: bottom span-right;
 }
 
 .panel:popover-open {

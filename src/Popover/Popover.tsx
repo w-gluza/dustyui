@@ -15,6 +15,18 @@ import styles from "./Popover.module.css";
 
 export type PopoverAlign = "start" | "end";
 
+export type PopoverTriggerProps = Omit<
+  ComponentProps<"button">,
+  | "type"
+  | "children"
+  | "popoverTarget"
+  | "popoverTargetAction"
+  | "aria-expanded"
+  | "aria-label"
+  | "dangerouslySetInnerHTML"
+> &
+  Partial<Record<`data-${string}`, string>>;
+
 export interface PopoverProps extends Omit<
   ComponentProps<"div">,
   "popover" | "dangerouslySetInnerHTML"
@@ -24,6 +36,8 @@ export interface PopoverProps extends Omit<
   align?: PopoverAlign | undefined;
   chevron?: boolean | undefined;
   closeOnSelect?: boolean | undefined;
+  triggerProps?: PopoverTriggerProps | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 export function Popover({
@@ -32,6 +46,8 @@ export function Popover({
   align = "start",
   chevron = true,
   closeOnSelect = false,
+  triggerProps,
+  onOpenChange,
   className,
   children,
   ref,
@@ -56,8 +72,9 @@ export function Popover({
   return (
     <span className={styles.popover} style={anchor}>
       <button
+        {...triggerProps}
         type="button"
-        className={styles.trigger}
+        className={clsx(styles.trigger, triggerProps?.className)}
         aria-label={triggerLabel}
         aria-expanded={open}
         popoverTarget={panelId}
@@ -75,8 +92,13 @@ export function Popover({
         className={clsx(styles.panel, className)}
         data-align={align}
         onToggle={(event) => {
-          setOpen(event.newState === "open");
+          const next = event.newState === "open";
+
+          setOpen(next);
           onToggle?.(event);
+          if (next !== open) {
+            onOpenChange?.(next);
+          }
         }}
       >
         {children}

@@ -14,13 +14,10 @@ export function useCloseOnSelect<Panel extends HTMLElement>(
     if (!panel || !enabled) {
       return;
     }
-    let byPointer = false;
-    const handlePointerDown = () => {
-      byPointer = true;
-    };
+    let arrowing = false;
     let chosenWithEnter = false;
     const handleKeyDown = (event: KeyboardEvent) => {
-      byPointer = false;
+      arrowing = event.key.startsWith("Arrow");
       chosenWithEnter =
         event.key === "Enter" &&
         !event.isComposing &&
@@ -28,6 +25,7 @@ export function useCloseOnSelect<Panel extends HTMLElement>(
         event.target.matches(CHOICES);
     };
     const handleKeyUp = (event: KeyboardEvent) => {
+      arrowing = false;
       if (event.key === "Enter" && chosenWithEnter) {
         chosenWithEnter = false;
         panel.hidePopover();
@@ -42,18 +40,20 @@ export function useCloseOnSelect<Panel extends HTMLElement>(
         panel.hidePopover();
       }
     };
-    const handleChange = () => {
-      if (byPointer) {
+    const handleChange = (event: Event) => {
+      if (
+        !arrowing &&
+        event.target instanceof Element &&
+        event.target.matches(CHOICES)
+      ) {
         panel.hidePopover();
       }
     };
-    panel.addEventListener("pointerdown", handlePointerDown);
     panel.addEventListener("keydown", handleKeyDown);
     panel.addEventListener("keyup", handleKeyUp);
     panel.addEventListener("change", handleChange);
     panel.addEventListener("click", handleClick);
     return () => {
-      panel.removeEventListener("pointerdown", handlePointerDown);
       panel.removeEventListener("keydown", handleKeyDown);
       panel.removeEventListener("keyup", handleKeyUp);
       panel.removeEventListener("change", handleChange);

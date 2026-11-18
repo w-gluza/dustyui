@@ -75,6 +75,7 @@ export {
 export {
   Popover,
   type PopoverAlign,
+  type PopoverTriggerProps,
   type PopoverProps,
 } from "./Popover/Popover.js";
 export {
