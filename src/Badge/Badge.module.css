@@ -6,7 +6,7 @@
   padding-block: 0.125rem;
   padding-inline: 0.625rem;
   border: 1px solid transparent;
-  border-radius: var(--dusty-radius-full);
+  border-radius: 1lh;
   font-size: 0.75rem;
   font-weight: var(--dusty-weight-semibold);
   line-height: 1.33;
@@ -17,6 +17,7 @@
   align-items: center;
   justify-content: center;
   inline-size: 0.875rem;
+  flex-shrink: 0;
   block-size: 0.875rem;
   line-height: 0;
 }
@@ -27,9 +28,9 @@
 
 .neutral {
   --badge-ink: var(--dusty-text);
-  --badge-line: var(--dusty-border);
+  --badge-line: var(--dusty-border-strong);
   --badge-tint: var(--dusty-surface-sunken);
-  --badge-fill: var(--dusty-text);
+  --badge-fill: var(--dusty-text-muted);
   --badge-on-fill: var(--dusty-surface);
   --badge-marker: var(--dusty-illustration-primary);
 }
@@ -55,7 +56,7 @@
 
 .solid {
   border-color: var(--badge-fill);
-  border-radius: var(--dusty-radius-md);
+  border-radius: var(--dusty-radius-sm);
   background-color: var(--badge-fill);
   color: var(--badge-on-fill);
 }

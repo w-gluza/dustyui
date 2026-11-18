@@ -79,12 +79,14 @@ describe("Badge", () => {
       <>
         <Badge label="Plain" />
         <Badge label="Named" variant="outline" tone="neutral" />
-        <Probe token="--dusty-border" />
+        <Probe token="--dusty-border-strong" />
         <Probe token="--dusty-text" />
       </>,
     );
 
-    expect(styleOf("Plain").borderTopColor).toBe(tokenColour("--dusty-border"));
+    expect(styleOf("Plain").borderTopColor).toBe(
+      tokenColour("--dusty-border-strong"),
+    );
     expect(styleOf("Plain").color).toBe(tokenColour("--dusty-text"));
     expect(styleOf("Plain").backgroundColor).toBe("rgba(0, 0, 0, 0)");
     expect(styleOf("Named").borderTopColor).toBe(
@@ -124,12 +126,14 @@ describe("Badge", () => {
     await render(
       <>
         <Badge label="Solid" variant="solid" />
-        <Probe token="--dusty-text" />
+        <Probe token="--dusty-text-muted" />
         <Probe token="--dusty-surface" />
       </>,
     );
 
-    expect(styleOf("Solid").backgroundColor).toBe(tokenColour("--dusty-text"));
+    expect(styleOf("Solid").backgroundColor).toBe(
+      tokenColour("--dusty-text-muted"),
+    );
     expect(styleOf("Solid").color).toBe(tokenColour("--dusty-surface"));
   });
 
@@ -183,5 +187,80 @@ describe("Badge", () => {
 
     expect(screen.getByTestId("badge").element().children).toHaveLength(1);
     expect(screen.getByTestId("badge").element().textContent).toBe("Editorial");
+  });
+
+  it("keeps the icon at its size when a long label wraps", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "7rem" }}>
+        <Badge
+          label="Awaiting editorial review"
+          icon={<svg data-testid="icon" viewBox="0 0 1 1" />}
+        />
+      </div>,
+    );
+    const icon = screen.getByTestId("icon").element().parentElement;
+
+    expect(icon?.getBoundingClientRect().width).toBe(14);
+  });
+
+  it.each(["outline", "soft"] as const)(
+    "is a full pill on one line and keeps the same corners when a %s label wraps",
+    async (variant) => {
+      await render(
+        <>
+          <Badge label="Short" variant={variant} />
+          <div style={{ inlineSize: "7rem" }}>
+            <Badge label="Awaiting editorial review" variant={variant} />
+          </div>
+        </>,
+      );
+      const short = styleOf("Short");
+      const long = styleOf("Awaiting editorial review");
+
+      const outerHeight = (style: CSSStyleDeclaration) =>
+        Number.parseFloat(style.blockSize) +
+        Number.parseFloat(style.paddingTop) * 2 +
+        Number.parseFloat(style.borderTopWidth) * 2;
+
+      expect(
+        Number.parseFloat(short.borderTopLeftRadius) * 2,
+      ).toBeGreaterThanOrEqual(outerHeight(short));
+      expect(Number.parseFloat(long.borderTopLeftRadius) * 2).toBeLessThan(
+        outerHeight(long),
+      );
+      expect(outerHeight(long)).toBeGreaterThan(outerHeight(short) * 1.5);
+      expect(long.borderTopLeftRadius).toBe(short.borderTopLeftRadius);
+    },
+  );
+
+  it("gives a solid badge small square corners so it does not read as a pill", async () => {
+    await render(
+      <>
+        <Badge label="Solid" variant="solid" />
+        <Badge label="Pill" />
+      </>,
+    );
+
+    expect(styleOf("Solid").borderTopLeftRadius).toBe("4px");
+    expect(
+      Number.parseFloat(styleOf("Pill").borderTopLeftRadius),
+    ).toBeGreaterThan(8);
+  });
+
+  it("fills a neutral solid badge more quietly than an accent one", async () => {
+    await render(
+      <>
+        <Badge label="Neutral" variant="solid" />
+        <Badge label="Accent" variant="solid" tone="accent" />
+        <Probe token="--dusty-text" />
+      </>,
+    );
+
+    expect(styleOf("Neutral").backgroundColor).not.toBe(
+      styleOf("Accent").backgroundColor,
+    );
+    expect(styleOf("Neutral").backgroundColor).not.toBe(
+      tokenColour("--dusty-text"),
+    );
   });
 });
