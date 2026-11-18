@@ -1,7 +1,10 @@
 .group {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
   margin: 0;
   padding: 0;
+  padding-inline-start: calc(var(--avatar-group-overlap) * -1);
   list-style: none;
 }
 
@@ -20,11 +23,8 @@
 .item {
   display: flex;
   border-radius: var(--dusty-radius-full);
-  box-shadow: 0 0 0 2px var(--dusty-avatar-group-gap, var(--dusty-surface));
-}
-
-.item + .item {
   margin-inline-start: var(--avatar-group-overlap);
+  box-shadow: 0 0 0 2px var(--dusty-avatar-group-gap, var(--dusty-surface));
 }
 
 .overflow {

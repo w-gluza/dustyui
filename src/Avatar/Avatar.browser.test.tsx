@@ -381,6 +381,44 @@ describe("Avatar", () => {
     expect(range.getBoundingClientRect().width).toBeLessThan(28);
   });
 
+  it.each([undefined, "neutral", "accent"] as const)(
+    "clips an image to the circle with a ring of %s",
+    async (ring) => {
+      function Portrait() {
+        return <svg viewBox="0 0 1 1" data-testid="portrait" />;
+      }
+      const screen = await render(
+        <Avatar
+          name="Wioletta Gluza"
+          {...(ring ? { ring } : {})}
+          image={<Portrait />}
+        />,
+      );
+      const avatar = screen
+        .getByRole("img", { name: "Wioletta Gluza" })
+        .element();
+      const portrait = screen.getByTestId("portrait").element();
+
+      expect(getComputedStyle(portrait).borderTopLeftRadius).toBe(
+        getComputedStyle(avatar).borderTopLeftRadius,
+      );
+      expect(getComputedStyle(portrait).borderTopLeftRadius).not.toBe("0px");
+    },
+  );
+
+  it("rounds the edge of the initials to the circle so it is not drawn as a square", async () => {
+    const screen = await render(<Avatar name="Wioletta Gluza" />);
+    const avatar = screen
+      .getByRole("img", { name: "Wioletta Gluza" })
+      .element();
+    const initials = screen.getByText("WG").element();
+
+    expect(getComputedStyle(initials).borderTopLeftRadius).toBe(
+      getComputedStyle(avatar).borderTopLeftRadius,
+    );
+    expect(getComputedStyle(initials).borderTopLeftRadius).not.toBe("0px");
+  });
+
   it("draws an edge around the initials so they stand out from the page", async () => {
     const screen = await render(<Avatar name="Wioletta Gluza" />);
 

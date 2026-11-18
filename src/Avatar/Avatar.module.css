@@ -42,10 +42,6 @@
   grid-area: 1 / 1;
   min-inline-size: 0;
   min-block-size: 0;
-}
-
-:is(.ringNeutral, .ringAccent) > :not(.image),
-:is(.ringNeutral, .ringAccent) > .image > * {
   border-radius: inherit;
 }
 
@@ -59,6 +55,7 @@
 
 .image {
   display: contents;
+  border-radius: inherit;
 }
 
 .image img[data-image-failed] {

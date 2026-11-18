@@ -118,6 +118,40 @@ describe("AvatarGroup", () => {
     expect(boxes[1]?.right).toBeLessThan(boxes[0]?.right ?? 0);
   });
 
+  it.each(["ltr", "rtl"] as const)(
+    "wraps inside a narrow container when the text runs %s",
+    async (dir) => {
+      const screen = await render(
+        <div dir={dir} data-testid="box" style={{ inlineSize: "90px" }}>
+          <AvatarGroup label="Contributors" avatars={people} size="small" />
+        </div>,
+      );
+      const box = screen.getByTestId("box").element().getBoundingClientRect();
+      const avatars = screen
+        .getByRole("img")
+        .elements()
+        .map((avatar) => avatar.getBoundingClientRect());
+
+      expect(avatars.every((avatar) => avatar.left >= box.left)).toBe(true);
+      expect(avatars.every((avatar) => avatar.right <= box.right)).toBe(true);
+      expect(new Set(avatars.map((avatar) => avatar.top)).size).toBeGreaterThan(
+        1,
+      );
+    },
+  );
+
+  it("starts the first avatar at the edge of the group", async () => {
+    const screen = await render(
+      <AvatarGroup label="Contributors" avatars={people} size="small" />,
+    );
+    const list = screen.getByRole("list", { name: "Contributors" }).element();
+    const first = screen.getByRole("img").first().element();
+
+    expect(first.getBoundingClientRect().left).toBe(
+      list.getBoundingClientRect().left,
+    );
+  });
+
   it("draws the gap between avatars in the colour the consumer sets", async () => {
     const screen = await render(
       <AvatarGroup
