@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  angleValue,
   ARC_END,
   ARC_START,
   isOnRing,
@@ -49,5 +50,13 @@ describe("dial geometry", () => {
     expect(valueAngle(140, range)).toBe(0);
     expect(valueAngle(240, range)).toBe(ARC_END);
     expect(valueAngle(5, { min: 5, max: 5, step: 1 })).toBe(ARC_START);
+  });
+
+  it("turns an angle on the arc back into its value and clamps the gap at the bottom", () => {
+    expect(angleValue(ARC_START, range)).toBe(40);
+    expect(angleValue(0, range)).toBe(140);
+    expect(angleValue(90, range)).toBe(200);
+    expect(angleValue(180, range)).toBe(240);
+    expect(angleValue(-170, range)).toBe(40);
   });
 });

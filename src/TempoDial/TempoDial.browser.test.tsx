@@ -212,4 +212,45 @@ describe("TempoDial", () => {
 
     await expect.poll(lit).toBe(all);
   });
+
+  it.each([
+    ["%", "0 %"],
+    [undefined, "0"],
+  ])("says a value of zero with a unit of %j as %j", async (unit, expected) => {
+    const screen = await render(
+      <TempoDial label="Volume" min={0} max={100} value={0} unit={unit} />,
+    );
+
+    await expect
+      .element(screen.getByRole("slider", { name: "Volume" }))
+      .toHaveAttribute("aria-valuetext", expected);
+  });
+
+  it.each([
+    [[0.95, 0.5], 200],
+    [[0.05, 0.5], 80],
+    [[0.5, 0.05], 140],
+    [[0.5, 0.95], 240],
+  ] as const)(
+    "sets the value where the ring is tapped at %j",
+    async (spot, expected) => {
+      const onValueChange = vi.fn();
+      const screen = await render(<Dial onValueChange={onValueChange} />);
+
+      drag(screen.getByTestId("dial").element(), [...spot], [...spot]);
+
+      await expect
+        .element(screen.getByRole("slider"))
+        .toHaveValue(String(expected));
+    },
+  );
+
+  it("ignores a tap in the middle", async () => {
+    const onValueChange = vi.fn();
+    const screen = await render(<Dial onValueChange={onValueChange} />);
+
+    drag(screen.getByTestId("dial").element(), [0.5, 0.5], [0.5, 0.5]);
+
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
 });

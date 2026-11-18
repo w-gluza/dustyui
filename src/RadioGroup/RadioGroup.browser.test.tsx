@@ -204,4 +204,39 @@ describe("RadioGroup", () => {
       .toBeVisible();
     expect(getComputedStyle(legend).clipPath).toBe("inset(50%)");
   });
+
+  it("draws the same tick when the text runs right to left", async () => {
+    const screen = await render(
+      <>
+        <RadioGroup
+          legend="Left to right"
+          options={METERS}
+          defaultValue="4/4"
+        />
+        <div dir="rtl">
+          <RadioGroup
+            legend="Right to left"
+            options={METERS}
+            defaultValue="4/4"
+          />
+        </div>
+      </>,
+    );
+    const tick = (legend: string) => {
+      const style = getComputedStyle(
+        screen
+          .getByRole("group", { name: legend })
+          .element()
+          .querySelector("[aria-hidden]") as Element,
+      );
+      const drawnOnTheRight =
+        Number.parseFloat(style.borderRightWidth) > 0 !==
+        style.scale.startsWith("-1");
+
+      return { drawnOnTheRight, rotate: style.rotate };
+    };
+
+    expect(tick("Right to left")).toEqual(tick("Left to right"));
+    expect(tick("Left to right").drawnOnTheRight).toBe(true);
+  });
 });

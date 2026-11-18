@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
 import {
+  angleValue,
   isOnRing,
   pointAngle,
   snapValue,
@@ -8,6 +9,8 @@ import {
   type DialPoint,
   type DialRange,
 } from "./dialGeometry.js";
+
+const TAP_SLOP = 3;
 
 interface RingDrag {
   value: number;
@@ -27,6 +30,7 @@ export function useRingDrag<Dial extends HTMLElement>({
     pointerId: number;
     angle: number;
     value: number;
+    turned: number;
   } | null>(null);
 
   const start = useEffectEvent(
@@ -34,7 +38,12 @@ export function useRingDrag<Dial extends HTMLElement>({
       if (drag.current || !isOnRing(point, size)) {
         return;
       }
-      drag.current = { pointerId, angle: pointAngle(point, size), value };
+      drag.current = {
+        pointerId,
+        angle: pointAngle(point, size),
+        value,
+        turned: 0,
+      };
       dialRef.current?.setPointerCapture(pointerId);
       onStart();
     },
@@ -46,15 +55,24 @@ export function useRingDrag<Dial extends HTMLElement>({
         return;
       }
       const angle = pointAngle(point, size);
-      const turned = turnedValue(
-        drag.current.value,
-        turnBetween(drag.current.angle, angle),
-        range,
-      );
-      drag.current = { pointerId, angle, value: turned };
+      const degrees = turnBetween(drag.current.angle, angle);
+      const turned = turnedValue(drag.current.value, degrees, range);
+      drag.current = {
+        pointerId,
+        angle,
+        value: turned,
+        turned: drag.current.turned + Math.abs(degrees),
+      };
       onChange(snapValue(turned, range));
     },
   );
+
+  const release = useEffectEvent((pointerId: number) => {
+    const pressed = drag.current;
+    if (pressed?.pointerId === pointerId && pressed.turned < TAP_SLOP) {
+      onChange(snapValue(angleValue(pressed.angle, range), range));
+    }
+  });
 
   useEffect(() => {
     const dial = dialRef.current;
@@ -83,13 +101,17 @@ export function useRingDrag<Dial extends HTMLElement>({
     };
     dial.addEventListener("pointerdown", handleDown);
     dial.addEventListener("pointermove", handleMove);
-    dial.addEventListener("pointerup", handleEnd);
+    const handleUp = (event: PointerEvent) => {
+      release(event.pointerId);
+      handleEnd(event);
+    };
+    dial.addEventListener("pointerup", handleUp);
     dial.addEventListener("pointercancel", handleEnd);
     dial.addEventListener("lostpointercapture", handleEnd);
     return () => {
       dial.removeEventListener("pointerdown", handleDown);
       dial.removeEventListener("pointermove", handleMove);
-      dial.removeEventListener("pointerup", handleEnd);
+      dial.removeEventListener("pointerup", handleUp);
       dial.removeEventListener("pointercancel", handleEnd);
       dial.removeEventListener("lostpointercapture", handleEnd);
     };

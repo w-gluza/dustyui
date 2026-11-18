@@ -77,7 +77,7 @@ export function TempoDial({
         type="range"
         aria-label={label}
         aria-valuetext={
-          valueText?.(value) ?? [value, unit].filter(Boolean).join(" ")
+          valueText?.(value) ?? [String(value), unit].filter(Boolean).join(" ")
         }
         min={min}
         max={max}

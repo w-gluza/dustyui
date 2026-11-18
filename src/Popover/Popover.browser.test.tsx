@@ -248,4 +248,78 @@ describe("Popover", () => {
     await userEvent.keyboard("{Enter}");
     expect(isOpen()).toBe(false);
   });
+
+  it("lets Enter press a button inside and closes once it has run", async () => {
+    const onSave = vi.fn();
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <button type="button" onClick={onSave}>
+          Save
+        </button>
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    screen.getByRole("button", { name: "Save" }).element().focus();
+    await userEvent.keyboard("{Enter}");
+
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(isOpen()).toBe(false);
+  });
+
+  it("closes after a button inside is pressed with the pointer", async () => {
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <button type="button">Save</button>
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    expect(isOpen()).toBe(false);
+  });
+
+  it("stays open for Enter in a text field and never cancels the key", async () => {
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <input aria-label="Name" />
+      </Popover>,
+    );
+    const pressed: boolean[] = [];
+    panelOf().addEventListener("keydown", (event) => {
+      queueMicrotask(() => pressed.push(event.defaultPrevented));
+    });
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    await screen.getByRole("textbox", { name: "Name" }).click();
+    await userEvent.keyboard("a{Enter}");
+
+    expect(isOpen()).toBe(true);
+    expect(pressed).toEqual([false, false]);
+  });
+
+  it("ignores Enter that confirms text being composed", async () => {
+    const screen = await render(
+      <Popover trigger="Options" closeOnSelect data-testid="panel">
+        <label>
+          <input type="radio" name="meter" /> 4/4
+        </label>
+      </Popover>,
+    );
+
+    await screen.getByRole("button", { name: "Options" }).click();
+    screen
+      .getByRole("radio")
+      .element()
+      .dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          bubbles: true,
+          isComposing: true,
+        }),
+      );
+
+    expect(isOpen()).toBe(true);
+  });
 });

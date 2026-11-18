@@ -49,6 +49,12 @@ export function turnedValue(
   );
 }
 
+export function angleValue(degrees: number, range: DialRange): number {
+  const share =
+    (Math.min(ARC_END, Math.max(ARC_START, degrees)) - ARC_START) / ARC_SPAN;
+  return range.min + share * (range.max - range.min);
+}
+
 export function snapValue(value: number, range: DialRange): number {
   const steps = Math.round((value - range.min) / range.step);
   return clampValue(range.min + steps * range.step, range);
