@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 export function useControllableState<Value>(
   controlled: Value | undefined,
@@ -7,15 +7,22 @@ export function useControllableState<Value>(
 ): [Value, (next: Value) => void] {
   const [own, setOwn] = useState(initial);
   const value = controlled ?? own;
+  const latest = useRef({ controlled, value, onChange });
 
-  function change(next: Value) {
-    if (controlled === undefined) {
+  useLayoutEffect(() => {
+    latest.current = { controlled, value, onChange };
+  });
+
+  const change = useCallback((next: Value) => {
+    const current = latest.current;
+
+    if (current.controlled === undefined) {
       setOwn(next);
     }
-    if (next !== value) {
-      onChange?.(next);
+    if (next !== current.value) {
+      current.onChange?.(next);
     }
-  }
+  }, []);
 
   return [value, change];
 }

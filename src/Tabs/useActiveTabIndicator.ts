@@ -7,10 +7,14 @@ interface IndicatorRefs {
   rowRef: RefObject<HTMLDivElement | null>;
 }
 
-function place(list: HTMLElement, row: HTMLElement): boolean {
-  const active = getEnabledTabs(row).find(
+function getActiveTab(row: HTMLElement): HTMLButtonElement | undefined {
+  return getEnabledTabs(row).find(
     (tab) => tab.getAttribute("aria-selected") === "true",
   );
+}
+
+function place(list: HTMLElement, row: HTMLElement): boolean {
+  const active = getActiveTab(row);
 
   if (!active) {
     return false;
@@ -27,9 +31,28 @@ function place(list: HTMLElement, row: HTMLElement): boolean {
   return true;
 }
 
+function reveal(list: HTMLElement, tab: HTMLElement): void {
+  const listBox = list.getBoundingClientRect();
+  const tabBox = tab.getBoundingClientRect();
+  const style = getComputedStyle(list);
+  const edge = Math.max(
+    Number.parseFloat(style.paddingInlineStart),
+    Number.parseFloat(style.paddingInlineEnd),
+  );
+  const before = tabBox.left - edge - listBox.left;
+  const after = tabBox.right + edge - listBox.right;
+
+  if (before < 0) {
+    list.scrollLeft += before;
+  } else if (after > 0) {
+    list.scrollLeft += Math.min(after, before);
+  }
+}
+
 export function useActiveTabIndicator(): IndicatorRefs {
   const listRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  const revealedRef = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -44,6 +67,12 @@ export function useActiveTabIndicator(): IndicatorRefs {
       delete list.dataset.placed;
       delete list.dataset.animated;
     }
+
+    const active = getActiveTab(row) ?? null;
+    if (active && active !== revealedRef.current) {
+      reveal(list, active);
+    }
+    revealedRef.current = active;
   });
 
   useLayoutEffect(() => {
@@ -53,24 +82,31 @@ export function useActiveTabIndicator(): IndicatorRefs {
     if (!list || !row) {
       return undefined;
     }
-    const observer = new ResizeObserver(() => {
+    const sizes = new ResizeObserver(() => {
       place(list, row);
     });
+    const watch = () => {
+      sizes.disconnect();
+      sizes.observe(row);
+      for (const tab of row.children) {
+        sizes.observe(tab);
+      }
+    };
+    const tabs = new MutationObserver(watch);
     const frame = requestAnimationFrame(() => {
       if ("placed" in list.dataset) {
         list.dataset.animated = "";
       }
     });
 
-    observer.observe(row);
-    for (const tab of row.children) {
-      observer.observe(tab);
-    }
+    watch();
+    tabs.observe(row, { childList: true });
     return () => {
-      observer.disconnect();
+      sizes.disconnect();
+      tabs.disconnect();
       cancelAnimationFrame(frame);
     };
-  });
+  }, []);
 
   return { listRef, rowRef };
 }

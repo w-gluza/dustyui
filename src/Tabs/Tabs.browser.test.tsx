@@ -505,4 +505,374 @@ describe("Tabs", () => {
     expect(getComputedStyle(indicator, "::after").marginLeft).toBe("-7px");
     expect(getComputedStyle(indicator, "::after").height).toBe("8px");
   });
+
+  it.each(["Alt", "Control", "Meta", "Shift"])(
+    "leaves an arrow key alone while %s is held",
+    async (modifier) => {
+      const onKeyDown = vi.fn((event: React.KeyboardEvent) => {
+        queueMicrotask(() => prevented.push(event.defaultPrevented));
+      });
+      const prevented: boolean[] = [];
+      const screen = await render(
+        <Tabs defaultValue="a">
+          <TabsList label="Views" onKeyDown={onKeyDown}>
+            <TabsTrigger value="a">A</TabsTrigger>
+            <TabsTrigger value="b">B</TabsTrigger>
+          </TabsList>
+        </Tabs>,
+      );
+      const first = screen.getByRole("tab", { name: "A" });
+
+      first.element().focus();
+      await userEvent.keyboard(`{${modifier}>}{ArrowRight}{/${modifier}}`);
+
+      await expect.element(first).toHaveAttribute("aria-selected", "true");
+      await expect.element(first).toHaveFocus();
+      expect(prevented).not.toContain(true);
+    },
+  );
+
+  it("keeps an unselected panel hidden when a consumer class sets display", async () => {
+    const screen = await render(
+      <>
+        <style>{".shown { display: grid; }"}</style>
+        <Tabs defaultValue="a">
+          <TabsList label="Views">
+            <TabsTrigger value="a">A</TabsTrigger>
+            <TabsTrigger value="b">B</TabsTrigger>
+          </TabsList>
+          <TabsContent value="a" className="shown">
+            A panel
+          </TabsContent>
+          <TabsContent value="b" className="shown" data-testid="hidden">
+            B panel
+          </TabsContent>
+        </Tabs>
+      </>,
+    );
+
+    expect(
+      getComputedStyle(screen.getByTestId("hidden").element()).display,
+    ).toBe("none");
+    await expect.element(screen.getByText("A panel")).toBeVisible();
+  });
+
+  it("styles the list and panels the same when they sit inside wrappers", async () => {
+    const screen = await render(
+      <>
+        <Example data-testid="direct" />
+        <Tabs defaultValue="a" data-testid="wrapped">
+          <header>
+            <TabsList label="Views">
+              <TabsTrigger value="a">A</TabsTrigger>
+            </TabsList>
+          </header>
+          <div>
+            <TabsContent value="a">A panel</TabsContent>
+          </div>
+        </Tabs>
+      </>,
+    );
+    const part = (id: string, role: string) => {
+      const root = screen.getByTestId(id).element();
+      const node =
+        role === "tablist"
+          ? root.querySelector('[role="tablist"]')?.parentElement
+          : root.querySelector('[role="tabpanel"]:not([hidden])');
+      const style = getComputedStyle(node as Element);
+
+      return [
+        style.paddingInlineStart,
+        style.marginBlockEnd,
+        style.borderTopWidth,
+        style.backgroundColor,
+      ];
+    };
+
+    expect(part("wrapped", "tablist")).toEqual(part("direct", "tablist"));
+    expect(part("wrapped", "tabpanel")).toEqual(part("direct", "tabpanel"));
+  });
+
+  it("keeps the variant of nested tabs apart from the tabs around them", async () => {
+    const screen = await render(
+      <Tabs defaultValue="a" variant="pill">
+        <TabsList label="Outer">
+          <TabsTrigger value="a">Outer tab</TabsTrigger>
+        </TabsList>
+        <TabsContent value="a">
+          <Tabs defaultValue="x" variant="underline">
+            <TabsList label="Inner">
+              <TabsTrigger value="x">Inner tab</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Tabs defaultValue="y" variant="underline">
+            <TabsList label="Alone">
+              <TabsTrigger value="y">Lone tab</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </TabsContent>
+      </Tabs>,
+    );
+    const height = (name: string) =>
+      getComputedStyle(screen.getByRole("tab", { name }).element())
+        .minBlockSize;
+
+    expect(height("Inner tab")).toBe("44px");
+    expect(height("Outer tab")).toBe("36px");
+  });
+
+  it("gives values that differ only by a space or a hyphen their own ids", async () => {
+    const screen = await render(
+      <Tabs defaultValue="my tab">
+        <TabsList label="Views">
+          <TabsTrigger value="my tab">Spaced</TabsTrigger>
+          <TabsTrigger value="my-tab">Hyphenated</TabsTrigger>
+        </TabsList>
+        <TabsContent value="my tab">Spaced panel</TabsContent>
+        <TabsContent value="my-tab">Hyphenated panel</TabsContent>
+      </Tabs>,
+    );
+    const spaced = screen.getByRole("tab", { name: "Spaced" }).element();
+    const hyphenated = screen
+      .getByRole("tab", { name: "Hyphenated" })
+      .element();
+
+    expect(spaced.id).not.toBe(hyphenated.id);
+    expect(spaced.id).not.toMatch(/\s/u);
+    expect(
+      document.getElementById(spaced.getAttribute("aria-controls") ?? "")
+        ?.textContent,
+    ).toBe("Spaced panel");
+    expect(
+      document.getElementById(hyphenated.getAttribute("aria-controls") ?? "")
+        ?.textContent,
+    ).toBe("Hyphenated panel");
+  });
+
+  it.each([false, true])(
+    "brings a tab selected from outside into view without moving the page (right to left: %s)",
+    async (rtl) => {
+      const example = (value: string) => (
+        <div dir={rtl ? "rtl" : "ltr"} style={{ inlineSize: "220px" }}>
+          <Tabs value={value} variant="underline" data-testid="tabs">
+            <TabsList label="Account settings">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="activity">Recent activity</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      );
+      const screen = await render(example("overview"));
+      const list = screen.getByTestId("tabs").element()
+        .firstElementChild as Element;
+      const inView = (name: string) => {
+        const tab = screen
+          .getByRole("tab", { name })
+          .element()
+          .getBoundingClientRect();
+        const box = list.getBoundingClientRect();
+
+        return tab.left >= box.left - 1 && tab.right <= box.right + 1;
+      };
+
+      expect(inView("Settings")).toBe(false);
+      await screen.rerender(example("settings"));
+
+      await expect.poll(() => inView("Settings")).toBe(true);
+      expect(window.scrollX).toBe(0);
+      expect(window.scrollY).toBe(0);
+
+      await screen.rerender(example("overview"));
+      await expect.poll(() => inView("Overview")).toBe(true);
+    },
+  );
+
+  it("starts with an off-screen default tab in view", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "220px" }}>
+        <Example variant="underline" defaultValue="settings" />
+      </div>,
+    );
+    const tab = screen
+      .getByRole("tab", { name: "Settings" })
+      .element()
+      .getBoundingClientRect();
+
+    const list = (
+      screen.getByRole("tablist").element().parentElement as Element
+    ).getBoundingClientRect();
+
+    expect(tab.right).toBeLessThanOrEqual(list.right + 1);
+    expect(tab.left).toBeGreaterThanOrEqual(list.left - 1);
+  });
+
+  it("hands the list element to a consumer ref", async () => {
+    const ref = { current: null as HTMLDivElement | null };
+    const screen = await render(
+      <Tabs defaultValue="a">
+        <TabsList label="Views" ref={ref} data-testid="list">
+          <TabsTrigger value="a">A</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+
+    expect(ref.current).toBe(screen.getByTestId("list").element());
+  });
+
+  it("measures the tabs with one observer however often it renders", async () => {
+    const created = vi.fn();
+    const Real = window.ResizeObserver;
+    window.ResizeObserver = class extends Real {
+      constructor(callback: ResizeObserverCallback) {
+        super(callback);
+        created();
+      }
+    };
+    try {
+      const screen = await render(<Example />);
+      await screen.rerender(<Example />);
+      await screen.rerender(<Example />);
+      await userEvent.click(screen.getByRole("tab", { name: "Settings" }));
+
+      expect(created).toHaveBeenCalledTimes(1);
+    } finally {
+      window.ResizeObserver = Real;
+    }
+  });
+
+  it("keeps following the selected tab after tabs are added", async () => {
+    const example = (extra: boolean) => (
+      <Tabs defaultValue="b" data-testid="tabs">
+        <TabsList label="Views">
+          {extra ? (
+            <TabsTrigger value="new">A new first tab</TabsTrigger>
+          ) : null}
+          <TabsTrigger value="b">B</TabsTrigger>
+        </TabsList>
+      </Tabs>
+    );
+    const screen = await render(example(false));
+    const root = screen.getByTestId("tabs").element();
+    const selected = () =>
+      screen.getByRole("tab", { name: "B" }).element().getBoundingClientRect();
+
+    await screen.rerender(example(true));
+
+    await expect
+      .poll(() => Math.round(indicatorBox(root).left))
+      .toBe(Math.round(selected().left));
+  });
+
+  it("shows the whole joined shape of an end tab brought into view", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "220px" }}>
+        <Example defaultValue="settings" data-testid="tabs" />
+      </div>,
+    );
+    const list = screen.getByTestId("tabs").element()
+      .firstElementChild as Element;
+
+    expect(
+      Math.ceil(list.scrollLeft + list.clientWidth),
+    ).toBeGreaterThanOrEqual(list.scrollWidth);
+  });
+
+  it("renders a value holding half of a surrogate pair, with its own ids", async () => {
+    const lone = "tab\uD83D";
+    const screen = await render(
+      <Tabs defaultValue={lone}>
+        <TabsList label="Views">
+          <TabsTrigger value={lone}>Lone</TabsTrigger>
+          <TabsTrigger value="tab_d83d_">Lookalike</TabsTrigger>
+          <TabsTrigger value="tab">Plain</TabsTrigger>
+        </TabsList>
+        <TabsContent value={lone}>Lone panel</TabsContent>
+      </Tabs>,
+    );
+    const ids = screen
+      .getByRole("tab")
+      .elements()
+      .map((tab) => tab.id);
+
+    expect(new Set(ids).size).toBe(3);
+    await expect
+      .element(screen.getByRole("tabpanel", { name: "Lone" }))
+      .toHaveTextContent("Lone panel");
+  });
+
+  it("keeps the variant of a tab list nested inside another tab list", async () => {
+    const screen = await render(
+      <Tabs defaultValue="a" variant="connected">
+        <TabsList label="Outer" data-testid="outer">
+          <TabsTrigger value="a">Outer tab</TabsTrigger>
+          <Tabs defaultValue="x" variant="pill">
+            <TabsList label="Inner" data-testid="inner">
+              <TabsTrigger value="x">Inner tab</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </TabsList>
+      </Tabs>,
+    );
+    const alone = await render(
+      <Tabs defaultValue="x" variant="pill">
+        <TabsList label="Alone" data-testid="alone">
+          <TabsTrigger value="x">Lone tab</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const look = (list: Element, name: string) => {
+      const tab = getComputedStyle(screen.getByRole("tab", { name }).element());
+      const indicator = list.querySelector(":scope > [aria-hidden]") as Element;
+
+      return [
+        tab.paddingBlockEnd,
+        tab.minBlockSize,
+        getComputedStyle(indicator).gridTemplateRows,
+        getComputedStyle(indicator, "::before").content,
+        getComputedStyle(indicator).borderTopWidth,
+      ];
+    };
+
+    expect(look(screen.getByTestId("inner").element(), "Inner tab")).toEqual(
+      look(alone.getByTestId("alone").element(), "Lone tab"),
+    );
+  });
+
+  it.each(["connected", "underline", "pill"] as const)(
+    "draws a nested %s selection once when the list around it has none",
+    async (variant) => {
+      const screen = await render(
+        <>
+          <Tabs value="missing" variant={variant}>
+            <TabsList label="Outer">
+              <TabsTrigger value="a">Outer tab</TabsTrigger>
+              <Tabs defaultValue="x" variant={variant}>
+                <TabsList label="Inner" data-testid="inner">
+                  <TabsTrigger value="x">Inner tab</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </TabsList>
+          </Tabs>
+          <Tabs defaultValue="x" variant={variant}>
+            <TabsList label="Alone">
+              <TabsTrigger value="x">Lone tab</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </>,
+      );
+      const look = (name: string) => {
+        const style = getComputedStyle(
+          screen.getByRole("tab", { name }).element(),
+        );
+
+        return [style.backgroundColor, style.boxShadow, style.borderTopWidth];
+      };
+
+      await expect
+        .element(screen.getByTestId("inner"))
+        .toHaveAttribute("data-placed");
+      expect(look("Inner tab")).toEqual(look("Lone tab"));
+    },
+  );
 });

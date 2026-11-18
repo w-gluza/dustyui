@@ -48,7 +48,13 @@ export function TabsTrigger({
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     onKeyDown?.(event);
-    if (event.defaultPrevented) {
+    if (
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
       return;
     }
     const list = event.currentTarget.closest<HTMLElement>('[role="tablist"]');
@@ -83,6 +89,7 @@ export function TabsTrigger({
       id={tabId(tabs.baseId, value)}
       className={clsx(styles.trigger, className)}
       data-value={value}
+      data-variant={tabs.variant}
       aria-selected={selected}
       aria-controls={panelId(tabs.baseId, value)}
       tabIndex={selected ? 0 : -1}

@@ -24,7 +24,7 @@ export function TabsList({
   ref,
   ...props
 }: TabsListProps) {
-  useTabs("TabsList");
+  const { variant } = useTabs("TabsList");
   const { listRef, rowRef } = useActiveTabIndicator();
 
   const setList = useCallback(
@@ -66,7 +66,12 @@ export function TabsList({
   }, [rowRef]);
 
   return (
-    <div {...props} ref={setList} className={clsx(styles.list, className)}>
+    <div
+      {...props}
+      ref={setList}
+      className={clsx(styles.list, className)}
+      data-variant={variant}
+    >
       <span className={styles.indicator} aria-hidden="true" />
       <div
         ref={rowRef}

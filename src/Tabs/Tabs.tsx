@@ -47,10 +47,7 @@ export function Tabs({
 
   return (
     <TabsContext value={context}>
-      <div
-        {...props}
-        className={clsx(styles.tabs, styles[variant], className)}
-      />
+      <div {...props} className={clsx(styles.tabs, className)} />
     </TabsContext>
   );
 }

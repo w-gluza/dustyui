@@ -23,7 +23,10 @@ export function useTabs(part: string): TabsContextValue {
 }
 
 function idPart(value: string): string {
-  return value.replace(/\s+/gu, "-");
+  return value.replace(
+    /[^a-z0-9]/gi,
+    (unit) => `_${unit.charCodeAt(0).toString(16)}_`,
+  );
 }
 
 export function tabId(baseId: string, value: string): string {

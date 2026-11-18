@@ -27,6 +27,7 @@ export function TabsContent({
       tabIndex={tabIndex}
       id={panelId(tabs.baseId, value)}
       className={clsx(styles.content, className)}
+      data-variant={tabs.variant}
       aria-labelledby={tabId(tabs.baseId, value)}
       hidden={tabs.value !== value}
     />
