@@ -179,7 +179,6 @@ describe("BeatPattern", () => {
 
   it("does not announce a refused change when a later update happens to match it", async () => {
     resetAnnouncer();
-    vi.useFakeTimers({ toFake: ["performance"] });
     const screen = await render(
       <BeatPattern
         label="Beats"
@@ -189,7 +188,6 @@ describe("BeatPattern", () => {
     );
 
     await screen.getByRole("button", { name: "Beat 2, normal" }).click();
-    vi.advanceTimersByTime(5000);
     await screen.rerender(
       <BeatPattern
         label="Beats"
@@ -197,7 +195,6 @@ describe("BeatPattern", () => {
         onBeatChange={() => undefined}
       />,
     );
-    vi.useRealTimers();
 
     await expect
       .element(screen.getByRole("button", { name: "Beat 2, accent" }))

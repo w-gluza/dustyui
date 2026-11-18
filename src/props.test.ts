@@ -14,6 +14,7 @@ import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { BeatPatternProps } from "./BeatPattern/BeatPattern.js";
 import type { CalloutProps } from "./Callout/Callout.js";
+import type { CopyButtonProps } from "./CopyButton/CopyButton.js";
 import type { BarChartProps } from "./BarChart/BarChart.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
@@ -97,6 +98,21 @@ describe("props", () => {
     expectTypeOf<
       Accepts<CalloutProps, { title: string }>
     >().toEqualTypeOf<false>();
+  });
+
+  it("refuse an icon position on an icon-only copy button", () => {
+    expectTypeOf<
+      Accepts<CopyButtonProps, { value: string; iconPosition: "end" }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<
+        CopyButtonProps,
+        { value: string; iconOnly: true; iconPosition: "end" }
+      >
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<CopyButtonProps, { value: string; iconOnly: boolean }>
+    >().toEqualTypeOf<true>();
   });
 
   it("refuse a second accessible name on a bar chart", () => {

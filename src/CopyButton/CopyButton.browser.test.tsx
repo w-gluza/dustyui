@@ -2,12 +2,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { CopyButton } from "../index.js";
+import { announcements, resetAnnouncer } from "../test/announcements.js";
 
 async function settledBackground(button: Element): Promise<string> {
   await Promise.all(
     button.getAnimations().map((animation) => animation.finished),
   );
   return getComputedStyle(button).backgroundColor;
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }
 
 function clipboard() {
@@ -304,11 +311,6 @@ describe("CopyButton", () => {
     const screen = await render(
       <CopyButton value="abc" feedbackDuration={400} />,
     );
-    const wait = (ms: number) =>
-      new Promise((resolve) => {
-        setTimeout(resolve, ms);
-      });
-
     await userEvent.click(screen.getByRole("button", { name: "Copy" }));
     await expect
       .element(screen.getByRole("button", { name: "Copied" }))
@@ -345,5 +347,124 @@ describe("CopyButton", () => {
     await expect
       .element(screen.getByRole("button", { name: "Copied" }))
       .toBeVisible();
+  });
+
+  it("keeps the resting icon and label still while the clipboard is answering", async () => {
+    let finish: () => void = () => undefined;
+    clipboard().mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const screen = await render(<CopyButton value="abc" />);
+    const button = screen.getByRole("button").element();
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    expect(button.hasAttribute("data-animated")).toBe(false);
+    expect(
+      button
+        .getAnimations({ subtree: true })
+        .filter((animation) => animation instanceof CSSAnimation),
+    ).toEqual([]);
+    finish();
+    await expect
+      .element(screen.getByRole("button", { name: "Copied" }))
+      .toHaveAttribute("data-animated", "true");
+  });
+
+  it("gives the copied label of a plain button the full text colour", async () => {
+    clipboard().mockResolvedValue();
+    const screen = await render(
+      <>
+        <CopyButton value="abc" variant="plain" />
+        <span data-testid="text" style={{ color: "var(--dusty-text)" }} />
+      </>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    const copied = screen.getByRole("button", { name: "Copied" });
+    await expect.element(copied).toBeVisible();
+    await Promise.all(
+      copied
+        .element()
+        .getAnimations()
+        .map((animation) => animation.finished),
+    );
+
+    expect(getComputedStyle(copied.element()).color).toBe(
+      getComputedStyle(screen.getByTestId("text").element()).color,
+    );
+  });
+
+  it.each([Number.NaN, -5])(
+    "falls back to the default feedback time for a duration of %s",
+    async (duration) => {
+      clipboard().mockResolvedValue();
+      const screen = await render(
+        <CopyButton value="abc" feedbackDuration={duration} />,
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+      await wait(300);
+
+      await expect
+        .element(screen.getByRole("button", { name: "Copied" }))
+        .toBeVisible();
+    },
+  );
+
+  it("keeps the feedback until the next press for an infinite duration", async () => {
+    clipboard().mockResolvedValue();
+    const screen = await render(
+      <CopyButton value="abc" feedbackDuration={Infinity} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await wait(300);
+
+    await expect
+      .element(screen.getByRole("button", { name: "Copied" }))
+      .toBeVisible();
+  });
+
+  it("names an icon-only button after the failure", async () => {
+    clipboard().mockRejectedValue(new Error("denied"));
+    const screen = await render(<CopyButton value="abc" iconOnly />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await expect
+      .element(screen.getByRole("button", { name: "Copy failed" }))
+      .toHaveAttribute("data-status", "failed");
+  });
+
+  it("announces a failure assertively", async () => {
+    resetAnnouncer();
+    clipboard().mockRejectedValue(new Error("denied"));
+    const screen = await render(<CopyButton value="abc" />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await expect
+      .poll(() => announcements("assertive"))
+      .toEqual(["Copy failed"]);
+  });
+
+  it("reports a failure where there is no clipboard, as on an insecure page", async () => {
+    vi.spyOn(navigator, "clipboard", "get").mockReturnValue(
+      undefined as unknown as Clipboard,
+    );
+    const onCopyError = vi.fn();
+    const screen = await render(
+      <CopyButton value="abc" onCopyError={onCopyError} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await expect
+      .element(screen.getByRole("button", { name: "Copy failed" }))
+      .toBeVisible();
+    expect(onCopyError).toHaveBeenCalledOnce();
   });
 });

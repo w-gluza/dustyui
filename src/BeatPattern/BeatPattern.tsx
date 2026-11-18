@@ -6,8 +6,6 @@ import { announce, readyAnnouncer } from "../announcer/announcer.js";
 import { nextBeatKind, type BeatKind } from "./beatKind.js";
 import styles from "./BeatPattern.module.css";
 
-const REQUEST_LIFETIME = 1000;
-
 function defaultBeatLabel(beat: number, kind: BeatKind): string {
   return `Beat ${String(beat)}, ${kind}`;
 }
@@ -34,22 +32,14 @@ export function BeatPattern({
   className,
   ...props
 }: BeatPatternProps) {
-  const requested = useRef<{
-    index: number;
-    kind: BeatKind;
-    expires: number;
-  }>(null);
+  const requested = useRef<{ index: number; kind: BeatKind }>(null);
 
   useEffect(readyAnnouncer, []);
 
   useEffect(() => {
     const request = requested.current;
     requested.current = null;
-    if (
-      request &&
-      performance.now() < request.expires &&
-      beats[request.index] === request.kind
-    ) {
+    if (request && beats[request.index] === request.kind) {
       announce(beatLabel(request.index + 1, request.kind));
     }
   }, [beats, beatLabel]);
@@ -71,12 +61,14 @@ export function BeatPattern({
             aria-label={beatLabel(index + 1, kind)}
             onClick={() => {
               const next = nextBeatKind(kind);
-              requested.current = {
-                index,
-                kind: next,
-                expires: performance.now() + REQUEST_LIFETIME,
-              };
+              const request = { index, kind: next };
+              requested.current = request;
               onBeatChange(index, next);
+              setTimeout(() => {
+                if (requested.current === request) {
+                  requested.current = null;
+                }
+              });
             }}
           >
             <span className={styles.accentMark} aria-hidden="true">

@@ -10,21 +10,36 @@ import styles from "./CopyButton.module.css";
 
 type CopyStatus = "idle" | "copied" | "failed";
 
-export interface CopyButtonProps extends Omit<
+interface CopyButtonBaseProps extends Omit<
   ButtonProps,
-  "children" | "icon" | "value" | "aria-label" | "aria-labelledby"
+  | "children"
+  | "icon"
+  | "iconPosition"
+  | "value"
+  | "aria-label"
+  | "aria-labelledby"
 > {
   value: string;
   label?: string | undefined;
   copiedLabel?: string | undefined;
   failedLabel?: string | undefined;
-  iconOnly?: boolean | undefined;
   feedbackDuration?: number | undefined;
   onCopied?: ((value: string) => void) | undefined;
   onCopyError?: ((error: unknown) => void) | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
 }
+
+export type CopyButtonProps = CopyButtonBaseProps &
+  (
+    | { iconOnly?: boolean | undefined; iconPosition?: never }
+    | {
+        iconOnly?: false | undefined;
+        iconPosition?: ButtonProps["iconPosition"];
+      }
+  );
+
+const DEFAULT_FEEDBACK_DURATION = 2000;
 
 const SETTLED_LABELS = ["idle", "copied"] as const;
 const FAILED_LABELS = ["failed"] as const;
@@ -35,7 +50,7 @@ export function CopyButton({
   copiedLabel = "Copied",
   failedLabel = "Copy failed",
   iconOnly = false,
-  feedbackDuration = 2000,
+  feedbackDuration = DEFAULT_FEEDBACK_DURATION,
   variant = "secondary",
   iconPosition,
   onCopied,
@@ -57,9 +72,17 @@ export function CopyButton({
     if (feedback.status === "idle") {
       return undefined;
     }
-    const timer = setTimeout(() => {
-      setFeedback({ status: "idle" });
-    }, feedbackDuration);
+    if (feedbackDuration === Infinity) {
+      return undefined;
+    }
+    const timer = setTimeout(
+      () => {
+        setFeedback({ status: "idle" });
+      },
+      Number.isFinite(feedbackDuration) && feedbackDuration >= 0
+        ? feedbackDuration
+        : DEFAULT_FEEDBACK_DURATION,
+    );
 
     return () => {
       clearTimeout(timer);
@@ -70,11 +93,13 @@ export function CopyButton({
     try {
       await navigator.clipboard.writeText(value);
     } catch (error) {
+      setAnimated(true);
       setFeedback({ status: "failed" });
       announce(failedLabel, "assertive");
       onCopyError?.(error);
       return;
     }
+    setAnimated(true);
     setFeedback({ status: "copied" });
     announce(copiedLabel);
     onCopied?.(value);
@@ -83,7 +108,6 @@ export function CopyButton({
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     onClick?.(event);
     if (!event.defaultPrevented) {
-      setAnimated(true);
       copy().catch(reportError);
     }
   }
