@@ -177,6 +177,63 @@ describe("BeatPattern", () => {
     expect(announcements()).toEqual([]);
   });
 
+  it("does not announce a refused change when a later update happens to match it", async () => {
+    resetAnnouncer();
+    vi.useFakeTimers({ toFake: ["performance"] });
+    const screen = await render(
+      <BeatPattern
+        label="Beats"
+        beats={BEATS}
+        onBeatChange={() => undefined}
+      />,
+    );
+
+    await screen.getByRole("button", { name: "Beat 2, normal" }).click();
+    vi.advanceTimersByTime(5000);
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={["accent", "accent", "skipped", "normal"]}
+        onBeatChange={() => undefined}
+      />,
+    );
+    vi.useRealTimers();
+
+    await expect
+      .element(screen.getByRole("button", { name: "Beat 2, accent" }))
+      .toBeVisible();
+    expect(announcements()).toEqual([]);
+  });
+
+  it("forgets a refused change once the beats change to something else", async () => {
+    resetAnnouncer();
+    const screen = await render(
+      <BeatPattern
+        label="Beats"
+        beats={BEATS}
+        onBeatChange={() => undefined}
+      />,
+    );
+
+    await screen.getByRole("button", { name: "Beat 2, normal" }).click();
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={["normal", "normal", "skipped", "normal"]}
+        onBeatChange={() => undefined}
+      />,
+    );
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={["normal", "accent", "skipped", "normal"]}
+        onBeatChange={() => undefined}
+      />,
+    );
+
+    expect(announcements()).toEqual([]);
+  });
+
   it("keeps the list role that a list without markers loses in Safari", async () => {
     const screen = await render(
       <BeatPattern

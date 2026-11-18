@@ -299,6 +299,36 @@ describe("BarChart", () => {
     },
   );
 
+  it("caps two emphasised bars to their own columns so their long labels do not meet", async () => {
+    const two = Array.from({ length: 2 }, (_, position) => ({
+      label: `The longest quarter name anyone ever wrote, part ${String(position)}`,
+      value: 10 + position,
+      valueLabel: `${String(position)} thousand units sold across every region`,
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <BarChart label="Sales" bars={two} current={0} highlighted={1} />
+      </div>,
+    );
+    const columns = screen
+      .getByRole("listitem")
+      .elements()
+      .map((item) => ({
+        column: item.getBoundingClientRect(),
+        labels: Array.from(item.querySelectorAll("span"))
+          .filter((element) => element.closest("[aria-hidden='true']"))
+          .filter((element) => element.childElementCount === 0)
+          .filter((element) => element.textContent !== "")
+          .map((element) => element.getBoundingClientRect()),
+      }));
+
+    for (const { column, labels } of columns) {
+      expect(labels).toHaveLength(2);
+      expect(labels.every((box) => box.left >= column.left)).toBe(true);
+      expect(labels.every((box) => box.right <= column.right)).toBe(true);
+    }
+  });
+
   it("leaves a gap between the dots of empty bars in a dense chart", async () => {
     const empty = Array.from({ length: 60 }, (_, index) => ({
       label: String(index),

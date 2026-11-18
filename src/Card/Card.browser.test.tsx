@@ -172,6 +172,56 @@ describe("Card", () => {
     expect(screen.getByTestId("footer").element().children).toHaveLength(0);
   });
 
+  it.each(["", false, null, undefined] as const)(
+    "renders no end wrapper for an end of %j",
+    async (end) => {
+      const screen = await render(
+        <Card>
+          <CardFooter end={end} data-testid="footer">
+            Wioletta Gluza
+          </CardFooter>
+        </Card>,
+      );
+
+      expect(screen.getByTestId("footer").element().children).toHaveLength(0);
+    },
+  );
+
+  it("keeps an end of zero", async () => {
+    const screen = await render(
+      <Card>
+        <CardFooter end={0} data-testid="footer">
+          Comments
+        </CardFooter>
+      </Card>,
+    );
+
+    expect(screen.getByTestId("footer").element().children).toHaveLength(1);
+  });
+
+  it("keeps a consumer class name and forwards native attributes on every part", async () => {
+    const screen = await render(
+      <Card>
+        <CardMedia className="mine" data-testid="media" />
+        <CardContent className="mine" data-testid="content">
+          <CardTitle level={2} className="mine" data-testid="title">
+            Death Valley
+          </CardTitle>
+          <CardDescription className="mine" data-testid="description">
+            Salt flats.
+          </CardDescription>
+          <CardFooter className="mine" data-testid="footer">
+            Wioletta Gluza
+          </CardFooter>
+        </CardContent>
+      </Card>,
+    );
+
+    for (const part of ["media", "content", "title", "description", "footer"]) {
+      await expect.element(screen.getByTestId(part)).toHaveClass("mine");
+    }
+  });
+
   it("is plain unless asked to be a poster", async () => {
     const screen = await render(
       <>

@@ -68,6 +68,11 @@
   max-inline-size: 100cqi;
 }
 
+.item[data-highlighted]:has(~ .item[data-highlighted]) :is(.value, .axis),
+.item[data-highlighted] ~ .item[data-highlighted] :is(.value, .axis) {
+  max-inline-size: 100cqi;
+}
+
 .item[data-highlighted]:first-child .value {
   align-self: flex-start;
 }

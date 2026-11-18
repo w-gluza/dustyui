@@ -118,7 +118,9 @@ export function CardFooter({
   return (
     <footer {...props} className={clsx(styles.footer, className)}>
       {children}
-      {end != null ? <span className={styles.end}>{end}</span> : null}
+      {end != null && end !== "" && typeof end !== "boolean" ? (
+        <span className={styles.end}>{end}</span>
+      ) : null}
     </footer>
   );
 }
