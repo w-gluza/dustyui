@@ -1,5 +1,6 @@
 import type { ComponentProps, CSSProperties } from "react";
 import clsx from "clsx";
+import { getShares } from "./getShares.js";
 import styles from "./StackedProgress.module.css";
 
 export interface ProgressSegment {
@@ -46,13 +47,18 @@ export function StackedProgress({
 }: StackedProgressProps) {
   const parts = segments.map((segment, index) => ({
     ...segment,
-    value: Math.max(0, segment.value),
+    value: Number.isFinite(segment.value) ? Math.max(0, segment.value) : 0,
     tone: TONES[index % TONES.length],
   }));
   const hasMoreSegmentsThanTones = parts.length > TONES.length;
   const total = parts.reduce((sum, part) => sum + part.value, 0);
-  const whole = Math.max(max, total);
+  const whole = Math.max(Number.isFinite(max) ? max : 1, total);
   const rest = whole - total;
+  const shares = getShares(
+    parts.map((part) => part.value),
+    whole,
+  );
+  const share = (value: number) => (whole > 0 ? (value / whole) * 100 : 0);
 
   return (
     <div {...props} className={clsx(styles.stacked, styles[size], className)}>
@@ -63,16 +69,17 @@ export function StackedProgress({
               <span
                 key={`${String(index)}-${part.label}`}
                 className={clsx(styles.segment, part.tone)}
-                style={grow(part.value)}
+                style={grow(share(part.value))}
               />
             ) : null,
           )}
           {rest > 0 ? (
-            <span className={styles.segment} style={grow(rest)} />
+            <span className={styles.segment} style={grow(share(rest))} />
           ) : null}
         </div>
       ) : null}
       <ul
+        role="list"
         className={clsx(
           styles.legend,
           legend === "grid" && styles.grid,
@@ -81,7 +88,7 @@ export function StackedProgress({
         aria-label={label}
       >
         {parts.map((part, index) => {
-          const percent = `${String(whole > 0 ? Math.round((part.value / whole) * 100) : 0)}%`;
+          const percent = shares[index];
 
           if (hasMoreSegmentsThanTones) {
             return (

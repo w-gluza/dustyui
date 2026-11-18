@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cdp } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { StackedProgress } from "../index.js";
 
@@ -214,5 +215,155 @@ describe("StackedProgress", () => {
 
     expect(height("small")).toBe(8);
     expect(height("medium")).toBe(16);
+  });
+
+  it("keeps list semantics where a styled list would lose them", async () => {
+    const screen = await render(
+      <StackedProgress label="Project time" segments={SEGMENTS} />,
+    );
+
+    await expect
+      .element(screen.getByRole("list", { name: "Project time" }))
+      .toHaveAttribute("role", "list");
+  });
+
+  it("fills the track when the whole is below one", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "404px" }}>
+        <StackedProgress
+          label="Storage"
+          max={0.5}
+          segments={[
+            { label: "Photos", value: 0.1 },
+            { label: "Music", value: 0.2 },
+          ]}
+          data-testid="stack"
+        />
+      </div>,
+    );
+
+    expect(segmentWidths(screen.getByTestId("stack").element())).toEqual([
+      80, 160, 160,
+    ]);
+  });
+
+  it("makes the listed shares add up and never calls a drawn sliver zero", async () => {
+    const screen = await render(
+      <>
+        <StackedProgress
+          label="Thirds"
+          max={3}
+          segments={[
+            { label: "One", value: 1 },
+            { label: "Two", value: 1 },
+            { label: "Three", value: 1 },
+          ]}
+        />
+        <StackedProgress
+          label="Sliver"
+          segments={[
+            { label: "Tiny", value: 0.004 },
+            { label: "Rest", value: 0.5 },
+          ]}
+        />
+      </>,
+    );
+    const shares = (name: string) =>
+      Array.from(
+        screen.getByRole("list", { name }).element().children,
+        (item) => item.textContent,
+      );
+
+    expect(shares("Thirds")).toEqual(["34% One", "33% Two", "33% Three"]);
+    expect(shares("Sliver")).toEqual(["<1% Tiny", "50% Rest"]);
+  });
+
+  it("treats a value that is not a number as empty", async () => {
+    const screen = await render(
+      <StackedProgress
+        label="Storage"
+        segments={[
+          { label: "Photos", value: 0.5 },
+          { label: "Music", value: Number.NaN },
+          { label: "Apps", value: Number.POSITIVE_INFINITY },
+        ]}
+        data-testid="stack"
+      />,
+    );
+
+    expect(barOf(screen.getByTestId("stack").element()).children).toHaveLength(
+      2,
+    );
+    expect(
+      Array.from(
+        screen.getByRole("list").element().children,
+        (item) => item.textContent,
+      ),
+    ).toEqual(["50% Photos", "0% Music", "0% Apps"]);
+  });
+
+  it("draws an empty track and an empty list for no segments", async () => {
+    const screen = await render(
+      <StackedProgress label="Storage" segments={[]} data-testid="stack" />,
+    );
+
+    expect(barOf(screen.getByTestId("stack").element()).children).toHaveLength(
+      1,
+    );
+    expect(screen.getByRole("list").element().children).toHaveLength(0);
+  });
+
+  it("runs the segments from the right when the text runs right to left", async () => {
+    const screen = await render(
+      <div dir="rtl" style={{ inlineSize: "400px" }}>
+        <StackedProgress
+          label="Project time"
+          segments={SEGMENTS}
+          data-testid="stack"
+        />
+      </div>,
+    );
+    const [first, second] = Array.from(
+      barOf(screen.getByTestId("stack").element()).children,
+      (segment) => segment.getBoundingClientRect(),
+    );
+
+    expect(first?.left).toBeGreaterThan(second?.left ?? Infinity);
+  });
+
+  it("outlines each segment and dot when colours are forced", async () => {
+    const screen = await render(
+      <StackedProgress
+        label="Project time"
+        segments={SEGMENTS}
+        data-testid="stack"
+      />,
+    );
+    const root = screen.getByTestId("stack").element();
+    const outlines = () =>
+      [barOf(root).firstElementChild, root.querySelector("li > span")].map(
+        (part) => {
+          const style = getComputedStyle(part as Element);
+
+          return style.outlineStyle === "none" ? "0px" : style.outlineWidth;
+        },
+      );
+    const widths = segmentWidths(root);
+
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+
+    expect(outlines()).toEqual(["0px", "0px"]);
+
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "forced-colors", value: "active" }],
+    });
+    try {
+      expect(outlines()).toEqual(["1px", "1px"]);
+      expect(segmentWidths(root)).toEqual(widths);
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", { features: [] });
+    }
   });
 });

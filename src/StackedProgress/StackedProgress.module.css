@@ -131,5 +131,7 @@
   .segment,
   .dot {
     forced-color-adjust: none;
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
   }
 }
