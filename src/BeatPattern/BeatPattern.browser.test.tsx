@@ -157,6 +157,26 @@ describe("BeatPattern", () => {
     await expect.poll(() => announcements()).toEqual(["Beat 2, accent"]);
   });
 
+  it("announces nothing when its owner refuses the change", async () => {
+    resetAnnouncer();
+    const onBeatChange = vi.fn();
+    const screen = await render(
+      <BeatPattern label="Beats" beats={BEATS} onBeatChange={onBeatChange} />,
+    );
+
+    await screen.getByRole("button", { name: "Beat 2, normal" }).click();
+    await screen.rerender(
+      <BeatPattern
+        label="Beats"
+        beats={[...BEATS]}
+        onBeatChange={onBeatChange}
+      />,
+    );
+
+    expect(onBeatChange).toHaveBeenCalledExactlyOnceWith(1, "accent");
+    expect(announcements()).toEqual([]);
+  });
+
   it("keeps the list role that a list without markers loses in Safari", async () => {
     const screen = await render(
       <BeatPattern

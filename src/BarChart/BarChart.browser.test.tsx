@@ -268,6 +268,37 @@ describe("BarChart", () => {
     },
   );
 
+  it.each([
+    [1, 0],
+    [2, 0],
+    [2, 1],
+  ] as const)(
+    "keeps long labels inside a chart of %s bars when bar %s is current",
+    async (count, index) => {
+      const few = Array.from({ length: count }, (_, position) => ({
+        label: `The longest quarter name anyone ever wrote, part ${String(position)}`,
+        value: 10 + position,
+        valueLabel: `${String(position)} thousand units sold across every region`,
+      }));
+      const screen = await render(
+        <div style={{ inlineSize: "200px" }}>
+          <BarChart label="Sales" bars={few} current={index} />
+        </div>,
+      );
+      const chart = screen.getByRole("list").element().getBoundingClientRect();
+      const item = screen.getByRole("listitem").elements()[index];
+      const labels = Array.from(item?.querySelectorAll("span") ?? [])
+        .filter((element) => element.closest("[aria-hidden='true']"))
+        .filter((element) => element.childElementCount === 0)
+        .filter((element) => element.textContent !== "")
+        .map((element) => element.getBoundingClientRect());
+
+      expect(labels).toHaveLength(2);
+      expect(labels.every((box) => box.left >= chart.left)).toBe(true);
+      expect(labels.every((box) => box.right <= chart.right)).toBe(true);
+    },
+  );
+
   it("leaves a gap between the dots of empty bars in a dense chart", async () => {
     const empty = Array.from({ length: 60 }, (_, index) => ({
       label: String(index),

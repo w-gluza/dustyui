@@ -59,6 +59,15 @@
   text-overflow: ellipsis;
 }
 
+.item[data-highlighted]:first-child:nth-last-child(2) :is(.value, .axis),
+.item[data-highlighted]:last-child:nth-child(2) :is(.value, .axis) {
+  max-inline-size: 200cqi;
+}
+
+.item[data-highlighted]:only-child :is(.value, .axis) {
+  max-inline-size: 100cqi;
+}
+
 .item[data-highlighted]:first-child .value {
   align-self: flex-start;
 }

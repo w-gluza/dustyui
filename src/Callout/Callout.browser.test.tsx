@@ -75,4 +75,33 @@ describe("Callout", () => {
 
     await expect.element(screen.getByTestId("callout")).toHaveClass("mine");
   });
+
+  it("takes its name from its title", async () => {
+    const screen = await render(
+      <Callout title="Good to know">Carry water.</Callout>,
+    );
+
+    await expect
+      .element(screen.getByRole("note"))
+      .toHaveAccessibleName("Good to know");
+  });
+
+  it("keeps a name the consumer gives it over its title", async () => {
+    const screen = await render(
+      <Callout title="Good to know" aria-label="Packing advice">
+        Carry water.
+      </Callout>,
+    );
+
+    await expect
+      .element(screen.getByRole("note"))
+      .toHaveAccessibleName("Packing advice");
+  });
+
+  it("has no name without a title", async () => {
+    const screen = await render(<Callout>Carry water.</Callout>);
+    const note = screen.getByRole("note").element();
+
+    expect(note.hasAttribute("aria-labelledby")).toBe(false);
+  });
 });

@@ -13,6 +13,7 @@ import type { TempoDialProps } from "./TempoDial/TempoDial.js";
 import type { TrackListProps } from "./TrackList/TrackList.js";
 import type { ExpandableCardProps } from "./ExpandableCard/ExpandableCard.js";
 import type { BeatPatternProps } from "./BeatPattern/BeatPattern.js";
+import type { CalloutProps } from "./Callout/Callout.js";
 import type { BarChartProps } from "./BarChart/BarChart.js";
 import type { IconButtonProps } from "./IconButton/IconButton.js";
 import type { ObjectInspectorProps } from "./ObjectInspector/ObjectInspector.js";
@@ -86,6 +87,15 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
     expectTypeOf<
       Accepts<BeatPatternProps, Pattern & { "aria-label": string }>
+    >().toEqualTypeOf<false>();
+  });
+
+  it("require content in a callout", () => {
+    expectTypeOf<
+      Accepts<CalloutProps, { children: string }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<CalloutProps, { title: string }>
     >().toEqualTypeOf<false>();
   });
 

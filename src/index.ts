@@ -63,10 +63,9 @@ export {
 } from "./BarChart/BarChart.js";
 export {
   BeatPattern,
-  nextBeatKind,
-  type BeatKind,
   type BeatPatternProps,
 } from "./BeatPattern/BeatPattern.js";
+export { nextBeatKind, type BeatKind } from "./BeatPattern/beatKind.js";
 export { TempoDial, type TempoDialProps } from "./TempoDial/TempoDial.js";
 export {
   PlaybackControls,
