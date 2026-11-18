@@ -72,10 +72,10 @@ export function announce(
   let removal: ReturnType<typeof setTimeout> | undefined;
 
   function insert(): void {
-    const readyAt = regionsReadyAt;
     const region = ensureRegions()[politeness];
-    if (regionsReadyAt !== readyAt) {
-      timer = setTimeout(insert, REGION_READY_DELAY);
+    const remaining = regionsReadyAt - performance.now();
+    if (remaining > 0) {
+      timer = setTimeout(insert, remaining);
       return;
     }
     const added = document.createElement("div");

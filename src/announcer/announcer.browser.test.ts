@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { announcements, resetAnnouncer } from "../test/announcements.js";
-import { announce } from "./announcer.js";
+import { announce, readyAnnouncer } from "./announcer.js";
 
 describe("announce", () => {
   beforeEach(() => {
@@ -146,6 +146,22 @@ describe("announce", () => {
 
       expect(dialog.querySelector("[data-dusty-announcer]")).not.toBeNull();
       expect(announcements()).toContain("Saved");
+    });
+
+    it("gives a region moved while a message waits its full time to register", () => {
+      announce("Saved");
+      vi.advanceTimersByTime(50);
+
+      openModal();
+      readyAnnouncer();
+      vi.advanceTimersByTime(50);
+      expect(announcements()).toEqual([]);
+
+      vi.advanceTimersByTime(49);
+      expect(announcements()).toEqual([]);
+
+      vi.advanceTimersByTime(1);
+      expect(announcements()).toEqual(["Saved"]);
     });
 
     it("uses the modal that holds focus, whatever the document order", () => {
