@@ -3,6 +3,7 @@ import clsx from "clsx";
 import styles from "./StatList.module.css";
 
 export interface Stat {
+  id?: string | undefined;
   label: string;
   value: ReactNode;
   icon?: ReactNode | undefined;
@@ -16,12 +17,21 @@ export interface StatListProps extends Omit<
 }
 
 export function StatList({ stats, className, ...props }: StatListProps) {
+  const hasIcons = stats.some((stat) => stat.icon != null);
+
   return (
     <dl {...props} className={clsx(styles.list, className)}>
       {stats.map((stat, index) => (
-        <div key={`${String(index)}-${stat.label}`} className={styles.row}>
+        <div
+          key={
+            stat.id === undefined
+              ? `index:${String(index)}-${stat.label}`
+              : `id:${stat.id}`
+          }
+          className={styles.row}
+        >
           <dt className={styles.term}>
-            {stat.icon != null ? (
+            {hasIcons ? (
               <span className={styles.icon} aria-hidden="true">
                 {stat.icon}
               </span>

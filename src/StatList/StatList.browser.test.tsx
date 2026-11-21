@@ -28,14 +28,23 @@ describe("StatList", () => {
       .toHaveTextContent("Total practice time");
   });
 
-  it("hides the icon from assistive technology and renders none when not given", async () => {
-    const screen = await render(<StatList stats={STATS} data-testid="stats" />);
-    const terms = screen.getByTestId("stats").element().querySelectorAll("dt");
+  it("hides the icon from assistive technology, keeps its place empty on a row without one and renders none in a list without icons", async () => {
+    const screen = await render(
+      <>
+        <StatList stats={STATS} data-testid="stats" />
+        <StatList stats={[{ label: "Tracks", value: 9 }]} data-testid="plain" />
+      </>,
+    );
+    const termsOf = (id: string) =>
+      screen.getByTestId(id).element().querySelectorAll("dt");
+    const slot = termsOf("stats")[1]?.firstElementChild;
 
     expect(
       screen.getByTestId("icon").element().closest("[aria-hidden='true']"),
     ).not.toBeNull();
-    expect(terms[1]?.children).toHaveLength(0);
+    expect(slot?.getAttribute("aria-hidden")).toBe("true");
+    expect(slot?.children).toHaveLength(0);
+    expect(termsOf("plain")[0]?.children).toHaveLength(0);
   });
 
   it("pushes the value to the far side and rules off every row but the last", async () => {
@@ -81,5 +90,81 @@ describe("StatList", () => {
     await expect
       .element(screen.getByLabelText("Your activity"))
       .toHaveClass("mine");
+  });
+
+  it("keeps a long unbroken label and value inside the list", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "240px" }}>
+        <StatList
+          data-testid="list"
+          stats={[
+            {
+              label: "Primary_contact_address_for_billing",
+              value: "a.very.long.address@an-unbroken-example-domain.example",
+            },
+          ]}
+        />
+      </div>,
+    );
+    const list = screen.getByTestId("list").element();
+    const term = screen.getByText(/Primary_contact/u).element();
+
+    expect(list.scrollWidth).toBeLessThanOrEqual(240);
+    expect(term.getBoundingClientRect().width).toBeGreaterThan(60);
+  });
+
+  it("renders an empty list with no rows and no height", async () => {
+    const screen = await render(<StatList stats={[]} data-testid="list" />);
+    const list = screen.getByTestId("list").element();
+
+    expect(list.children).toHaveLength(0);
+    expect(list.getBoundingClientRect().height).toBe(0);
+  });
+
+  it("keeps a row's own state when rows with ids are reordered", async () => {
+    const stat = (id: string) => ({
+      id,
+      label: id,
+      value: <input aria-label={id} defaultValue="" />,
+    });
+    const screen = await render(
+      <StatList stats={[stat("One"), stat("Two")]} />,
+    );
+    const field = screen.getByRole("textbox", { name: "Two" });
+
+    await field.fill("kept");
+    await screen.rerender(<StatList stats={[stat("Two"), stat("One")]} />);
+
+    await expect
+      .element(screen.getByRole("textbox", { name: "Two" }))
+      .toHaveValue("kept");
+  });
+
+  it("lines up every label when only some rows have an icon", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <StatList
+          stats={[
+            { label: "Elevation", value: "3,776 m", icon: <svg /> },
+            { label: "Season", value: "July" },
+          ]}
+        />
+        <StatList
+          stats={[{ label: "Plain", value: "1" }]}
+          data-testid="plain"
+        />
+      </div>,
+    );
+    const textStart = (label: string) => {
+      const range = document.createRange();
+      range.selectNodeContents(
+        screen.getByText(label).element().lastChild as Node,
+      );
+      return range.getBoundingClientRect().left;
+    };
+    const plain = screen.getByTestId("plain").element();
+
+    expect(textStart("Season")).toBe(textStart("Elevation"));
+    expect(textStart("Plain")).toBe(plain.getBoundingClientRect().left);
   });
 });
