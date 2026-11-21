@@ -540,4 +540,23 @@ describe("Popover", () => {
     await expect.element(select).toHaveValue("6/8");
     expect(isOpen()).toBe(false);
   });
+
+  it("keeps a one-character trigger at the minimum target size, with its content centred", async () => {
+    const screen = await render(
+      <Popover trigger="4" chevron={false}>
+        Content
+      </Popover>,
+    );
+    const trigger = screen.getByRole("button", { name: "4" }).element();
+    const box = trigger.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(trigger);
+    const text = range.getBoundingClientRect();
+
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(Math.round(text.left - box.left)).toBe(
+      Math.round(box.right - text.right),
+    );
+  });
 });

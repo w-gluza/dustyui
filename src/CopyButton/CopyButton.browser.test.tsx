@@ -467,4 +467,18 @@ describe("CopyButton", () => {
       .toBeVisible();
     expect(onCopyError).toHaveBeenCalledOnce();
   });
+
+  it("keeps its width when copying fails", async () => {
+    clipboard().mockRejectedValue(new Error("denied"));
+    const screen = await render(<CopyButton value="abc" />);
+    const button = screen.getByRole("button").element();
+    const before = button.getBoundingClientRect().width;
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await expect
+      .element(screen.getByRole("button", { name: "Copy failed" }))
+      .toBeVisible();
+
+    expect(button.getBoundingClientRect().width).toBe(before);
+  });
 });

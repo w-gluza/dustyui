@@ -117,7 +117,9 @@
 }
 
 .sheet > .close {
-  grid-area: 1 / 1;
+  position: sticky;
+  inset-block-start: calc(var(--expandable-card-padding, 0.5rem) + 0.5rem);
+  grid-area: 1 / 1 / 5 / 2;
   place-self: start end;
   margin: 0.5rem;
   border-color: var(--dusty-border);
@@ -154,6 +156,22 @@
   padding: 1rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.sheet > .media {
+  grid-row: 1;
+}
+
+.sheet > .dialogTitle {
+  grid-area: 2 / 1;
+}
+
+.sheet > .dialogSummary {
+  grid-area: 3 / 1;
+}
+
+.sheet > .content {
+  grid-area: 4 / 1;
 }
 
 .content > * {

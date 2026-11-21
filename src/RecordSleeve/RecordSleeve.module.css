@@ -20,7 +20,7 @@
 }
 
 .stage[data-revealed] :is(.sleeve, .vinyl) {
-  inline-size: 55%;
+  inline-size: calc(100% / 1.55);
 }
 
 .sleeve {

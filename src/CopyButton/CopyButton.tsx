@@ -41,8 +41,7 @@ export type CopyButtonProps = CopyButtonBaseProps &
 
 const DEFAULT_FEEDBACK_DURATION = 2000;
 
-const SETTLED_LABELS = ["idle", "copied"] as const;
-const FAILED_LABELS = ["failed"] as const;
+const STATUSES = ["idle", "copied", "failed"] as const;
 
 export function CopyButton({
   value,
@@ -139,7 +138,7 @@ export function CopyButton({
       onClick={handleClick}
     >
       <span className={styles.labels}>
-        {(status === "failed" ? FAILED_LABELS : SETTLED_LABELS).map((name) => (
+        {STATUSES.map((name) => (
           <span
             key={name}
             className={styles.text}

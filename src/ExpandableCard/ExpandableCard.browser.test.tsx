@@ -520,4 +520,27 @@ describe("ExpandableCard", () => {
     await expect.element(dialog).toHaveAccessibleName("Helios");
     expect(dialog.element().classList.length).toBe(2);
   });
+
+  it("keeps the close button in view when long content is scrolled", async () => {
+    const screen = await render(
+      <ExpandableCard title="Helios" level={2} defaultExpanded>
+        <div style={{ blockSize: "300vh" }}>Long notes</div>
+      </ExpandableCard>,
+    );
+    const dialog = screen.getByRole("dialog").element();
+    const close = screen.getByRole("button", { name: "Close" }).element();
+    const before = close.getBoundingClientRect();
+
+    dialog.scrollTop = dialog.scrollHeight;
+
+    const view = dialog.getBoundingClientRect();
+    const after = close.getBoundingClientRect();
+    expect(dialog.scrollTop).toBeGreaterThan(200);
+    expect(after.top).toBeGreaterThanOrEqual(view.top);
+    expect(after.bottom).toBeLessThanOrEqual(view.bottom);
+    expect(Math.round(after.right)).toBe(Math.round(before.right));
+    expect(Math.round(before.top - view.top)).toBe(
+      Math.round(after.top - view.top),
+    );
+  });
 });

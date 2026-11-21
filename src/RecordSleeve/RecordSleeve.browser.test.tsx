@@ -157,4 +157,33 @@ describe("RecordSleeve", () => {
 
     expect([box.width, box.height]).toEqual([200, 200]);
   });
+
+  it("centres the sleeve and the record in the stage once the record has slid out", async () => {
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    try {
+      const screen = await render(
+        <div style={{ inlineSize: "400px" }}>
+          <RecordSleeve artwork={artwork} revealed data-testid="sleeve" />
+        </div>,
+      );
+      const stage = screen.getByTestId("sleeve").element();
+      const cover = screen.getByTestId("artwork").element();
+      const startGap =
+        cover.getBoundingClientRect().left - stage.getBoundingClientRect().left;
+      const endGap =
+        stage.getBoundingClientRect().right -
+        vinylOf(stage).getBoundingClientRect().right;
+
+      expect(Math.round(endGap)).toBe(Math.round(startGap));
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: "" }],
+      });
+    }
+  });
 });
