@@ -73,6 +73,14 @@ function reveal(container: HTMLElement, row: Element): void {
   }
 }
 
+function revealWithin(container: HTMLElement, row: Element): void {
+  const view = container.getBoundingClientRect();
+  const box = row.getBoundingClientRect();
+  if (box.top < view.top || box.bottom > view.bottom) {
+    container.scrollTop += box.top - view.top - (view.height - box.height) / 2;
+  }
+}
+
 const MIRRORED_KEYS: Record<string, string> = {
   ArrowLeft: "ArrowRight",
   ArrowRight: "ArrowLeft",
@@ -186,6 +194,7 @@ export function Tree<Node extends TreeNode>({
   const rowWindow = useRowWindow(element, rows.length);
   const withTypedText = useTypeahead();
   const scrolledTo = useRef(focused);
+  const startsOnARow = useRef(focused !== undefined);
   const notifySelected = useEffectEvent((id: string) => {
     onSelectedChange?.(id);
   });
@@ -231,6 +240,13 @@ export function Tree<Node extends TreeNode>({
       const target = container.querySelector(TAB_STOP);
       if (target instanceof HTMLElement) {
         target.focus();
+      }
+    }
+    if (startsOnARow.current) {
+      startsOnARow.current = false;
+      const row = container.querySelector(TAB_STOP);
+      if (row) {
+        revealWithin(container, row);
       }
     }
     if (scrolledTo.current !== focused) {

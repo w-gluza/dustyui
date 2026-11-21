@@ -71,7 +71,9 @@ export function ObjectInspector({
   defaultExpanded = ROOT_OPEN,
   onExpandedChange,
   selected: controlledSelected,
+  defaultSelected,
   onSelectedChange,
+  onRowAction,
   className,
   "aria-describedby": describedBy,
   ...props
@@ -84,7 +86,7 @@ export function ObjectInspector({
   const [ownExpanded, setOwnExpanded] = useState<ReadonlySet<string>>(
     () => new Set(defaultExpanded),
   );
-  const [ownSelected, setOwnSelected] = useState<string>();
+  const [ownSelected, setOwnSelected] = useState(defaultSelected);
   const [query, setQuery] = useState("");
   const [position, setPosition] = useState<{
     matches: Matches | undefined;
@@ -254,6 +256,7 @@ export function ObjectInspector({
         onExpandedChange={changeExpanded}
         selected={selected}
         onSelectedChange={changeSelected}
+        onRowAction={onRowAction}
         renderRow={renderRow}
         getRowText={getRowText}
       />

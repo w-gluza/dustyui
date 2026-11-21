@@ -710,6 +710,29 @@ describe("Tree", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
     }
 
+    it.each(["defaultSelected", "selected"] as const)(
+      "brings a row given as %s into its own view at the start, without scrolling the page",
+      async (prop) => {
+        const screen = await render(
+          <>
+            <div style={{ blockSize: "150vh" }} />
+            <Many {...{ [prop]: "item 4000" }} />
+          </>,
+        );
+        await settle();
+        const tree = screen.getByRole("tree").element();
+        const row = screen
+          .getByRole("treeitem", { name: "item 4000", exact: true })
+          .element()
+          .getBoundingClientRect();
+        const view = tree.getBoundingClientRect();
+
+        expect(row.top).toBeGreaterThanOrEqual(view.top);
+        expect(row.bottom).toBeLessThanOrEqual(view.bottom);
+        expect(window.scrollY).toBe(0);
+      },
+    );
+
     it("renders every row of a tree with up to 200 rows", async () => {
       const small = folder(
         "root",

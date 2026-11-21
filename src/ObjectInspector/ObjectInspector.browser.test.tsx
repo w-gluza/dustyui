@@ -990,4 +990,26 @@ describe("ObjectInspector wording and wiring", () => {
       .poll(() => announcements())
       .toEqual(["Nie mozna odczytac: refused"]);
   });
+
+  it("starts on a given row and reports row actions, without leaking either to the page", async () => {
+    const onRowAction = vi.fn();
+    const screen = await render(
+      <ObjectInspector
+        label="Park"
+        value={{ name: "Yosemite", area: 3027 }}
+        defaultSelected="$/.area"
+        onRowAction={onRowAction}
+        data-testid="inspector"
+      />,
+    );
+    const area = screen.getByRole("treeitem", { name: /^area/u });
+    const root = screen.getByTestId("inspector").element();
+
+    await expect.element(area).toHaveAttribute("aria-selected", "true");
+    await area.click();
+    expect(
+      onRowAction.mock.calls.map(([row]) => (row as { id: string }).id),
+    ).toEqual(["$/.area"]);
+    expect(root.hasAttribute("defaultselected")).toBe(false);
+  });
 });
