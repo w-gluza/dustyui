@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { announce } from "../announcer/announcer.js";
-import { Button } from "../Button/Button.js";
+import { CopyButton } from "../CopyButton/CopyButton.js";
 import type { InspectorNode } from "./describe/describe.js";
 import { getEscapedText } from "./describe/getEscapedText.js";
 import { getCopyText, type CopyText } from "./getCopyText.js";
@@ -16,17 +16,28 @@ const FEEDBACK_DURATION = 5000;
 interface InspectorDetailsProps {
   label: string;
   labels: ObjectInspectorLabels;
-  node: InspectorNode;
+  node: InspectorNode | undefined;
   query: string;
 }
 
 interface Feedback {
-  readonly node: InspectorNode | undefined;
   readonly text: string;
   readonly hasFailed: boolean;
 }
 
-const NO_FEEDBACK: Feedback = { node: undefined, text: "", hasFailed: false };
+const NO_FEEDBACK: Feedback = { text: "", hasFailed: false };
+const nodeKeys = new WeakMap<InspectorNode, number>();
+let lastNodeKey = 0;
+
+function getNodeKey(node: InspectorNode): number {
+  const known = nodeKeys.get(node);
+  if (known !== undefined) {
+    return known;
+  }
+  lastNodeKey += 1;
+  nodeKeys.set(node, lastNodeKey);
+  return lastNodeKey;
+}
 
 export function InspectorDetails({
   label,
@@ -34,43 +45,70 @@ export function InspectorDetails({
   node,
   query,
 }: InspectorDetailsProps) {
+  return (
+    <section
+      aria-label={labels.detailsRegion(label)}
+      className={styles.details}
+    >
+      {node ? (
+        <SelectedDetails
+          key={getNodeKey(node)}
+          labels={labels}
+          node={node}
+          query={query}
+        />
+      ) : (
+        <p className={styles.note}>{labels.noSelection}</p>
+      )}
+    </section>
+  );
+}
+
+interface SelectedDetailsProps {
+  labels: ObjectInspectorLabels;
+  node: InspectorNode;
+  query: string;
+}
+
+function SelectedDetails({ labels, node, query }: SelectedDetailsProps) {
   const [feedback, setFeedback] = useState(NO_FEEDBACK);
+  const [copied] = useState(() => ({ isComplete: true }));
   const isLeaf = hasValueText(node);
   const text = isLeaf ? getValueText(node) : "";
   const shown = getShownValue(text, query);
 
-  if (feedback.node !== undefined && feedback.node !== node) {
-    setFeedback(NO_FEEDBACK);
-  }
-
   useEffect(() => {
-    if (feedback.node === undefined) {
+    if (feedback === NO_FEEDBACK) {
       return;
     }
     const timer = setTimeout(() => setFeedback(NO_FEEDBACK), FEEDBACK_DURATION);
     return () => clearTimeout(timer);
   }, [feedback]);
 
-  async function copy(whole: string, part: string, read: () => CopyText) {
-    let result: string;
-    let hasFailed = false;
-    try {
-      const { text: copied, isComplete } = read();
-      await navigator.clipboard.writeText(copied);
-      result = isComplete ? whole : part;
-    } catch {
-      result = labels.copyFailed;
-      hasFailed = true;
+  function read(source: () => CopyText): () => string {
+    return () => {
+      const copy = source();
+      copied.isComplete = copy.isComplete;
+      return copy.text;
+    };
+  }
+
+  function noteCopied(part: string) {
+    if (copied.isComplete) {
+      setFeedback(NO_FEEDBACK);
+      return;
     }
-    setFeedback({ node, text: result, hasFailed });
-    announce(result, hasFailed ? "assertive" : "polite");
+    setFeedback({ text: part, hasFailed: false });
+    announce(part);
+  }
+
+  function noteFailed() {
+    setFeedback({ text: labels.copyFailed, hasFailed: true });
+    announce(labels.copyFailed, "assertive");
   }
 
   return (
-    <section
-      aria-label={labels.detailsRegion(label)}
-      className={styles.details}
-    >
+    <>
       <dl className={styles.facts}>
         <dt>{labels.path}</dt>
         <dd>{getEscapedText(getShownValue(node.path).text)}</dd>
@@ -93,38 +131,37 @@ export function InspectorDetails({
         ) : null}
       </dl>
       <div className={styles.actions}>
-        <Button
-          variant="secondary"
+        <CopyButton
           size="small"
-          onClick={() =>
-            void copy(labels.pathCopied, labels.pathPartCopied, () => ({
-              text: node.path,
-              isComplete: true,
-            }))
-          }
-        >
-          {labels.copyPath}
-        </Button>
+          value={read(() => ({ text: node.path, isComplete: true }))}
+          label={labels.copyPath}
+          copiedLabel={labels.pathCopied}
+          failedLabel={labels.copyFailedShort}
+          onCopied={() => {
+            noteCopied(labels.pathPartCopied);
+          }}
+          onCopyError={noteFailed}
+        />
         {node.kind === "range" ? null : (
-          <Button
-            variant="secondary"
+          <CopyButton
             size="small"
-            onClick={() =>
-              void copy(labels.valueCopied, labels.valuePartCopied, () =>
-                getCopyText(node),
-              )
-            }
-          >
-            {labels.copyValue}
-          </Button>
+            value={read(() => getCopyText(node))}
+            label={labels.copyValue}
+            copiedLabel={labels.valueCopied}
+            failedLabel={labels.copyFailedShort}
+            onCopied={() => {
+              noteCopied(labels.valuePartCopied);
+            }}
+            onCopyError={noteFailed}
+          />
         )}
         <span
           className={styles.feedback}
           data-failed={feedback.hasFailed || undefined}
         >
-          {feedback.node === node ? feedback.text : ""}
+          {feedback.text}
         </span>
       </div>
-    </section>
+    </>
   );
 }

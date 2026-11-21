@@ -16,6 +16,7 @@ export interface ObjectInspectorLabels {
   noProperties: string;
   unreadable: (reason: string, message: string) => string;
   detailsRegion: (label: string) => string;
+  noSelection: string;
   path: string;
   type: string;
   value: string;
@@ -28,6 +29,7 @@ export interface ObjectInspectorLabels {
   pathPartCopied: string;
   valuePartCopied: string;
   copyFailed: string;
+  copyFailedShort: string;
 }
 
 function count(value: number): string {
@@ -53,6 +55,7 @@ export const DEFAULT_LABELS: ObjectInspectorLabels = {
   noProperties: "No properties",
   unreadable: (_reason, message) => message,
   detailsRegion: (label) => `Selected value in ${label}`,
+  noSelection: "Select a row to see its details",
   path: "Path",
   type: "Type",
   value: "Value",
@@ -66,4 +69,5 @@ export const DEFAULT_LABELS: ObjectInspectorLabels = {
   pathPartCopied: "Part of the path copied. It is too large to copy whole.",
   valuePartCopied: "Part of the value copied. It is too large to copy whole.",
   copyFailed: "Could not copy. Select the text and copy it by hand.",
+  copyFailedShort: "Copy failed",
 };

@@ -41,6 +41,7 @@ describe("ObjectInspector contract", () => {
             ref={full}
             searchable
             showDetails
+            defaultSelected="$"
           />
         </>,
       );
@@ -68,6 +69,7 @@ describe("ObjectInspector contract", () => {
           style={{ blockSize: "12rem" }}
           searchable
           showDetails
+          defaultSelected="$"
         />,
       );
       const tree = screen.getByRole("tree").element();
@@ -82,8 +84,20 @@ describe("ObjectInspector contract", () => {
     it("names the search and the details after each inspector on the page", async () => {
       const screen = await render(
         <>
-          <ObjectInspector label="Before" value={park} searchable showDetails />
-          <ObjectInspector label="After" value={park} searchable showDetails />
+          <ObjectInspector
+            label="Before"
+            value={park}
+            searchable
+            showDetails
+            defaultSelected="$"
+          />
+          <ObjectInspector
+            label="After"
+            value={park}
+            searchable
+            showDetails
+            defaultSelected="$"
+          />
         </>,
       );
 
@@ -206,7 +220,12 @@ describe("ObjectInspector contract", () => {
       vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
       const list = Array.from({ length: 6000 }, (_, index) => index);
       const screen = await render(
-        <ObjectInspector label="List" value={{ list }} showDetails />,
+        <ObjectInspector
+          label="List"
+          value={{ list }}
+          showDetails
+          defaultSelected="$"
+        />,
       );
 
       await screen.getByRole("button", { name: "Copy value" }).click();
@@ -225,7 +244,12 @@ describe("ObjectInspector contract", () => {
     it("does not bring the confirmation back when the row is selected again", async () => {
       vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
       const screen = await render(
-        <ObjectInspector label="Park" value={park} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={park}
+          showDetails
+          defaultSelected="$"
+        />,
       );
       const panel = screen.getByRole("region", {
         name: "Selected value in Park",
@@ -237,15 +261,18 @@ describe("ObjectInspector contract", () => {
       await screen.getByRole("treeitem", { name: /^animals/u }).click();
       await screen.getByRole("treeitem", { name: /^name/u }).click();
 
-      await expect
-        .element(panel.getByText("Path copied"))
-        .not.toBeInTheDocument();
+      await expect.element(panel.getByText("Path copied")).not.toBeVisible();
     });
 
     it("drops the confirmation when the value is replaced", async () => {
       vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
       const screen = await render(
-        <ObjectInspector label="Park" value={park} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={park}
+          showDetails
+          defaultSelected="$"
+        />,
       );
       const panel = screen.getByRole("region", {
         name: "Selected value in Park",
@@ -254,12 +281,15 @@ describe("ObjectInspector contract", () => {
       await expect.element(panel.getByText("Value copied")).toBeVisible();
 
       await screen.rerender(
-        <ObjectInspector label="Park" value={{ other: true }} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={{ other: true }}
+          showDetails
+          defaultSelected="$"
+        />,
       );
 
-      await expect
-        .element(panel.getByText("Value copied"))
-        .not.toBeInTheDocument();
+      await expect.element(panel.getByText("Value copied")).not.toBeVisible();
     });
 
     it("describes rows in plain words and marks the search text in the value", async () => {
@@ -270,6 +300,7 @@ describe("ObjectInspector contract", () => {
           value={{ text }}
           searchable
           showDetails
+          defaultSelected="$"
         />,
       );
       const panel = screen.getByRole("region", {

@@ -30,6 +30,8 @@
 }
 
 .status {
+  min-inline-size: 9ch;
   color: var(--dusty-text-muted);
+  text-align: end;
   font-variant-numeric: tabular-nums;
 }

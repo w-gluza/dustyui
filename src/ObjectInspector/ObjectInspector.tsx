@@ -32,6 +32,7 @@ import { InspectorSearch } from "./InspectorSearch.js";
 import { DEFAULT_LABELS, type ObjectInspectorLabels } from "./labels.js";
 import { getMatches, type Matches } from "./search/getMatches.js";
 import { getSearchStatus } from "./search/getSearchStatus.js";
+import { getShortPreview } from "./describe/getShortPreview.js";
 import { getExcerpt } from "./search/getExcerpt.js";
 import { Highlighted } from "./search/Highlighted.js";
 import styles from "./ObjectInspector.module.css";
@@ -136,8 +137,8 @@ export function ObjectInspector({
   const selectedNode = useMemo(
     () =>
       showDetails && selected !== undefined
-        ? (getNode(root, selected) ?? root)
-        : root,
+        ? getNode(root, selected)
+        : undefined,
     [showDetails, root, selected],
   );
 
@@ -243,6 +244,8 @@ export function ObjectInspector({
               text={getShownPreview(node, searched)}
               query={searched}
             />
+          ) : expanded.has(node.id) ? (
+            getShortPreview(node.kind, node.preview)
           ) : (
             node.preview
           )}

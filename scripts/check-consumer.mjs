@@ -213,6 +213,7 @@ async function checkPages(origin, policy) {
       .waitFor();
     await clientPage.getByRole("searchbox").fill("puma");
     await clientPage.getByText("1 match").waitFor();
+    await clientPage.getByRole("searchbox").press("Enter");
     await clientPage.getByRole("button", { name: "Copy path" }).click();
     const mounted = await measure(clientPage);
     const blockedOnClientPage = await getBlocked(clientPage);

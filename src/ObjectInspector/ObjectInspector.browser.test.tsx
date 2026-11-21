@@ -41,7 +41,7 @@ describe("ObjectInspector", () => {
       .element(screen.getByRole("tree", { name: "Park" }))
       .toBeVisible();
     expect(rowTexts()).toEqual([
-      '{name: "Yellowstone", established: 1872, open: true, animals: Array(2)}',
+      "{…}",
       'name: "Yellowstone"',
       "established: 1872",
       "open: true",
@@ -375,14 +375,21 @@ describe("ObjectInspector", () => {
       expect(screen.getByRole("region").query()).toBeNull();
     });
 
-    it("describes the whole value before a row is chosen", async () => {
+    it("asks for a row to be chosen before describing anything", async () => {
       const screen = await render(
         <ObjectInspector label="Park" value={details} showDetails />,
       );
+      const region = screen.getByRole("region", {
+        name: "Selected value in Park",
+      });
 
       await expect
-        .element(screen.getByRole("region", { name: "Selected value in Park" }))
-        .toBeVisible();
+        .element(region)
+        .toHaveTextContent("Select a row to see its details");
+      expect(facts()).toEqual({});
+      expect(region.getByRole("button").elements()).toHaveLength(0);
+
+      await screen.getByRole("treeitem", { name: /^\{/u }).click();
       expect(facts()).toEqual({ Path: "$", Type: "Object" });
     });
 
@@ -393,6 +400,7 @@ describe("ObjectInspector", () => {
           value={details}
           defaultExpanded={["$", "$/.notes"]}
           showDetails
+          defaultSelected="$"
         />,
       );
 
@@ -407,7 +415,12 @@ describe("ObjectInspector", () => {
 
     it("follows the keyboard", async () => {
       await render(
-        <ObjectInspector label="Park" value={details} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={details}
+          showDetails
+          defaultSelected="$"
+        />,
       );
       await userEvent.tab();
 
@@ -423,14 +436,21 @@ describe("ObjectInspector", () => {
     it("copies the path and says so", async () => {
       const writeText = stubClipboard();
       const screen = await render(
-        <ObjectInspector label="Park" value={details} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={details}
+          showDetails
+          defaultSelected="$"
+        />,
       );
       await screen.getByRole("treeitem", { name: /^tags/u }).click();
 
       await screen.getByRole("button", { name: "Copy path" }).click();
 
       expect(writeText).toHaveBeenCalledWith("$.tags");
-      await expect.element(screen.getByText("Path copied")).toBeVisible();
+      await expect
+        .element(screen.getByRole("button", { name: "Path copied" }))
+        .toBeVisible();
       await expect.poll(() => announcements()).toEqual(["Path copied"]);
     });
 
@@ -442,6 +462,7 @@ describe("ObjectInspector", () => {
           value={details}
           defaultExpanded={["$", "$/.notes"]}
           showDetails
+          defaultSelected="$"
         />,
       );
       const copyValue = screen.getByRole("button", { name: "Copy value" });
@@ -465,11 +486,18 @@ describe("ObjectInspector", () => {
     it("clears the confirmation when another row is selected", async () => {
       stubClipboard();
       const screen = await render(
-        <ObjectInspector label="Park" value={details} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={details}
+          showDetails
+          defaultSelected="$"
+        />,
       );
       await screen.getByRole("treeitem", { name: /^tags/u }).click();
       await screen.getByRole("button", { name: "Copy path" }).click();
-      await expect.element(screen.getByText("Path copied")).toBeVisible();
+      await expect
+        .element(screen.getByRole("button", { name: "Path copied" }))
+        .toBeVisible();
 
       await screen.getByRole("treeitem", { name: /^name/u }).click();
 
@@ -479,7 +507,7 @@ describe("ObjectInspector", () => {
             .getByRole("region", { name: "Selected value in Park" })
             .getByText("Path copied"),
         )
-        .not.toBeInTheDocument();
+        .not.toBeVisible();
     });
 
     it("says when copying fails", async () => {
@@ -487,7 +515,12 @@ describe("ObjectInspector", () => {
         new Error("denied"),
       );
       const screen = await render(
-        <ObjectInspector label="Park" value={details} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={details}
+          showDetails
+          defaultSelected="$"
+        />,
       );
 
       await screen.getByRole("button", { name: "Copy value" }).click();
@@ -504,18 +537,28 @@ describe("ObjectInspector", () => {
         .poll(
           () => document.querySelector('[aria-live="assertive"]')?.textContent,
         )
-        .toBe(failure);
+        .toBe(`Copy failed${failure}`);
     });
 
     it("falls back to the whole value when the selected row no longer exists", async () => {
       const screen = await render(
-        <ObjectInspector label="Park" value={details} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={details}
+          showDetails
+          defaultSelected="$"
+        />,
       );
       await screen.getByRole("treeitem", { name: /^tags/u }).click();
       expect(facts().Path).toBe("$.tags");
 
       await screen.rerender(
-        <ObjectInspector label="Park" value={{ name: "Tatra" }} showDetails />,
+        <ObjectInspector
+          label="Park"
+          value={{ name: "Tatra" }}
+          showDetails
+          defaultSelected="$"
+        />,
       );
 
       expect(facts().Path).toBe("$");
@@ -565,11 +608,7 @@ describe("ObjectInspector with lazy rows and ranges", () => {
     );
     const row = screen.getByRole("treeitem", { name: /^empty/u });
 
-    expect(rowTexts()).toEqual([
-      "{empty: {…}, after: 1}",
-      "empty: {…}",
-      "after: 1",
-    ]);
+    expect(rowTexts()).toEqual(["{…}", "empty: {…}", "after: 1"]);
     expect(listed).toBe(0);
     await expect.element(row).toHaveAttribute("aria-expanded", "false");
 
@@ -577,11 +616,7 @@ describe("ObjectInspector with lazy rows and ranges", () => {
     await userEvent.keyboard("{ArrowDown}{ArrowRight}");
 
     expect(listed).toBe(1);
-    expect(rowTexts()).toEqual([
-      "{empty: {…}, after: 1}",
-      "empty: {}",
-      "after: 1",
-    ]);
+    expect(rowTexts()).toEqual(["{…}", "empty: {}", "after: 1"]);
     await expect.element(row).not.toHaveAttribute("aria-expanded");
     await expect.element(row).toHaveFocus();
     await expect.poll(() => announcements()).toEqual(["No properties"]);
@@ -641,6 +676,7 @@ describe("ObjectInspector with lazy rows and ranges", () => {
         value={{ list }}
         defaultExpanded={["$", "$/.list", "$/.list/~i100-199"]}
         showDetails
+        defaultSelected="$"
       />,
     );
 
@@ -721,7 +757,13 @@ describe("ObjectInspector with lazy rows and ranges", () => {
   it("keeps the named properties of a very long list behind a Properties row", async () => {
     const value = Object.assign(new Uint8Array(100_001), { note: "needle" });
     const screen = await render(
-      <ObjectInspector label="Bytes" value={value} searchable showDetails />,
+      <ObjectInspector
+        label="Bytes"
+        value={value}
+        searchable
+        showDetails
+        defaultSelected="$"
+      />,
     );
     const properties = screen.getByRole("treeitem", { name: "Properties" });
 
@@ -826,6 +868,7 @@ describe("ObjectInspector wording and wiring", () => {
         value={park}
         searchable
         showDetails
+        defaultSelected="$"
         labels={{
           search: "Szukaj",
           searchRegion: (label) => `Szukaj w: ${label}`,
@@ -1040,5 +1083,86 @@ describe("ObjectInspector wording and wiring", () => {
     await userEvent.clear(screen.getByRole("searchbox"));
     await userEvent.type(screen.getByRole("searchbox"), "puma");
     await expect.poll(() => marked(/: true$/u)).toEqual(["Puma"]);
+  });
+
+  it("shows the short form of a row while it is open and the full preview once it is closed", async () => {
+    const screen = await render(
+      <ObjectInspector label="Park" value={{ animals: ["bison", "wolf"] }} />,
+    );
+    const animals = screen.getByRole("treeitem", { name: /^animals/u });
+
+    await expect
+      .element(animals)
+      .toHaveTextContent('animals: Array(2) ["bison", "wolf"]');
+    await animals.click();
+    await expect.poll(() => rowTexts()[1]).toBe("animals: Array(2)");
+
+    await animals.click();
+    await expect
+      .poll(() => rowTexts()[1])
+      .toBe('animals: Array(2) ["bison", "wolf"]');
+  });
+
+  it("fills every match, and the one on the selected row more strongly", async () => {
+    const screen = await render(
+      <ObjectInspector
+        label="Park"
+        searchable
+        value={{ first: "condor", second: "condor" }}
+      />,
+    );
+    await screen.getByRole("searchbox").fill("condor");
+    await userEvent.keyboard("{Enter}");
+    await expect.element(screen.getByText("1 of 2")).toBeVisible();
+    const fills = [...document.querySelectorAll("mark")].map(
+      (mark) => getComputedStyle(mark).backgroundColor,
+    );
+
+    expect(fills).toEqual([
+      tokenColour("--dusty-action"),
+      tokenColour("--dusty-surface-selected"),
+    ]);
+  });
+
+  it("draws the match buttons as icons and keeps the field steady as the count appears", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "420px" }}>
+        <ObjectInspector label="Park" searchable value={park} />
+      </div>,
+    );
+    const field = screen.getByRole("searchbox");
+    const before = field.element().getBoundingClientRect().width;
+
+    expect(
+      screen
+        .getByRole("button", { name: "Next match" })
+        .element()
+        .querySelector("svg"),
+    ).not.toBeNull();
+    await field.fill("bison");
+    await expect.element(screen.getByText("1 match")).toBeVisible();
+
+    expect(field.element().getBoundingClientRect().width).toBe(before);
+  });
+
+  it("copies with the same button as the rest of the library", async () => {
+    vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    const screen = await render(
+      <ObjectInspector
+        label="Park"
+        value={park}
+        showDetails
+        defaultSelected="$"
+      />,
+    );
+    const copy = screen.getByRole("button", { name: "Copy path" });
+
+    expect(copy.element().dataset.status).toBe("idle");
+    await copy.click();
+
+    await expect
+      .element(screen.getByRole("button", { name: "Path copied" }))
+      .toHaveAttribute("data-status", "copied");
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith("$");
   });
 });
