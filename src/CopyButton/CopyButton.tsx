@@ -23,6 +23,8 @@ interface CopyButtonBaseProps extends Omit<
   label?: string | undefined;
   copiedLabel?: string | undefined;
   failedLabel?: string | undefined;
+  copiedAnnouncement?: string | ((value: string) => string) | undefined;
+  failedAnnouncement?: string | undefined;
   feedbackDuration?: number | undefined;
   onCopied?: ((value: string) => void) | undefined;
   onCopyError?: ((error: unknown) => void) | undefined;
@@ -48,6 +50,8 @@ export function CopyButton({
   label = "Copy",
   copiedLabel = "Copied",
   failedLabel = "Copy failed",
+  copiedAnnouncement = copiedLabel,
+  failedAnnouncement = failedLabel,
   iconOnly = false,
   feedbackDuration = DEFAULT_FEEDBACK_DURATION,
   variant = "secondary",
@@ -96,13 +100,17 @@ export function CopyButton({
     } catch (error) {
       setAnimated(true);
       setFeedback({ status: "failed" });
-      announce(failedLabel, "assertive");
+      announce(failedAnnouncement, "assertive");
       onCopyError?.(error);
       return;
     }
     setAnimated(true);
     setFeedback({ status: "copied" });
-    announce(copiedLabel);
+    announce(
+      typeof copiedAnnouncement === "function"
+        ? copiedAnnouncement(copied)
+        : copiedAnnouncement,
+    );
     onCopied?.(copied);
   }
 

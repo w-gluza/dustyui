@@ -518,4 +518,29 @@ describe("CopyButton", () => {
       .toBeVisible();
     expect(onCopyError).toHaveBeenCalledOnce();
   });
+
+  it("announces what it is told to in place of the button labels", async () => {
+    resetAnnouncer();
+    clipboard().mockResolvedValueOnce();
+    clipboard().mockRejectedValueOnce(new Error("denied"));
+    const screen = await render(
+      <CopyButton
+        value="abcdef"
+        feedbackDuration={50}
+        copiedAnnouncement={(copied) =>
+          `Copied ${String(copied.length)} characters`
+        }
+        failedAnnouncement="Could not copy, select the text by hand"
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await expect.poll(() => announcements()).toEqual(["Copied 6 characters"]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await expect
+      .poll(() => announcements("assertive"))
+      .toEqual(["Could not copy, select the text by hand"]);
+    expect(announcements()).toEqual(["Copied 6 characters"]);
+  });
 });
