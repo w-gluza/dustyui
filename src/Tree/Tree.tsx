@@ -65,10 +65,21 @@ function reveal(container: HTMLElement, row: Element): void {
     return;
   }
   const view = container.getBoundingClientRect();
-  const offset = content.getBoundingClientRect().left - view.left;
+  const box = content.getBoundingClientRect();
+  const rightToLeft = container.matches(":dir(rtl)");
+  const offset = rightToLeft ? view.right - box.right : box.left - view.left;
   if (offset < 0 || offset > view.width / 2) {
-    container.scrollBy({ left: offset });
+    container.scrollBy({ left: rightToLeft ? -offset : offset });
   }
+}
+
+const MIRRORED_KEYS: Record<string, string> = {
+  ArrowLeft: "ArrowRight",
+  ArrowRight: "ArrowLeft",
+};
+
+export interface TreeRowState {
+  readonly selected: boolean;
 }
 
 function isInsideControl(target: EventTarget, row: Element): boolean {
@@ -93,11 +104,13 @@ export interface TreeBaseProps<Node extends TreeNode> extends Omit<
 > {
   root: Node;
   label: string;
-  renderRow: (row: TreeRow<Node>) => ReactNode;
+  renderRow: (row: TreeRow<Node>, state: TreeRowState) => ReactNode;
   getRowText?: ((row: TreeRow<Node>) => string) | undefined;
   onExpandedChange?: ((expanded: ReadonlySet<string>) => void) | undefined;
   selected?: string | undefined;
+  defaultSelected?: string | undefined;
   onSelectedChange?: ((selected: string) => void) | undefined;
+  onRowAction?: ((row: TreeRow<Node>) => void) | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
   "aria-multiselectable"?: never;
@@ -127,7 +140,9 @@ export function Tree<Node extends TreeNode>({
   defaultExpanded,
   onExpandedChange,
   selected: controlledSelected,
+  defaultSelected,
   onSelectedChange,
+  onRowAction,
   className,
   onKeyDown,
   onFocus,
@@ -138,7 +153,7 @@ export function Tree<Node extends TreeNode>({
   const [ownExpanded, setOwnExpanded] = useState<ReadonlySet<string>>(
     () => new Set(defaultExpanded),
   );
-  const [ownSelected, setOwnSelected] = useState<string>();
+  const [ownSelected, setOwnSelected] = useState(defaultSelected);
   const element = useRef<HTMLDivElement>(null);
   const focusTarget = useRef<string | undefined>(undefined);
   const hasFocusWithin = useRef(false);
@@ -263,11 +278,18 @@ export function Tree<Node extends TreeNode>({
     ) {
       return;
     }
-    const action = keyToAction(event.key);
+    const key = event.currentTarget.matches(":dir(rtl)")
+      ? (MIRRORED_KEYS[event.key] ?? event.key)
+      : event.key;
+    const action = keyToAction(key);
     if (!action || (action.type === "typeahead" && !getRowText)) {
       return;
     }
     event.preventDefault();
+    const row = rows[tabStop];
+    if (key === "Enter" && row) {
+      onRowAction?.(row);
+    }
     dispatch(withTypedText(action, event.timeStamp));
   }
 
@@ -290,13 +312,14 @@ export function Tree<Node extends TreeNode>({
         onClick={(event) => {
           if (!isInsideControl(event.target, event.currentTarget)) {
             dispatch({ type: "toggle", id: row.id });
+            onRowAction?.(row);
           }
         }}
         onFocus={() => select(row.id)}
         onKeyDown={handleKeyDown}
       >
         <span className={styles.toggle} aria-hidden="true" />
-        <span>{renderRow(row)}</span>
+        <span>{renderRow(row, { selected: row.id === focused })}</span>
       </div>
     );
   }

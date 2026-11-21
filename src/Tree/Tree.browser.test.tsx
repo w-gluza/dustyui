@@ -885,4 +885,142 @@ describe("Tree", () => {
       expect(renderedRows()).toHaveLength(1);
     });
   });
+
+  describe("right to left", () => {
+    it("opens with the arrow that points the way the chevron points", async () => {
+      const screen = await render(
+        <div dir="rtl">
+          <Files />
+        </div>,
+      );
+      await userEvent.tab();
+      await press("{ArrowDown}");
+      expect(focusedName()).toBe("docs");
+
+      await press("{ArrowLeft}");
+      await expect
+        .element(screen.getByRole("treeitem", { name: "docs" }))
+        .toHaveAttribute("aria-expanded", "true");
+
+      await press("{ArrowLeft}");
+      expect(focusedName()).toBe("guide");
+
+      await press("{ArrowRight}");
+      expect(focusedName()).toBe("docs");
+      await press("{ArrowRight}");
+      await expect
+        .element(screen.getByRole("treeitem", { name: "docs" }))
+        .toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("indents from the right and brings the start of a deep row into view", async () => {
+      const screen = await render(
+        <div dir="rtl">
+          <Files
+            defaultExpanded={["root", "docs", "notes"]}
+            style={{ inlineSize: "6rem", "--tree-indent": "4rem" } as never}
+          />
+        </div>,
+      );
+      const tree = screen.getByRole("tree").element();
+      await userEvent.tab();
+
+      await press(
+        "{End}",
+        "{Home}",
+        "{ArrowDown}",
+        "{ArrowDown}",
+        "{ArrowDown}",
+        "{ArrowDown}",
+      );
+
+      expect(focusedName()).toBe("draft");
+      const toggle = document.activeElement?.firstElementChild;
+      const offset =
+        tree.getBoundingClientRect().right -
+        (toggle?.getBoundingClientRect().right ?? 0);
+      expect(tree.scrollLeft).toBeLessThan(0);
+      expect(offset).toBeGreaterThanOrEqual(0);
+      expect(offset).toBeLessThan(tree.clientWidth / 2 + 1);
+    });
+  });
+
+  describe("acting on rows", () => {
+    it("reports a row on Enter and on click, and still toggles a row with children", async () => {
+      const onRowAction = vi.fn();
+      const screen = await render(<Files onRowAction={onRowAction} />);
+      const acted = () =>
+        onRowAction.mock.calls.map(([row]) => (row as { id: string }).id);
+
+      await screen.getByRole("treeitem", { name: "readme" }).click();
+      expect(acted()).toEqual(["readme"]);
+
+      await press("{Enter}");
+      expect(acted()).toEqual(["readme", "readme"]);
+
+      await press(" ");
+      expect(acted()).toHaveLength(2);
+
+      await screen.getByRole("treeitem", { name: "docs" }).click();
+      expect(acted()).toEqual(["readme", "readme", "docs"]);
+      expect(names()).toContain("guide");
+    });
+
+    it("does not report a row for a click on a control inside it", async () => {
+      const onRowAction = vi.fn();
+      const screen = await render(
+        <Files
+          onRowAction={onRowAction}
+          renderRow={(row) => (
+            <button type="button">Copy {row.node.name}</button>
+          )}
+        />,
+      );
+
+      await screen.getByRole("button", { name: "Copy readme" }).click();
+
+      expect(onRowAction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("starting row and controls in rows", () => {
+    it("starts on a given row when uncontrolled", async () => {
+      const screen = await render(<Files defaultSelected="src" />);
+
+      await expect
+        .element(screen.getByRole("treeitem", { name: "src" }))
+        .toHaveAttribute("aria-selected", "true");
+      await userEvent.tab();
+      expect(focusedName()).toBe("src");
+    });
+
+    it("tells a row whether it is the current one, so its controls can leave the tab order", async () => {
+      const screen = await render(
+        <>
+          <Files
+            renderRow={(row, { selected }) => (
+              <>
+                {row.node.name}{" "}
+                <button type="button" tabIndex={selected ? 0 : -1}>
+                  Copy {row.node.name}
+                </button>
+              </>
+            )}
+          />
+          <button type="button">After</button>
+        </>,
+      );
+
+      await userEvent.tab();
+      await press("{ArrowDown}");
+      await userEvent.tab();
+      await expect
+        .element(screen.getByRole("button", { name: "Copy docs" }))
+        .toHaveFocus();
+      await userEvent.tab();
+      await expect
+        .element(screen.getByRole("button", { name: "After" }))
+        .toHaveFocus();
+    });
+  });
 });

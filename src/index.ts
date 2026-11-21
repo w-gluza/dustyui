@@ -146,7 +146,7 @@ export {
   type PathStep,
   type RangeUnit,
 } from "./ObjectInspector/describe/getPath.js";
-export { Tree, type TreeProps } from "./Tree/Tree.js";
+export { Tree, type TreeProps, type TreeRowState } from "./Tree/Tree.js";
 export type { TreeNode, TreeRow } from "./Tree/treeModel.js";
 export { Tabs, type TabsProps } from "./Tabs/Tabs.js";
 export { TabsContent, type TabsContentProps } from "./Tabs/TabsContent.js";
