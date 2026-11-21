@@ -17,9 +17,44 @@ export interface TrackListProps extends Omit<
   label: string;
   tracks: readonly Track[];
   currentTrack?: number | undefined;
-  onTrackSelect: (index: number) => void;
+  onTrackSelect?: ((index: number) => void) | undefined;
   "aria-label"?: never;
   "aria-labelledby"?: never;
+}
+
+interface TrackRowProps {
+  track: Track;
+  number: number;
+  current: boolean;
+  onSelect: (() => void) | undefined;
+}
+
+function TrackRow({ track, number, current, onSelect }: TrackRowProps) {
+  const cells = (
+    <>
+      <span className={styles.number} aria-hidden="true">
+        {String(number).padStart(2, "0")}
+      </span>
+      <span className={styles.title}>{track.title}</span>
+      <span className={styles.duration}>{track.duration}</span>
+    </>
+  );
+  const ariaCurrent = current ? "true" : undefined;
+
+  return onSelect ? (
+    <button
+      type="button"
+      className={styles.track}
+      aria-current={ariaCurrent}
+      onClick={onSelect}
+    >
+      {cells}
+    </button>
+  ) : (
+    <div className={styles.track} aria-current={ariaCurrent}>
+      {cells}
+    </div>
+  );
 }
 
 export function TrackList({
@@ -33,6 +68,7 @@ export function TrackList({
   return (
     <ol
       {...props}
+      role="list"
       className={clsx(styles.tracks, className)}
       aria-label={label}
     >
@@ -44,20 +80,17 @@ export function TrackList({
               : `id:${track.id}`
           }
         >
-          <button
-            type="button"
-            className={styles.track}
-            aria-current={index === currentTrack ? "true" : undefined}
-            onClick={() => {
-              onTrackSelect(index);
-            }}
-          >
-            <span className={styles.number} aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <span className={styles.title}>{track.title}</span>
-            <span className={styles.duration}>{track.duration}</span>
-          </button>
+          <TrackRow
+            track={track}
+            number={index + 1}
+            current={index === currentTrack}
+            onSelect={
+              onTrackSelect &&
+              (() => {
+                onTrackSelect(index);
+              })
+            }
+          />
         </li>
       ))}
     </ol>

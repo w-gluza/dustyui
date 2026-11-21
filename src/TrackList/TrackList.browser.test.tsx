@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { userEvent } from "vitest/browser";
+import { cdp, userEvent } from "vitest/browser";
 import { TrackList } from "../index.js";
 
 const TRACKS = [
@@ -121,5 +121,101 @@ describe("TrackList", () => {
     );
 
     await expect.element(screen.getByTestId("tracks")).toHaveClass("mine");
+  });
+
+  it("keeps its list role explicit so the track position survives the unstyled markers", async () => {
+    const screen = await render(
+      <TrackList label="Tracks" tracks={TRACKS} onTrackSelect={() => {}} />,
+    );
+
+    await expect
+      .element(screen.getByRole("list", { name: "Tracks" }))
+      .toHaveAttribute("role", "list");
+  });
+
+  it("lists tracks as plain rows, with no buttons, when nothing can be picked", async () => {
+    const screen = await render(
+      <TrackList label="Tracks" tracks={TRACKS} currentTrack={1} />,
+    );
+    const list = screen.getByRole("list", { name: "Tracks" });
+    const row = screen.getByText("Soft Transit").element().parentElement;
+
+    expect(list.getByRole("listitem").elements()).toHaveLength(3);
+    expect(screen.getByRole("button").elements()).toHaveLength(0);
+    expect(row?.getAttribute("aria-current")).toBe("true");
+    expect(getComputedStyle(row as Element).cursor).not.toBe("pointer");
+    await userEvent.hover(screen.getByText("Dawn Static"));
+    expect(
+      getComputedStyle(
+        screen.getByText("Dawn Static").element().parentElement as Element,
+      ).backgroundColor,
+    ).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  it("draws nothing for an empty list", async () => {
+    const screen = await render(
+      <TrackList label="Tracks" tracks={[]} data-testid="list" />,
+    );
+
+    expect(
+      screen.getByTestId("list").element().getBoundingClientRect().height,
+    ).toBe(0);
+  });
+
+  it("marks the current track with a system-colour bar when colours are forced, without moving its text", async () => {
+    const screen = await render(
+      <TrackList
+        label="Tracks"
+        tracks={TRACKS}
+        currentTrack={1}
+        onTrackSelect={() => {}}
+      />,
+    );
+    const current = screen.getByRole("button", { name: /Soft Transit/u });
+    const other = screen.getByRole("button", { name: /Dawn Static/u });
+    const edge = (row: typeof current) =>
+      getComputedStyle(row.element()).borderInlineStartWidth;
+    const titleStart = () =>
+      screen.getByText("Soft Transit").element().getBoundingClientRect().left;
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    const before = titleStart();
+
+    expect(edge(current)).toBe("0px");
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "forced-colors", value: "active" }],
+    });
+    try {
+      expect(edge(current)).not.toBe("0px");
+      expect(edge(other)).toBe("0px");
+      expect(titleStart()).toBe(before);
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", { features: [] });
+    }
+  });
+
+  it("keeps a long title and a three-digit number inside the row", async () => {
+    const tracks = Array.from({ length: 100 }, (_, index) => ({
+      id: String(index),
+      title:
+        index === 99
+          ? "An_unbroken_title_that_is_far_too_long_for_one_narrow_row.flac"
+          : `Track ${String(index + 1)}`,
+      duration: "3:42",
+    }));
+    const screen = await render(
+      <div style={{ inlineSize: "240px" }}>
+        <TrackList label="Tracks" tracks={tracks} data-testid="list" />
+      </div>,
+    );
+    const list = screen.getByTestId("list").element();
+    const number = screen.getByText("100", { exact: true }).element();
+    const title = screen.getByText(/An_unbroken/u).element();
+
+    expect(list.scrollWidth).toBeLessThanOrEqual(240);
+    expect(number.getBoundingClientRect().right).toBeLessThanOrEqual(
+      title.getBoundingClientRect().left,
+    );
   });
 });

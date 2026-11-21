@@ -335,6 +335,12 @@ describe("props", () => {
       Accepts<TrackListProps, List & { "aria-label": string }>
     >().toEqualTypeOf<false>();
     expectTypeOf<
+      Accepts<TrackListProps, List & { "aria-labelledby": string }>
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      Accepts<TrackListProps, Omit<List, "onTrackSelect">>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
       Accepts<RecordSleeveProps, { revealed: true }>
     >().toEqualTypeOf<false>();
   });

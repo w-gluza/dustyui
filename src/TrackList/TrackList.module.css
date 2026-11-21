@@ -6,8 +6,13 @@
   list-style: none;
 }
 
+.tracks:empty {
+  border: 0;
+}
+
 .track {
   display: grid;
+  box-sizing: border-box;
   grid-template-columns: 2rem 1fr auto;
   gap: 0.5rem;
   align-items: baseline;
@@ -20,6 +25,9 @@
   color: var(--dusty-text);
   font: inherit;
   text-align: start;
+}
+
+button.track {
   cursor: pointer;
 }
 
@@ -50,7 +58,14 @@
 }
 
 @media (hover: hover) {
-  .track:hover:not([aria-current]) {
+  button.track:hover:not([aria-current]) {
     background-color: var(--dusty-surface-hover);
+  }
+}
+
+@media (forced-colors: active) {
+  .track[aria-current] {
+    padding-inline-start: 0.25rem;
+    border-inline-start: 0.25rem solid Highlight;
   }
 }
