@@ -29,10 +29,13 @@ interface PlaybackControlsBaseProps extends Omit<
   "children" | "dangerouslySetInnerHTML"
 > {
   progress?: number | undefined;
+  progressValueLabel?: string | undefined;
+  elapsed?: string | undefined;
+  duration?: string | undefined;
   labels?: Partial<PlaybackControlsLabels> | undefined;
   onPlayingChange?: ((playing: boolean) => void) | undefined;
-  onPrevious?: (() => void) | undefined;
-  onNext?: (() => void) | undefined;
+  onPrevious?: (() => void) | null | undefined;
+  onNext?: (() => void) | null | undefined;
 }
 
 export type PlaybackControlsProps = PlaybackControlsBaseProps &
@@ -45,6 +48,9 @@ export function PlaybackControls({
   playing: controlledPlaying,
   defaultPlaying = false,
   progress,
+  progressValueLabel,
+  elapsed,
+  duration,
   labels,
   onPlayingChange,
   onPrevious,
@@ -62,14 +68,16 @@ export function PlaybackControls({
   return (
     <div {...props} className={clsx(styles.player, className)}>
       <div className={styles.controls}>
-        <IconButton
-          variant="plain"
-          size="small"
-          label={text.previous}
-          icon={<PreviousIcon />}
-          aria-disabled={!onPrevious}
-          onClick={onPrevious}
-        />
+        {onPrevious === null ? null : (
+          <IconButton
+            variant="plain"
+            size="small"
+            label={text.previous}
+            icon={<PreviousIcon />}
+            aria-disabled={!onPrevious}
+            onClick={onPrevious}
+          />
+        )}
         <IconButton
           shape="pill"
           label={playing ? text.pause : text.play}
@@ -78,17 +86,25 @@ export function PlaybackControls({
             setPlaying(!playing);
           }}
         />
-        <IconButton
-          variant="plain"
-          size="small"
-          label={text.next}
-          icon={<NextIcon />}
-          aria-disabled={!onNext}
-          onClick={onNext}
-        />
+        {onNext === null ? null : (
+          <IconButton
+            variant="plain"
+            size="small"
+            label={text.next}
+            icon={<NextIcon />}
+            aria-disabled={!onNext}
+            onClick={onNext}
+          />
+        )}
       </div>
       {progress !== undefined ? (
-        <ProgressBar label={text.progress} value={progress} />
+        <ProgressBar
+          label={text.progress}
+          value={progress}
+          valueLabel={progressValueLabel}
+          startLabel={elapsed}
+          endLabel={duration}
+        />
       ) : null}
     </div>
   );

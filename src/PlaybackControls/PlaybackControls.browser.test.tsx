@@ -117,4 +117,82 @@ describe("PlaybackControls", () => {
     ).toBeGreaterThanOrEqual(box.height / 2);
     expect(button.querySelector("svg")).not.toBeNull();
   });
+
+  it("leaves out a step that is not there at all", async () => {
+    const screen = await render(
+      <PlaybackControls onPrevious={null} onNext={null} />,
+    );
+
+    expect(screen.getByRole("button").elements()).toHaveLength(1);
+    await expect
+      .element(screen.getByRole("button", { name: "Play" }))
+      .toBeVisible();
+  });
+
+  it("words the progress as asked and shows the elapsed time and duration at its ends", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <PlaybackControls
+          progress={0.35}
+          progressValueLabel="1:18 of 3:42"
+          elapsed="1:18"
+          duration="3:42"
+        />
+      </div>,
+    );
+    const bar = screen.getByRole("progressbar", { name: "Track progress" });
+    const elapsed = screen.getByText("1:18", { exact: true }).element();
+    const duration = screen.getByText("3:42", { exact: true }).element();
+
+    await expect.element(bar).toHaveAttribute("aria-valuetext", "1:18 of 3:42");
+    expect(elapsed.getBoundingClientRect().left).toBeLessThan(
+      duration.getBoundingClientRect().left,
+    );
+  });
+
+  it("shows no times without a progress bar to put them on", async () => {
+    const screen = await render(
+      <PlaybackControls elapsed="1:18" duration="3:42" />,
+    );
+
+    expect(screen.getByText("1:18").elements()).toHaveLength(0);
+  });
+
+  it("keeps the transport order and the direction of progress when the text runs right to left", async () => {
+    const screen = await render(
+      <div dir="rtl" style={{ inlineSize: "320px" }}>
+        <PlaybackControls
+          progress={0.25}
+          elapsed="1:18"
+          duration="3:42"
+          onPrevious={() => {}}
+          onNext={() => {}}
+          data-testid="player"
+        />
+      </div>,
+    );
+    const left = (name: string) =>
+      screen.getByRole("button", { name }).element().getBoundingClientRect()
+        .left;
+    const player = screen.getByTestId("player").element();
+    const fill = player.querySelector("progress + span > span") as Element;
+    const track = fill.parentElement as Element;
+
+    expect(left("Previous track")).toBeLessThan(left("Play"));
+    expect(left("Play")).toBeLessThan(left("Next track"));
+    expect(Math.round(fill.getBoundingClientRect().left)).toBe(
+      Math.round(track.getBoundingClientRect().left) + 1,
+    );
+    expect(
+      screen
+        .getByText("1:18", { exact: true })
+        .element()
+        .getBoundingClientRect().left,
+    ).toBeLessThan(
+      screen
+        .getByText("3:42", { exact: true })
+        .element()
+        .getBoundingClientRect().left,
+    );
+  });
 });
