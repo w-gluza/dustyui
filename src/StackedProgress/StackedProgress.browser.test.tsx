@@ -470,4 +470,34 @@ describe("StackedProgress", () => {
     }
     expect(segmentWidths(bar.parentElement as Element)).toEqual([400, 0]);
   });
+
+  it.each([
+    ["320px", 2],
+    ["190px", 1],
+  ] as const)(
+    "sets a grid legend in a space of %s in %s columns",
+    async (inlineSize, columns) => {
+      const screen = await render(
+        <div style={{ inlineSize }}>
+          <StackedProgress
+            label="Budget"
+            legend="grid"
+            segments={[
+              { label: "Design and research", value: 40 },
+              { label: "Engineering", value: 35 },
+              { label: "Testing", value: 25 },
+            ]}
+          />
+        </div>,
+      );
+      const starts = new Set(
+        screen
+          .getByRole("listitem")
+          .elements()
+          .map((item) => Math.round(item.getBoundingClientRect().left)),
+      );
+
+      expect(starts.size).toBe(columns);
+    },
+  );
 });

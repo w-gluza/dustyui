@@ -342,4 +342,24 @@ describe("Card", () => {
     expect(box(screen.getByTestId("card").element()).height).toBe(600);
     expect(box(media).height).toBe(box(image ?? media).height);
   });
+
+  it("lines a footer placed straight in the card up with the text above it", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "320px" }}>
+        <Card data-testid="card">
+          <CardContent>
+            <CardDescription>Salt flats below sea level.</CardDescription>
+          </CardContent>
+          <CardFooter data-testid="footer">Wioletta Gluza</CardFooter>
+        </Card>
+      </div>,
+    );
+    const footer = box(screen.getByTestId("footer").element());
+    const card = box(screen.getByTestId("card").element());
+
+    expect(footer.left).toBe(
+      box(screen.getByText("Salt flats below sea level.").element()).left,
+    );
+    expect(card.bottom - footer.bottom).toBeGreaterThanOrEqual(16);
+  });
 });

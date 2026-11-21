@@ -81,7 +81,10 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(max(8rem, 50% - 0.75rem), 1fr)
+  );
   gap: 0.5rem 1.5rem;
 }
 

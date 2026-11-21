@@ -159,6 +159,11 @@
   border-block-start: var(--card-footer-rule);
 }
 
+.card > .footer {
+  margin-inline: var(--card-content-inline);
+  margin-block-end: 1rem;
+}
+
 .end {
   margin-inline-start: auto;
   color: var(--dusty-text-muted);
