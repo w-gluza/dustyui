@@ -32,6 +32,7 @@ import { InspectorSearch } from "./InspectorSearch.js";
 import { DEFAULT_LABELS, type ObjectInspectorLabels } from "./labels.js";
 import { getMatches, type Matches } from "./search/getMatches.js";
 import { getSearchStatus } from "./search/getSearchStatus.js";
+import { getExcerpt } from "./search/getExcerpt.js";
 import { Highlighted } from "./search/Highlighted.js";
 import styles from "./ObjectInspector.module.css";
 
@@ -53,8 +54,18 @@ const ANNOUNCE_DELAY = 700;
 const LABEL_LIMIT = 80;
 const ANNOUNCED_PATH_LIMIT = 120;
 
-function getShownLabel(label: NodeLabel): string {
-  return getEscapedText(getTruncatedText(getLabelText(label), LABEL_LIMIT));
+function getShownLabel(label: NodeLabel, query = ""): string {
+  return getEscapedText(getExcerpt(getLabelText(label), query, LABEL_LIMIT));
+}
+
+function getShownPreview(node: InspectorNode, query: string): string {
+  if (node.kind !== "string" || typeof node.value !== "string") {
+    return node.preview;
+  }
+  const excerpt = getExcerpt(node.value, query, LABEL_LIMIT);
+  return excerpt.startsWith("…")
+    ? getEscapedText(JSON.stringify(excerpt))
+    : node.preview;
 }
 
 function getRowText({ node }: TreeRow<InspectorNode>): string {
@@ -218,14 +229,20 @@ export function ObjectInspector({
         {node.label ? (
           <>
             <span>
-              <Highlighted text={getShownLabel(node.label)} query={searched} />
+              <Highlighted
+                text={getShownLabel(node.label, searched)}
+                query={searched}
+              />
             </span>
             <span className={styles.separator}>: </span>
           </>
         ) : null}
         <span className={styles.value} data-kind={node.kind}>
           {hasValueText(node) ? (
-            <Highlighted text={node.preview} query={searched} />
+            <Highlighted
+              text={getShownPreview(node, searched)}
+              query={searched}
+            />
           ) : (
             node.preview
           )}

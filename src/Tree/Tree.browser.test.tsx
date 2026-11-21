@@ -733,6 +733,23 @@ describe("Tree", () => {
       },
     );
 
+    it("keeps a row of context past a selected row it scrolls to", async () => {
+      const screen = await render(<Many selected="item 0" />);
+      await settle();
+      const tree = screen.getByRole("tree").element();
+
+      await screen.rerender(<Many selected="item 20" />);
+      await settle();
+      const row = screen
+        .getByRole("treeitem", { name: "item 20", exact: true })
+        .element()
+        .getBoundingClientRect();
+      const view = tree.getBoundingClientRect();
+
+      expect(tree.scrollTop).toBeGreaterThan(0);
+      expect(view.bottom - row.bottom).toBeGreaterThanOrEqual(row.height);
+    });
+
     it("renders every row of a tree with up to 200 rows", async () => {
       const small = folder(
         "root",

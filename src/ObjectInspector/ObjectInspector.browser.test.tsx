@@ -1012,4 +1012,33 @@ describe("ObjectInspector wording and wiring", () => {
     ).toEqual(["$/.area"]);
     expect(root.hasAttribute("defaultselected")).toBe(false);
   });
+
+  it("marks a match that lies past the point where a long key or value is cut", async () => {
+    const screen = await render(
+      <ObjectInspector
+        label="Notes"
+        searchable
+        value={{
+          note: `${"glacier ".repeat(60)}condor ${"river ".repeat(60)}`,
+          [`${"valley".repeat(30)}Puma`]: true,
+          plain: "condor",
+        }}
+      />,
+    );
+    const marked = (name: RegExp) =>
+      [
+        ...screen
+          .getByRole("treeitem", { name })
+          .element()
+          .querySelectorAll("mark"),
+      ].map((mark) => mark.textContent);
+
+    await userEvent.type(screen.getByRole("searchbox"), "condor");
+    await expect.poll(() => marked(/^note/u)).toEqual(["condor"]);
+    expect(marked(/^plain/u)).toEqual(["condor"]);
+
+    await userEvent.clear(screen.getByRole("searchbox"));
+    await userEvent.type(screen.getByRole("searchbox"), "puma");
+    await expect.poll(() => marked(/: true$/u)).toEqual(["Puma"]);
+  });
 });
