@@ -319,4 +319,84 @@ describe("ObjectInspector contract", () => {
         .toBeVisible();
     });
   });
+
+  describe("copy results", () => {
+    const part = "Part of the value copied. It is too large to copy whole.";
+    const list = Array.from({ length: 6000 }, (_, index) => index);
+
+    it("announces a partial copy once, as partial", async () => {
+      resetAnnouncer();
+      vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+      const screen = await render(
+        <ObjectInspector
+          label="List"
+          value={{ list }}
+          showDetails
+          defaultSelected="$"
+        />,
+      );
+
+      await screen.getByRole("button", { name: "Copy value" }).click();
+
+      await expect.poll(() => announcements()).toEqual([part]);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(announcements()).toEqual([part]);
+    });
+
+    it("announces a failed copy once, with the advice", async () => {
+      resetAnnouncer();
+      vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(
+        new Error("denied"),
+      );
+      const screen = await render(
+        <ObjectInspector
+          label="List"
+          value={{ list }}
+          showDetails
+          defaultSelected="$"
+        />,
+      );
+
+      await screen.getByRole("button", { name: "Copy path" }).click();
+
+      await expect
+        .poll(() => announcements("assertive"))
+        .toEqual(["Could not copy. Select the text and copy it by hand."]);
+      expect(announcements()).toEqual([]);
+    });
+
+    it("keeps the partial warning of a value copy when the path is copied before it finishes", async () => {
+      resetAnnouncer();
+      const pending: (() => void)[] = [];
+      vi.spyOn(navigator.clipboard, "writeText").mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            pending.push(resolve);
+          }),
+      );
+      const screen = await render(
+        <ObjectInspector
+          label="List"
+          value={{ list }}
+          showDetails
+          defaultSelected="$"
+        />,
+      );
+      const panel = screen.getByRole("region", {
+        name: "Selected value in List",
+      });
+
+      await screen.getByRole("button", { name: "Copy value" }).click();
+      await screen.getByRole("button", { name: "Copy path" }).click();
+      await expect.poll(() => pending.length).toBe(2);
+      pending[1]?.();
+      await expect
+        .element(screen.getByRole("button", { name: "Path copied" }))
+        .toBeVisible();
+      pending[0]?.();
+
+      await expect.element(panel.getByText(part)).toBeVisible();
+      await expect.poll(() => announcements()).toEqual(["Path copied", part]);
+    });
+  });
 });

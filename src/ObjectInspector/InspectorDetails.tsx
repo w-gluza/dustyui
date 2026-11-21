@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { announce } from "../announcer/announcer.js";
 import { CopyButton } from "../CopyButton/CopyButton.js";
 import type { InspectorNode } from "./describe/describe.js";
 import { getEscapedText } from "./describe/getEscapedText.js";
-import { getCopyText, type CopyText } from "./getCopyText.js";
+import { getCopyText } from "./getCopyText.js";
 import { getShownValue } from "./getShownValue.js";
 import { getTypeText } from "./getTypeText.js";
 import { getValueText, hasValueText } from "./getValueText.js";
@@ -72,7 +71,7 @@ interface SelectedDetailsProps {
 
 function SelectedDetails({ labels, node, query }: SelectedDetailsProps) {
   const [feedback, setFeedback] = useState(NO_FEEDBACK);
-  const [copied] = useState(() => ({ isComplete: true }));
+  const [partCopies] = useState(() => new Set<string>());
   const isLeaf = hasValueText(node);
   const text = isLeaf ? getValueText(node) : "";
   const shown = getShownValue(text, query);
@@ -85,26 +84,24 @@ function SelectedDetails({ labels, node, query }: SelectedDetailsProps) {
     return () => clearTimeout(timer);
   }, [feedback]);
 
-  function read(source: () => CopyText): () => string {
-    return () => {
-      const copy = source();
-      copied.isComplete = copy.isComplete;
-      return copy.text;
-    };
+  function readValue(): string {
+    const copy = getCopyText(node);
+    if (!copy.isComplete) {
+      partCopies.add(copy.text);
+    }
+    return copy.text;
   }
 
-  function noteCopied(part: string) {
-    if (copied.isComplete) {
-      setFeedback(NO_FEEDBACK);
-      return;
-    }
-    setFeedback({ text: part, hasFailed: false });
-    announce(part);
+  function noteCopied(copied: string) {
+    setFeedback(
+      partCopies.has(copied)
+        ? { text: labels.valuePartCopied, hasFailed: false }
+        : NO_FEEDBACK,
+    );
   }
 
   function noteFailed() {
     setFeedback({ text: labels.copyFailed, hasFailed: true });
-    announce(labels.copyFailed, "assertive");
   }
 
   return (
@@ -133,25 +130,28 @@ function SelectedDetails({ labels, node, query }: SelectedDetailsProps) {
       <div className={styles.actions}>
         <CopyButton
           size="small"
-          value={read(() => ({ text: node.path, isComplete: true }))}
+          value={node.path}
           label={labels.copyPath}
           copiedLabel={labels.pathCopied}
           failedLabel={labels.copyFailedShort}
-          onCopied={() => {
-            noteCopied(labels.pathPartCopied);
-          }}
+          failedAnnouncement={labels.copyFailed}
+          onCopied={noteCopied}
           onCopyError={noteFailed}
         />
         {node.kind === "range" ? null : (
           <CopyButton
             size="small"
-            value={read(() => getCopyText(node))}
+            value={readValue}
             label={labels.copyValue}
             copiedLabel={labels.valueCopied}
+            copiedAnnouncement={(copied) =>
+              partCopies.has(copied)
+                ? labels.valuePartCopied
+                : labels.valueCopied
+            }
             failedLabel={labels.copyFailedShort}
-            onCopied={() => {
-              noteCopied(labels.valuePartCopied);
-            }}
+            failedAnnouncement={labels.copyFailed}
+            onCopied={noteCopied}
             onCopyError={noteFailed}
           />
         )}

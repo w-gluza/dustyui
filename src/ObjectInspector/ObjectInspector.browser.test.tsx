@@ -537,7 +537,7 @@ describe("ObjectInspector", () => {
         .poll(
           () => document.querySelector('[aria-live="assertive"]')?.textContent,
         )
-        .toBe(`Copy failed${failure}`);
+        .toBe(failure);
     });
 
     it("falls back to the whole value when the selected row no longer exists", async () => {
