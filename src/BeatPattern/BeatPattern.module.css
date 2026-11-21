@@ -21,6 +21,9 @@
   background-color: transparent;
   color: var(--dusty-action);
   font: inherit;
+}
+
+button.beat {
   cursor: pointer;
 }
 
@@ -66,12 +69,12 @@
   background-color: var(--dusty-text);
 }
 
-.beat:active {
+button.beat:active {
   background-color: var(--dusty-surface-hover);
 }
 
 @media (hover: hover) {
-  .beat:hover {
+  button.beat:hover {
     background-color: var(--dusty-surface-hover);
   }
 }

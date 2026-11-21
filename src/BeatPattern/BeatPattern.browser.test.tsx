@@ -456,4 +456,42 @@ describe("BeatPattern", () => {
     expect(matchMedia("(forced-colors: active)").matches).toBe(false);
     expect(normal).not.toBe(skipped);
   });
+
+  it("shows a pattern for reading only when no change handler is given", async () => {
+    const screen = await render(
+      <>
+        <BeatPattern label="Preset" beats={BEATS} playingBeat={1} />
+        <BeatPattern
+          label="Editable"
+          beats={BEATS}
+          onBeatChange={() => undefined}
+        />
+      </>,
+    );
+    const preset = screen.getByRole("list", { name: "Preset" });
+    const beats = preset.getByRole("listitem").elements();
+    const editable = screen
+      .getByRole("button", { name: "Beat 1, accent" })
+      .element();
+    const shown = beats[0]?.firstElementChild as HTMLElement;
+
+    expect(preset.getByRole("button").elements()).toHaveLength(0);
+    expect(beats.map((beat) => beat.textContent.replace(">", ""))).toEqual([
+      "Beat 1, accent",
+      "Beat 2, normal",
+      "Beat 3, skipped",
+      "Beat 4, normal",
+    ]);
+    expect(getComputedStyle(shown).cursor).not.toBe("pointer");
+    expect(shown.getBoundingClientRect().width).toBe(
+      editable.getBoundingClientRect().width,
+    );
+    expect(shown.getBoundingClientRect().height).toBe(
+      editable.getBoundingClientRect().height,
+    );
+    expect(shown.dataset.kind).toBe("accent");
+    expect((beats[1]?.firstElementChild as HTMLElement).dataset.playing).toBe(
+      "true",
+    );
+  });
 });
