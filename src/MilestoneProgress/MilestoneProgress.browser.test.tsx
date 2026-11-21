@@ -374,4 +374,33 @@ describe("MilestoneProgress", () => {
     expect(seen.current).not.toBe(seen.upcoming);
     expect(seen.track).toBe("1px");
   });
+
+  it("marks the current step with a dot and a heavier label, not colour alone", async () => {
+    const screen = await render(
+      <MilestoneProgress
+        label="Project"
+        milestones={MILESTONES}
+        completed={2}
+      />,
+    );
+    const itemOf = (name: string) =>
+      screen
+        .getByRole("listitem")
+        .elements()
+        .find((item) => item.textContent.startsWith(name)) as Element;
+    const dot = (name: string) =>
+      getComputedStyle(
+        itemOf(name).querySelector("[aria-hidden]") as Element,
+        "::after",
+      );
+    const weight = (name: string) =>
+      Number(getComputedStyle(itemOf(name)).fontWeight);
+
+    expect(dot("Build").content).not.toBe("none");
+    expect(Number.parseFloat(dot("Build").width)).toBeGreaterThan(4);
+    expect(dot("Ship").content).toBe("none");
+    expect(dot("Setup").content).toBe("none");
+    expect(weight("Build")).toBeGreaterThan(weight("Ship"));
+    expect(weight("Build")).toBeGreaterThan(weight("Setup"));
+  });
 });
