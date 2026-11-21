@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+import { pressedStyle } from "../test/pressedStyle.js";
 import { cdp, userEvent } from "vitest/browser";
 import { List, ListItem } from "../index.js";
 import { announcements, resetAnnouncer } from "../test/announcements.js";
@@ -646,5 +647,28 @@ describe("List", () => {
 
     expect(reset("Outer")).toBe("dusty-list 6");
     expect(reset("Inner")).toBe("dusty-list 0");
+  });
+
+  it("fills a row while it is pressed, and a selected row differently", async () => {
+    const screen = await render(
+      <List aria-label="Files">
+        <ListItem title="Report" onClick={() => undefined} />
+        <ListItem title="Current" onClick={() => undefined} selected />
+        <ListItem title="Static" />
+      </List>,
+    );
+    const pressed = (name: string) =>
+      pressedStyle(
+        screen.getByRole("button", { name }).element(),
+        "background-color",
+      );
+
+    expect(pressed("Report")).toBe("var(--dusty-surface-selected)");
+    expect(pressed("Current")).toBe(
+      "var(--dusty-surface-selected) then var(--dusty-surface-hover)",
+    );
+    expect(
+      pressedStyle(screen.getByText("Static").element(), "background-color"),
+    ).toBe("");
   });
 });

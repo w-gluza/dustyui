@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+import { pressedStyle } from "../test/pressedStyle.js";
 import { cdp, userEvent } from "vitest/browser";
 import { TrackList } from "../index.js";
 
@@ -232,5 +233,37 @@ describe("TrackList", () => {
     await expect
       .element(screen.getByTestId("list"))
       .toHaveAttribute("role", "none");
+  });
+
+  it("fills a row while it is pressed, the current row differently, and never a row that is only shown", async () => {
+    const tracks = [
+      { title: "Dawn Static", duration: "3:12" },
+      { title: "Low Tide", duration: "4:01" },
+    ];
+    const screen = await render(
+      <>
+        <TrackList
+          label="Album"
+          tracks={tracks}
+          currentTrack={1}
+          onTrackSelect={() => undefined}
+        />
+        <TrackList
+          label="Listing"
+          tracks={[{ title: "Shown", duration: "1:00" }]}
+        />
+      </>,
+    );
+    const pressed = (title: string) =>
+      pressedStyle(
+        screen.getByText(title).element().parentElement as Element,
+        "background-color",
+      );
+
+    expect(pressed("Dawn Static")).toBe("var(--dusty-surface-selected)");
+    expect(pressed("Low Tide")).toBe(
+      "var(--dusty-surface-selected) then var(--dusty-surface-hover)",
+    );
+    expect(pressed("Shown")).toBe("");
   });
 });

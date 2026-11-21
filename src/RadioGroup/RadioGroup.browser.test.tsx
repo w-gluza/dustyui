@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+import { pressedStyle } from "../test/pressedStyle.js";
 import { cdp, userEvent } from "vitest/browser";
 import { RadioGroup } from "../index.js";
 
@@ -369,5 +370,25 @@ describe("RadioGroup", () => {
     } finally {
       await session.send("Emulation.setEmulatedMedia", { features: [] });
     }
+  });
+
+  it("fills an option while it is pressed, unless it is disabled", async () => {
+    const screen = await render(
+      <RadioGroup
+        legend="Sound"
+        options={[
+          { value: "on", label: "On" },
+          { value: "off", label: "Off", disabled: true },
+        ]}
+      />,
+    );
+    const pressed = (name: string) =>
+      pressedStyle(
+        screen.getByText(name).element().closest("label") as Element,
+        "background-color",
+      );
+
+    expect(pressed("On")).toBe("var(--dusty-surface-selected)");
+    expect(pressed("Off")).toBe("");
   });
 });

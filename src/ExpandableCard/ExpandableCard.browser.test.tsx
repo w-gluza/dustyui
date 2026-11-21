@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
+import { pressedStyle } from "../test/pressedStyle.js";
 import { cdp, userEvent } from "vitest/browser";
 import { ExpandableCard } from "../index.js";
 
@@ -542,5 +543,17 @@ describe("ExpandableCard", () => {
     expect(Math.round(before.top - view.top)).toBe(
       Math.round(after.top - view.top),
     );
+  });
+
+  it("fills the card while it is pressed", async () => {
+    const screen = await render(
+      <ExpandableCard title="Helios" level={2} data-testid="card">
+        Notes
+      </ExpandableCard>,
+    );
+
+    expect(
+      pressedStyle(screen.getByTestId("card").element(), "background-color"),
+    ).toBe("var(--dusty-surface-hover)");
   });
 });

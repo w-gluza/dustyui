@@ -63,6 +63,14 @@ button.track {
   }
 }
 
+button.track:active {
+  background-color: var(--dusty-surface-selected);
+}
+
+button.track[aria-current]:active {
+  background-color: var(--dusty-surface-hover);
+}
+
 @media (forced-colors: active) {
   .track[aria-current] {
     padding-inline-start: 0.25rem;

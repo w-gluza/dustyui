@@ -206,6 +206,10 @@
   }
 }
 
+.card:has(.trigger:active) {
+  background-color: var(--dusty-surface-hover);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;
