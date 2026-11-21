@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
+import { cdp } from "vitest/browser";
 import { RecordSleeve } from "../index.js";
 
 const artwork = <svg data-testid="artwork" viewBox="0 0 10 10" />;
@@ -90,5 +91,70 @@ describe("RecordSleeve", () => {
     );
 
     await expect.element(screen.getByTestId("sleeve")).toHaveClass("mine");
+  });
+
+  it("neither slides nor spins the record when motion is reduced", async () => {
+    const session = cdp() as unknown as {
+      send: (method: string, params: object) => Promise<unknown>;
+    };
+    await session.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    try {
+      const screen = await render(
+        <div style={{ inlineSize: "320px" }}>
+          <RecordSleeve
+            artwork={artwork}
+            revealed
+            playing
+            data-testid="sleeve"
+          />
+        </div>,
+      );
+      const vinyl = vinylOf(screen.getByTestId("sleeve").element());
+
+      expect(vinyl.getAnimations({ subtree: true })).toHaveLength(0);
+      expect(getComputedStyle(vinyl).visibility).toBe("visible");
+    } finally {
+      await session.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: "" }],
+      });
+    }
+  });
+
+  it.each([
+    [
+      "an image",
+      <img
+        key="a"
+        alt=""
+        data-testid="art"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 5'%3E%3C/svg%3E"
+      />,
+    ],
+    [
+      "a picture",
+      <picture key="b" data-testid="art">
+        <img
+          alt=""
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 5'%3E%3C/svg%3E"
+        />
+      </picture>,
+    ],
+    [
+      "a wrapped drawing",
+      <div key="c" data-testid="art">
+        <svg viewBox="0 0 10 10" />
+      </div>,
+    ],
+  ])("fills the square cover with %s", async (_name, art) => {
+    const screen = await render(
+      <div style={{ inlineSize: "200px" }}>
+        <RecordSleeve artwork={art} />
+      </div>,
+    );
+    const box = screen.getByTestId("art").element().getBoundingClientRect();
+
+    expect([box.width, box.height]).toEqual([200, 200]);
   });
 });
