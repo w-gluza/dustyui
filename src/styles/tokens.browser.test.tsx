@@ -32,3 +32,23 @@ describe("colour scheme", () => {
     },
   );
 });
+
+describe("shared tokens", () => {
+  it("resolve the large radius, regular weight, disabled opacity and inset focus ring", () => {
+    const probe = document.createElement("div");
+    probe.style.borderRadius = "var(--dusty-radius-lg)";
+    probe.style.fontWeight = "var(--dusty-weight-regular)";
+    probe.style.opacity = "var(--dusty-opacity-disabled)";
+    probe.style.outlineOffset = "var(--dusty-focus-ring-inset)";
+    document.body.append(probe);
+    const style = getComputedStyle(probe);
+
+    expect([
+      style.borderRadius,
+      style.fontWeight,
+      style.opacity,
+      style.outlineOffset,
+    ]).toEqual(["24px", "400", "0.5", "-2px"]);
+    probe.remove();
+  });
+});

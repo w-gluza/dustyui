@@ -52,6 +52,7 @@ export { EmptyState, type EmptyStateProps } from "./EmptyState/EmptyState.js";
 export { CopyButton, type CopyButtonProps } from "./CopyButton/CopyButton.js";
 export {
   ExpandableCard,
+  type ExpandableCardDialogProps,
   type ExpandableCardProps,
 } from "./ExpandableCard/ExpandableCard.js";
 export type { HeadingLevel } from "./headingLevel.js";

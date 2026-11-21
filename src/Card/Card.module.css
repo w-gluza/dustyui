@@ -21,7 +21,7 @@
 }
 
 .poster {
-  --card-radius: 1.5rem;
+  --card-radius: var(--dusty-radius-lg);
   --card-padding: 1.25rem;
   --card-content-inline: 0.25rem;
   --card-media-radius: 0;

@@ -39,7 +39,7 @@
 .value {
   block-size: var(--bar-chart-value);
   color: var(--dusty-text-muted);
-  font-weight: normal;
+  font-weight: var(--dusty-weight-regular);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

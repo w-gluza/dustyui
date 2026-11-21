@@ -43,7 +43,7 @@
 
 .button:disabled,
 .button[aria-disabled="true"]:not([data-loading]) {
-  opacity: 0.5;
+  opacity: var(--dusty-opacity-disabled);
   cursor: not-allowed;
 }
 

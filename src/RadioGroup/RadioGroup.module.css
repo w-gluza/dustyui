@@ -38,7 +38,7 @@
 
 .option:has(:focus-visible) {
   outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
-  outline-offset: calc(var(--dusty-focus-ring-offset) * -1);
+  outline-offset: var(--dusty-focus-ring-inset);
 }
 
 .label {

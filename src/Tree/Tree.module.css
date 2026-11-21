@@ -38,7 +38,7 @@
 
 .row:focus-visible {
   outline: var(--dusty-focus-ring-width) solid var(--dusty-focus-ring);
-  outline-offset: calc(-1 * var(--dusty-focus-ring-width));
+  outline-offset: var(--dusty-focus-ring-inset);
 }
 
 .toggle {

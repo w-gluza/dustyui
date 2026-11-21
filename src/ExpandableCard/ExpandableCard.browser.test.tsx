@@ -497,4 +497,27 @@ describe("ExpandableCard", () => {
 
     await expect.element(screen.getByTestId("card")).toHaveClass("mine");
   });
+
+  it("passes consumer props to the dialog and keeps its own class", async () => {
+    const screen = await render(
+      <ExpandableCard
+        title="Helios"
+        level={2}
+        defaultExpanded
+        dialogProps={{
+          className: "wide",
+          "aria-describedby": "about",
+          "data-testid": "dialog",
+        }}
+      >
+        <p id="about">Nine tracks</p>
+      </ExpandableCard>,
+    );
+    const dialog = screen.getByTestId("dialog");
+
+    await expect.element(dialog).toHaveClass("wide");
+    await expect.element(dialog).toHaveAccessibleDescription("Nine tracks");
+    await expect.element(dialog).toHaveAccessibleName("Helios");
+    expect(dialog.element().classList.length).toBe(2);
+  });
 });

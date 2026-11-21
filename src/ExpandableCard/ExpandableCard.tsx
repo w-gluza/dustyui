@@ -26,6 +26,19 @@ import styles from "./ExpandableCard.module.css";
 
 type MorphPart = "card" | "media" | "title";
 
+export type ExpandableCardDialogProps = Omit<
+  ComponentProps<"dialog">,
+  | "children"
+  | "dangerouslySetInnerHTML"
+  | "ref"
+  | "open"
+  | "style"
+  | "aria-labelledby"
+  | "aria-label"
+  | "onCancel"
+  | "onClose"
+> & { [attribute: `data-${string}`]: string | undefined };
+
 interface ExpandableCardBaseProps extends Omit<
   ComponentProps<"article">,
   "title" | "dangerouslySetInnerHTML"
@@ -36,6 +49,7 @@ interface ExpandableCardBaseProps extends Omit<
   media?: ReactNode | undefined;
   expandedMedia?: ReactNode | undefined;
   closeLabel?: string | undefined;
+  dialogProps?: ExpandableCardDialogProps | undefined;
   onExpandedChange?: ((expanded: boolean) => void) | undefined;
 }
 
@@ -52,6 +66,7 @@ export function ExpandableCard({
   media,
   expandedMedia = media,
   closeLabel = "Close",
+  dialogProps,
   expanded: controlledExpanded,
   defaultExpanded = false,
   onExpandedChange,
@@ -163,8 +178,9 @@ export function ExpandableCard({
         ) : null}
       </article>
       <dialog
+        {...dialogProps}
         ref={dialogRef}
-        className={styles.dialog}
+        className={clsx(styles.dialog, dialogProps?.className)}
         aria-labelledby={titleId}
         style={expanded ? part("card") : undefined}
         onCancel={handleCancel}
