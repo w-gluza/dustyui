@@ -40,4 +40,21 @@ describe("getExcerpt", () => {
 
     expect(getExcerpt(text, "condor", 81).isWellFormed()).toBe(true);
   });
+
+  it("finds the match again after letters that grow when lowercased", () => {
+    const excerpt = getExcerpt(`${"İ".repeat(100)}needle`, "needle", 80);
+
+    expect(excerpt).toBe(`…${"İ".repeat(20)}needle`);
+  });
+
+  it("keeps a match with growing letters on both sides inside the window", () => {
+    const excerpt = getExcerpt(
+      `${"İ".repeat(300)} Condor ${"İ".repeat(300)}`,
+      "condor",
+      80,
+    );
+
+    expect(excerpt).toContain(" Condor ");
+    expect(excerpt).toHaveLength(82);
+  });
 });

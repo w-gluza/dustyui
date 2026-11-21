@@ -9,6 +9,31 @@ function isLowSurrogate(text: string, index: number): boolean {
   return code >= 0xdc00 && code <= 0xdfff;
 }
 
+function getOriginalIndex(text: string, loweredIndex: number): number {
+  let lowered = 0;
+  let index = 0;
+  for (const character of text) {
+    if (lowered >= loweredIndex) {
+      break;
+    }
+    lowered += character.toLocaleLowerCase().length;
+    index += character.length;
+  }
+  return index;
+}
+
+function findMatch(text: string, query: string): number {
+  if (query === "") {
+    return -1;
+  }
+  const searched = text.slice(0, SEARCHED_LENGTH);
+  const lowered = searched.toLocaleLowerCase();
+  const found = lowered.indexOf(query);
+  return found < 0 || lowered.length === searched.length
+    ? found
+    : getOriginalIndex(searched, found);
+}
+
 export function getExcerpt(
   text: string,
   search: string,
@@ -18,10 +43,7 @@ export function getExcerpt(
     return text;
   }
   const query = search.trim().toLocaleLowerCase();
-  const found =
-    query === ""
-      ? -1
-      : text.slice(0, SEARCHED_LENGTH).toLocaleLowerCase().indexOf(query);
+  const found = findMatch(text, query);
   if (found < 0 || found + query.length <= limit) {
     return getTruncatedText(text, limit);
   }
