@@ -481,4 +481,41 @@ describe("CopyButton", () => {
 
     expect(button.getBoundingClientRect().width).toBe(before);
   });
+
+  it("works the value out only when it is asked to copy", async () => {
+    clipboard().mockResolvedValue();
+    const read = vi.fn(() => "late");
+    const onCopied = vi.fn();
+    const screen = await render(
+      <CopyButton value={read} onCopied={onCopied} />,
+    );
+
+    expect(read).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await expect
+      .element(screen.getByRole("button", { name: "Copied" }))
+      .toBeVisible();
+    expect(clipboard()).toHaveBeenCalledWith("late");
+    expect(onCopied).toHaveBeenCalledWith("late");
+  });
+
+  it("reports a value that cannot be worked out as a failed copy", async () => {
+    const onCopyError = vi.fn();
+    const screen = await render(
+      <CopyButton
+        value={() => {
+          throw new Error("unreadable");
+        }}
+        onCopyError={onCopyError}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await expect
+      .element(screen.getByRole("button", { name: "Copy failed" }))
+      .toBeVisible();
+    expect(onCopyError).toHaveBeenCalledOnce();
+  });
 });

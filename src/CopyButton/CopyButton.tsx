@@ -19,7 +19,7 @@ interface CopyButtonBaseProps extends Omit<
   | "aria-label"
   | "aria-labelledby"
 > {
-  value: string;
+  value: string | (() => string);
   label?: string | undefined;
   copiedLabel?: string | undefined;
   failedLabel?: string | undefined;
@@ -89,8 +89,10 @@ export function CopyButton({
   }, [feedback, feedbackDuration]);
 
   async function copy() {
+    let copied: string;
     try {
-      await navigator.clipboard.writeText(value);
+      copied = typeof value === "function" ? value() : value;
+      await navigator.clipboard.writeText(copied);
     } catch (error) {
       setAnimated(true);
       setFeedback({ status: "failed" });
@@ -101,7 +103,7 @@ export function CopyButton({
     setAnimated(true);
     setFeedback({ status: "copied" });
     announce(copiedLabel);
-    onCopied?.(value);
+    onCopied?.(copied);
   }
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
