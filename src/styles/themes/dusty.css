@@ -23,4 +23,6 @@
   --dusty-illustration-secondary: light-dark(#9daf9b, #8fa18d);
   --dusty-illustration-highlight: light-dark(#f1c86a, #e3bd66);
   --dusty-illustration-shadow: light-dark(#283b50, #45607f);
+  --dusty-shadow: light-dark(#283b50, #05070a);
+  --dusty-backdrop: light-dark(#283b50, #05070a);
 }

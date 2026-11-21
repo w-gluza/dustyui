@@ -107,7 +107,7 @@
 }
 
 .dialog::backdrop {
-  background-color: var(--dusty-illustration-shadow);
+  background-color: var(--dusty-backdrop);
   opacity: 0.6;
 }
 
@@ -184,7 +184,7 @@
 @media (hover: hover) {
   .card:has(.trigger:hover) {
     border-color: var(--dusty-border-strong);
-    box-shadow: 0 0.5rem 1.25rem -0.75rem var(--dusty-illustration-shadow);
+    box-shadow: 0 0.5rem 1.25rem -0.75rem var(--dusty-shadow);
   }
 }
 

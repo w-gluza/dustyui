@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import "../index.js";
+import { render } from "vitest-browser-react";
+import { ExpandableCard, Popover } from "../index.js";
 import "./themes/mono.css";
 
 const THEMES = ["dusty", "mono"] as const;
@@ -123,4 +124,55 @@ describe("theme palettes", () => {
       expect(failures(theme, BOUNDARIES, SURFACES, 3)).toEqual([]);
     },
   );
+
+  it.each(THEMES)(
+    "keep the %s shadow and backdrop darker than every surface",
+    (theme) => {
+      expect(namesOf(theme)).toEqual(
+        expect.arrayContaining(["--dusty-shadow", "--dusty-backdrop"]),
+      );
+      for (const scheme of SCHEMES) {
+        for (const token of ["shadow", "backdrop"]) {
+          for (const surface of SURFACES) {
+            expect(
+              luminance(colourOf(theme, scheme, token)),
+              `${scheme}: ${token} against ${surface}`,
+            ).toBeLessThan(luminance(colourOf(theme, scheme, surface)));
+          }
+        }
+      }
+    },
+  );
+
+  it("casts a dark shadow under a popover and dims the page behind a dialog in dark", async () => {
+    const screen = await render(
+      <div data-color-scheme="dark">
+        <Popover trigger="Options" data-testid="panel">
+          Content
+        </Popover>
+        <ExpandableCard title="Helios" level={2} defaultExpanded>
+          Details
+        </ExpandableCard>
+      </div>,
+    );
+    const channelsOf = (colour: string) =>
+      Array.from(colour.matchAll(/[\d.]+/gu), ([channel]) =>
+        Number(channel),
+      ).slice(0, 3);
+    const surface = luminance(colourOf("dusty", "dark", "surface"));
+    const dialog = screen.getByRole("dialog").element();
+
+    expect(
+      luminance(
+        channelsOf(
+          getComputedStyle(screen.getByTestId("panel").element()).boxShadow,
+        ),
+      ),
+    ).toBeLessThan(surface);
+    expect(
+      luminance(
+        channelsOf(getComputedStyle(dialog, "::backdrop").backgroundColor),
+      ),
+    ).toBeLessThan(surface);
+  });
 });
