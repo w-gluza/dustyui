@@ -922,4 +922,53 @@ describe("Tabs", () => {
       expect(look("Inner tab")).toEqual(look("Lone tab"));
     },
   );
+
+  it.each(["ltr", "rtl"] as const)(
+    "fades the edge where more tabs are waiting, in %s",
+    async (dir) => {
+      const screen = await render(
+        <div dir={dir}>
+          <div style={{ inlineSize: "220px" }}>
+            <Tabs defaultValue="a">
+              <TabsList label="Views" data-testid="crowded">
+                <TabsTrigger value="a">Overview</TabsTrigger>
+                <TabsTrigger value="b">Recent activity</TabsTrigger>
+                <TabsTrigger value="c">Account settings</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          <Tabs defaultValue="a">
+            <TabsList label="Short" data-testid="roomy">
+              <TabsTrigger value="a">One</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>,
+      );
+      const more = (id: string) => {
+        const list = screen.getByTestId(id).element();
+        return [
+          list.hasAttribute("data-more-start"),
+          list.hasAttribute("data-more-end"),
+        ];
+      };
+      const list = screen.getByTestId("crowded").element();
+      const edges = () => {
+        const mask = getComputedStyle(list).maskImage;
+        return [mask.includes("to left"), mask.includes("gradient")];
+      };
+
+      expect(more("roomy")).toEqual([false, false]);
+      expect(
+        getComputedStyle(screen.getByTestId("roomy").element()).maskImage,
+      ).toBe("none");
+      expect(more("crowded")).toEqual([false, true]);
+      expect(edges()).toEqual([dir === "rtl", true]);
+
+      list.scrollLeft = dir === "rtl" ? -list.scrollWidth : list.scrollWidth;
+      await expect.poll(() => more("crowded")).toEqual([true, false]);
+
+      await userEvent.tab();
+      expect(getComputedStyle(list).maskImage).toBe("none");
+    },
+  );
 });

@@ -18,6 +18,41 @@
   scrollbar-width: none;
 }
 
+.list:is([data-more-start], [data-more-end]) {
+  --tabs-fade-start: 0rem;
+  --tabs-fade-end: 0rem;
+
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    CanvasText var(--tabs-fade-start),
+    CanvasText calc(100% - var(--tabs-fade-end)),
+    transparent
+  );
+}
+
+.list:is([data-more-start], [data-more-end]):dir(rtl) {
+  mask-image: linear-gradient(
+    to left,
+    transparent,
+    CanvasText var(--tabs-fade-start),
+    CanvasText calc(100% - var(--tabs-fade-end)),
+    transparent
+  );
+}
+
+.list[data-more-start] {
+  --tabs-fade-start: 2rem;
+}
+
+.list[data-more-end] {
+  --tabs-fade-end: 2rem;
+}
+
+.list:is([data-more-start], [data-more-end]):has(:focus-visible) {
+  mask-image: none;
+}
+
 .row {
   position: relative;
   display: flex;

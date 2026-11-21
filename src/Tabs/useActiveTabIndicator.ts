@@ -31,6 +31,14 @@ function place(list: HTMLElement, row: HTMLElement): boolean {
   return true;
 }
 
+function markOverflow(list: HTMLElement): void {
+  const hidden = list.scrollWidth - list.clientWidth;
+  const scrolled = Math.abs(list.scrollLeft);
+
+  list.toggleAttribute("data-more-start", scrolled > 1);
+  list.toggleAttribute("data-more-end", scrolled < hidden - 1);
+}
+
 function reveal(list: HTMLElement, tab: HTMLElement): void {
   const listBox = list.getBoundingClientRect();
   const tabBox = tab.getBoundingClientRect();
@@ -73,6 +81,7 @@ export function useActiveTabIndicator(): IndicatorRefs {
       reveal(list, active);
     }
     revealedRef.current = active;
+    markOverflow(list);
   });
 
   useLayoutEffect(() => {
@@ -84,9 +93,14 @@ export function useActiveTabIndicator(): IndicatorRefs {
     }
     const sizes = new ResizeObserver(() => {
       place(list, row);
+      markOverflow(list);
     });
+    const handleScroll = () => {
+      markOverflow(list);
+    };
     const watch = () => {
       sizes.disconnect();
+      sizes.observe(list);
       sizes.observe(row);
       for (const tab of row.children) {
         sizes.observe(tab);
@@ -101,7 +115,9 @@ export function useActiveTabIndicator(): IndicatorRefs {
 
     watch();
     tabs.observe(row, { childList: true });
+    list.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
+      list.removeEventListener("scroll", handleScroll);
       sizes.disconnect();
       tabs.disconnect();
       cancelAnimationFrame(frame);
