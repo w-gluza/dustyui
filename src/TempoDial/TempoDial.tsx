@@ -106,6 +106,7 @@ export function TempoDial({
       )}
     >
       <DialTicks markerAngle={valueAngle(value, range)} />
+      <span className={styles.rest} aria-hidden="true" />
       <div className={styles.readout} aria-hidden="true">
         <span className={styles.value}>{value}</span>
         {unit ? <span className={styles.unit}>{unit}</span> : null}

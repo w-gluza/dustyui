@@ -5,7 +5,6 @@
   container-type: inline-size;
   border-radius: var(--dusty-radius-full);
   color: var(--dusty-text);
-  touch-action: none;
   user-select: none;
   cursor: grab;
 }
@@ -35,6 +34,16 @@
   grid-area: 1 / 1;
   inline-size: 100%;
   block-size: 100%;
+  touch-action: none;
+}
+
+.rest {
+  grid-area: 1 / 1;
+  place-self: center;
+  inline-size: 40%;
+  aspect-ratio: 1;
+  border-radius: var(--dusty-radius-full);
+  cursor: default;
 }
 
 .tick {

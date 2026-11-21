@@ -476,4 +476,31 @@ describe("TempoDial", () => {
     drag(dial, [0.5, 0.05], [0.95, 0.5]);
     expect(onValueChange).toHaveBeenLastCalledWith(200);
   });
+
+  it("lets a touch scroll the page from the centre, where a drag does nothing, and keeps the ring for dragging", async () => {
+    const screen = await render(
+      <div style={{ inlineSize: "300px" }}>
+        <TempoDial label="Tempo" min={40} max={240} data-testid="dial" />
+      </div>,
+    );
+    const box = screen.getByTestId("dial").element().getBoundingClientRect();
+    const blocksTouch = (x: number, y: number) => {
+      for (
+        let element = document.elementFromPoint(box.left + x, box.top + y);
+        element;
+        element = element.parentElement
+      ) {
+        if (getComputedStyle(element).touchAction === "none") {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    expect(blocksTouch(150, 150)).toBe(false);
+    expect(blocksTouch(150, 100)).toBe(false);
+    expect(blocksTouch(150, 80)).toBe(true);
+    expect(blocksTouch(150, 10)).toBe(true);
+    expect(blocksTouch(20, 150)).toBe(true);
+  });
 });
