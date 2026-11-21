@@ -1,4 +1,9 @@
-import type { ComponentProps, MouseEventHandler, ReactNode } from "react";
+import type {
+  ComponentProps,
+  CSSProperties,
+  MouseEventHandler,
+  ReactNode,
+} from "react";
 import clsx from "clsx";
 import { ListLoadingAnnouncement } from "./ListLoadingAnnouncement.js";
 import styles from "./List.module.css";
@@ -11,6 +16,7 @@ export interface ListProps extends Omit<
 > {
   variant?: ListVariant | undefined;
   numbered?: boolean | undefined;
+  start?: number | undefined;
   loading?: boolean | undefined;
   loadingLabel?: string | undefined;
   loadingRows?: number | undefined;
@@ -19,15 +25,22 @@ export interface ListProps extends Omit<
 export function List({
   variant = "divided",
   numbered = false,
+  start,
   loading = false,
   loadingLabel = "Loading",
   loadingRows = 3,
   className,
+  style,
   children,
   ...props
 }: ListProps) {
+  const numbering =
+    numbered && start !== undefined && Number.isInteger(start)
+      ? ({ ...style, "--list-start": start - 1 } as CSSProperties)
+      : style;
   const listProps = {
     ...props,
+    style: numbering,
     className: clsx(
       styles.list,
       styles[variant],
@@ -56,7 +69,7 @@ export function List({
   );
 
   return numbered ? (
-    <ol role="list" {...(listProps as ComponentProps<"ol">)}>
+    <ol role="list" start={start} {...(listProps as ComponentProps<"ol">)}>
       {content}
     </ol>
   ) : (
@@ -81,11 +94,34 @@ interface ListItemBaseProps extends Omit<
   selected?: ListItemSelected | undefined;
 }
 
+export type ListItemLinkProps = Omit<
+  ComponentProps<"a">,
+  "href" | "children" | "dangerouslySetInnerHTML" | "aria-current"
+>;
+
+export type ListItemButtonProps = Omit<
+  ComponentProps<"button">,
+  | "type"
+  | "disabled"
+  | "onClick"
+  | "children"
+  | "dangerouslySetInnerHTML"
+  | "aria-current"
+>;
+
 export type ListItemProps = ListItemBaseProps &
   (
-    | { href: string; onClick?: never }
-    | { href?: never; onClick: MouseEventHandler<HTMLButtonElement> }
-    | { href?: never; onClick?: never }
+    | {
+        href: string;
+        onClick?: never;
+        actionProps?: ListItemLinkProps | undefined;
+      }
+    | {
+        href?: never;
+        onClick: MouseEventHandler<HTMLButtonElement>;
+        actionProps?: ListItemButtonProps | undefined;
+      }
+    | { href?: never; onClick?: never; actionProps?: never }
   );
 
 export function ListItem({
@@ -98,9 +134,11 @@ export function ListItem({
   selected = false,
   href,
   onClick,
+  actionProps,
   className,
   ...props
 }: ListItemProps) {
+  const actionClassName = clsx(styles.action, actionProps?.className);
   const current = selected === true ? "true" : selected || undefined;
   const interactive = href !== undefined || onClick !== undefined;
   const main = (
@@ -131,13 +169,19 @@ export function ListItem({
       {interactive ? (
         <span className={styles.interactive}>
           {href !== undefined ? (
-            <a className={styles.action} href={href} aria-current={current}>
+            <a
+              {...actionProps}
+              className={actionClassName}
+              href={href}
+              aria-current={current}
+            >
               <span className={styles.main}>{main}</span>
             </a>
           ) : (
             <button
+              {...actionProps}
               type="button"
-              className={styles.action}
+              className={actionClassName}
               aria-current={current}
               onClick={onClick}
             >

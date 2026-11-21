@@ -570,4 +570,60 @@ describe("List", () => {
       }
     },
   );
+
+  it("starts the numbering where it is told to", async () => {
+    const screen = await render(
+      <List numbered start={5} aria-label="Queue">
+        <ListItem title="First" />
+        <ListItem title="Second" />
+      </List>,
+    );
+    const list = screen.getByRole("list", { name: "Queue" }).element();
+    expect(getComputedStyle(list).counterReset).toBe("dusty-list 4");
+  });
+
+  it("passes action props and a ref to the link or button of a row", async () => {
+    let link: HTMLAnchorElement | null = null;
+    let button: HTMLButtonElement | null = null;
+    const screen = await render(
+      <List aria-label="Files">
+        <ListItem
+          title="Report"
+          href="/report.pdf"
+          className="row"
+          actionProps={{
+            download: "report.pdf",
+            rel: "noopener",
+            className: "mine",
+            ref: (element) => {
+              link = element;
+            },
+          }}
+        />
+        <ListItem
+          title="Rename"
+          onClick={() => undefined}
+          actionProps={{
+            "aria-describedby": "hint",
+            ref: (element) => {
+              button = element;
+            },
+          }}
+        />
+      </List>,
+    );
+    const report = screen.getByRole("link", { name: "Report" });
+    const rename = screen.getByRole("button", { name: "Rename" });
+
+    await expect.element(report).toHaveAttribute("download", "report.pdf");
+    await expect.element(report).toHaveAttribute("rel", "noopener");
+    await expect.element(report).toHaveAttribute("href", "/report.pdf");
+    await expect.element(report).toHaveClass("mine");
+    expect(report.element().className).not.toBe("mine");
+    expect(report.element().closest("li")).toHaveClass("row");
+    await expect.element(rename).toHaveAttribute("aria-describedby", "hint");
+    await expect.element(rename).toHaveAttribute("type", "button");
+    expect(link).toBe(report.element());
+    expect(button).toBe(rename.element());
+  });
 });

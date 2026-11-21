@@ -23,7 +23,7 @@
 }
 
 .numbered {
-  counter-reset: dusty-list;
+  counter-reset: dusty-list var(--list-start, 0);
 }
 
 .numbered > .item {
