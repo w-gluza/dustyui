@@ -67,8 +67,8 @@ export function TrackList({
 }: TrackListProps) {
   return (
     <ol
-      {...props}
       role="list"
+      {...props}
       className={clsx(styles.tracks, className)}
       aria-label={label}
     >

@@ -218,4 +218,19 @@ describe("TrackList", () => {
       title.getBoundingClientRect().left,
     );
   });
+
+  it("keeps a role its consumer asks for", async () => {
+    const screen = await render(
+      <TrackList
+        label="Tracks"
+        tracks={TRACKS}
+        role="none"
+        data-testid="list"
+      />,
+    );
+
+    await expect
+      .element(screen.getByTestId("list"))
+      .toHaveAttribute("role", "none");
+  });
 });

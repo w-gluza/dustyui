@@ -65,6 +65,8 @@ export function PlaybackControls({
     onPlayingChange,
   );
 
+  const isReadOnly = controlledPlaying !== undefined && !onPlayingChange;
+
   return (
     <div {...props} className={clsx(styles.player, className)}>
       <div className={styles.controls}>
@@ -82,6 +84,7 @@ export function PlaybackControls({
           shape="pill"
           label={playing ? text.pause : text.play}
           icon={playing ? <PauseIcon /> : <PlayIcon />}
+          aria-disabled={isReadOnly}
           onClick={() => {
             setPlaying(!playing);
           }}

@@ -195,4 +195,21 @@ describe("PlaybackControls", () => {
         .getBoundingClientRect().left,
     );
   });
+
+  it("marks the play button unavailable when playback is controlled with nothing listening", async () => {
+    const screen = await render(
+      <>
+        <PlaybackControls playing={false} aria-label="Fixed" />
+        <PlaybackControls defaultPlaying={false} aria-label="Free" />
+      </>,
+    );
+    const buttons = screen.getByRole("button", { name: "Play" });
+
+    await expect
+      .element(buttons.first())
+      .toHaveAttribute("aria-disabled", "true");
+    await expect
+      .element(buttons.last())
+      .not.toHaveAttribute("aria-disabled", "true");
+  });
 });
