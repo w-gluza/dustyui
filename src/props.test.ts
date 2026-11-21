@@ -79,6 +79,24 @@ describe("props", () => {
     >().toEqualTypeOf<false>();
   });
 
+  it("take a beat pattern without a change handler, for reading only", () => {
+    expectTypeOf<
+      Accepts<BeatPatternProps, { label: string; beats: [] }>
+    >().toEqualTypeOf<true>();
+  });
+
+  it("take action props on a list row only when the row has an action", () => {
+    expectTypeOf<
+      Accepts<
+        ListItemProps,
+        { title: string; href: string; actionProps: { target: string } }
+      >
+    >().toEqualTypeOf<true>();
+    expectTypeOf<
+      Accepts<ListItemProps, { title: string; actionProps: { id: string } }>
+    >().toEqualTypeOf<false>();
+  });
+
   it("require a label on a beat pattern and refuse a second accessible name", () => {
     interface Pattern {
       label: string;

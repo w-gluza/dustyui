@@ -220,4 +220,24 @@ describe("AvatarGroup", () => {
       screen.getByRole("list", { name: "Contributors" }).element().children,
     ).toHaveLength(0);
   });
+
+  it("keeps a consumer class name and style and hands over the list element", async () => {
+    let list: HTMLUListElement | null = null;
+    const screen = await render(
+      <AvatarGroup
+        label="Contributors"
+        avatars={people}
+        className="mine"
+        style={{ marginBlockStart: "7px" }}
+        ref={(element) => {
+          list = element;
+        }}
+      />,
+    );
+    const group = screen.getByRole("list", { name: "Contributors" });
+
+    await expect.element(group).toHaveClass("mine");
+    expect(getComputedStyle(group.element()).marginTop).toBe("7px");
+    expect(list).toBe(group.element());
+  });
 });
