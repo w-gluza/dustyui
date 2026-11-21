@@ -6,9 +6,9 @@
   --dusty-surface-hover: light-dark(#eceae4, #2b2f38);
   --dusty-surface-selected: light-dark(#e5ebff, #27365b);
   --dusty-text: light-dark(#1c1c1a, #f7f6f2);
-  --dusty-text-muted: light-dark(#686b71, #b4b7c1);
+  --dusty-text-muted: light-dark(#676a70, #b4b7c1);
   --dusty-border: light-dark(#d9d5cd, #3a3d45);
-  --dusty-border-strong: light-dark(#84878c, #878b95);
+  --dusty-border-strong: light-dark(#83868b, #878b95);
   --dusty-focus-ring: light-dark(#315ceb, #91a9ff);
   --dusty-action: light-dark(#315ceb, #91a9ff);
   --dusty-action-hover: light-dark(#234bd0, #adc0ff);
