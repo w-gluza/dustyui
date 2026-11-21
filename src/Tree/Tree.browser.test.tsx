@@ -1063,4 +1063,20 @@ describe("Tree", () => {
         .toHaveFocus();
     });
   });
+
+  it("draws the toggle as a shape and squares the start corners of a row", async () => {
+    const screen = await render(<Files root={files} />);
+    const row = screen.getByRole("treeitem").first().element();
+    const toggle = getComputedStyle(
+      row.firstElementChild as Element,
+      "::before",
+    );
+    const style = getComputedStyle(row);
+
+    expect(toggle.clipPath).toContain("polygon");
+    expect(Number.parseFloat(toggle.width)).toBeGreaterThan(5);
+    expect(style.borderStartStartRadius).toBe("0px");
+    expect(style.borderEndStartRadius).toBe("0px");
+    expect(style.borderStartEndRadius).not.toBe("0px");
+  });
 });

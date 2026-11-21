@@ -18,6 +18,8 @@
   scroll-margin-block: var(--tree-row-height, max(1lh, 1.5rem));
   border-inline-start: 0.1875rem solid transparent;
   border-radius: var(--dusty-radius-sm);
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
   white-space: nowrap;
   cursor: default;
 }
@@ -51,7 +53,11 @@
 
 .row[aria-expanded] > .toggle::before {
   display: inline-block;
-  content: "▸";
+  inline-size: 0.5em;
+  block-size: 0.625em;
+  background-color: currentcolor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  content: "";
 }
 
 .row[aria-expanded="true"] > .toggle::before {
@@ -85,5 +91,9 @@
 
   .row[aria-selected="true"] {
     border-inline-start-color: Highlight;
+  }
+
+  .row[aria-expanded] > .toggle::before {
+    background-color: CanvasText;
   }
 }
