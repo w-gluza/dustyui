@@ -36,7 +36,7 @@ export function List({
 }: ListProps) {
   const numbering =
     numbered && start !== undefined && Number.isInteger(start)
-      ? ({ ...style, "--list-start": start - 1 } as CSSProperties)
+      ? ({ ...style, "--dusty-list-start": start - 1 } as CSSProperties)
       : style;
   const listProps = {
     ...props,

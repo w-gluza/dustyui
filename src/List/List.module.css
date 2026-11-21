@@ -22,8 +22,14 @@
   display: grid;
 }
 
+@property --dusty-list-start {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .numbered {
-  counter-reset: dusty-list var(--list-start, 0);
+  counter-reset: dusty-list var(--dusty-list-start);
 }
 
 .numbered > .item {

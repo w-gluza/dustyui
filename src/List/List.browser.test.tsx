@@ -626,4 +626,25 @@ describe("List", () => {
     expect(link).toBe(report.element());
     expect(button).toBe(rename.element());
   });
+
+  it("numbers a nested list from its own start, not the outer one", async () => {
+    const screen = await render(
+      <List numbered start={7} aria-label="Outer">
+        <ListItem
+          title="Seventh"
+          description={
+            <List numbered aria-label="Inner">
+              <ListItem title="First inside" />
+            </List>
+          }
+        />
+      </List>,
+    );
+    const reset = (name: string) =>
+      getComputedStyle(screen.getByRole("list", { name }).element())
+        .counterReset;
+
+    expect(reset("Outer")).toBe("dusty-list 6");
+    expect(reset("Inner")).toBe("dusty-list 0");
+  });
 });
