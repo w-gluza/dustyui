@@ -507,7 +507,7 @@ describe("ObjectInspector", () => {
             .getByRole("region", { name: "Selected value in Park" })
             .getByText("Path copied"),
         )
-        .not.toBeVisible();
+        .not.toBeInTheDocument();
     });
 
     it("says when copying fails", async () => {

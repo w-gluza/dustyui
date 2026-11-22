@@ -119,18 +119,22 @@ describe("CopyButton", () => {
     window.removeEventListener("error", collect);
   });
 
-  it("keeps its width when the label changes", async () => {
-    clipboard().mockResolvedValue();
-    const screen = await render(<CopyButton value="abc" />);
-    const button = screen.getByRole("button").element();
-    const before = button.getBoundingClientRect().width;
+  it("fits its resting label, holding no room for the other labels", async () => {
+    const screen = await render(
+      <>
+        <CopyButton value="abc" data-testid="short" />
+        <CopyButton
+          value="abc"
+          copiedLabel="Copied to your clipboard"
+          failedLabel="Copying did not work this time"
+          data-testid="long"
+        />
+      </>,
+    );
+    const width = (id: string) =>
+      screen.getByTestId(id).element().getBoundingClientRect().width;
 
-    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
-    await expect
-      .element(screen.getByRole("button", { name: "Copied" }))
-      .toBeVisible();
-
-    expect(button.getBoundingClientRect().width).toBe(before);
+    expect(width("long")).toBe(width("short"));
   });
 
   it("takes translated labels", async () => {
@@ -468,7 +472,7 @@ describe("CopyButton", () => {
     expect(onCopyError).toHaveBeenCalledOnce();
   });
 
-  it("keeps its width when copying fails", async () => {
+  it("grows to fit a longer label when copying fails", async () => {
     clipboard().mockRejectedValue(new Error("denied"));
     const screen = await render(<CopyButton value="abc" />);
     const button = screen.getByRole("button").element();
@@ -479,7 +483,7 @@ describe("CopyButton", () => {
       .element(screen.getByRole("button", { name: "Copy failed" }))
       .toBeVisible();
 
-    expect(button.getBoundingClientRect().width).toBe(before);
+    expect(button.getBoundingClientRect().width).toBeGreaterThan(before);
   });
 
   it("works the value out only when it is asked to copy", async () => {

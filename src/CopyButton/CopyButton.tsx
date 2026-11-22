@@ -43,8 +43,6 @@ export type CopyButtonProps = CopyButtonBaseProps &
 
 const DEFAULT_FEEDBACK_DURATION = 2000;
 
-const STATUSES = ["idle", "copied", "failed"] as const;
-
 export function CopyButton({
   value,
   label = "Copy",
@@ -147,17 +145,8 @@ export function CopyButton({
       data-animated={animated || undefined}
       onClick={handleClick}
     >
-      <span className={styles.labels}>
-        {STATUSES.map((name) => (
-          <span
-            key={name}
-            className={styles.text}
-            data-shown={name === status || undefined}
-            aria-hidden={name === status ? undefined : true}
-          >
-            {labels[name]}
-          </span>
-        ))}
+      <span key={status} className={styles.text}>
+        {labels[status]}
       </span>
     </Button>
   );

@@ -50,40 +50,19 @@
   color: var(--dusty-status-danger);
 }
 
-.labels {
-  display: grid;
-}
-
-.text {
-  grid-area: 1 / 1;
-  visibility: hidden;
-  opacity: 0;
-  text-align: start;
-  transition:
-    opacity 0.12s ease-in,
-    visibility 0s 0.12s;
-}
-
-.text[data-shown] {
-  visibility: visible;
-  opacity: 1;
-  transition: none;
-}
-
-.copy[data-animated] .text[data-shown] {
+.copy[data-animated] .text {
   animation: appear 0.2s 0.06s ease backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .copy,
   .icon,
-  .icon[data-shown],
-  .text {
+  .icon[data-shown] {
     transition: none;
   }
 
   .copy[data-animated] .icon[data-shown],
-  .copy[data-animated] .text[data-shown] {
+  .copy[data-animated] .text {
     animation: none;
   }
 }

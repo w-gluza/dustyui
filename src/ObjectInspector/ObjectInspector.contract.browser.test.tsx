@@ -288,7 +288,9 @@ describe("ObjectInspector contract", () => {
       await screen.getByRole("treeitem", { name: /^animals/u }).click();
       await screen.getByRole("treeitem", { name: /^name/u }).click();
 
-      await expect.element(panel.getByText("Path copied")).not.toBeVisible();
+      await expect
+        .element(panel.getByText("Path copied"))
+        .not.toBeInTheDocument();
     });
 
     it("drops the confirmation when the value is replaced", async () => {
@@ -316,7 +318,9 @@ describe("ObjectInspector contract", () => {
         />,
       );
 
-      await expect.element(panel.getByText("Value copied")).not.toBeVisible();
+      await expect
+        .element(panel.getByText("Value copied"))
+        .not.toBeInTheDocument();
     });
 
     it("describes rows in plain words and marks the search text in the value", async () => {
