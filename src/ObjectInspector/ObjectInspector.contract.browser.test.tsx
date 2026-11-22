@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { userEvent } from "vitest/browser";
-import { ObjectInspector } from "../index.js";
-import { announcements, resetAnnouncer } from "../test/announcements.js";
+import { ObjectInspector, type ObjectInspectorLabels } from "../index.js";
+import {
+  announcements,
+  resetAnnouncer,
+  settleAnnouncer,
+} from "../test/announcements.js";
 
 const park = {
   name: "Tatra",
@@ -320,12 +324,53 @@ describe("ObjectInspector contract", () => {
     });
   });
 
+  describe("labels", () => {
+    it("fills in the newer labels when given a full set written before they existed", async () => {
+      const earlier: ObjectInspectorLabels = {
+        search: "Szukaj",
+        searchRegion: (label) => `Szukaj w ${label}`,
+        previousMatch: "Poprzedni",
+        nextMatch: "Następny",
+        searchStatus: ({ count }) => `Wyniki: ${String(count)}`,
+        matchAnnouncement: (status, path) => `${status}: ${path}`,
+        noProperties: "Brak właściwości",
+        unreadable: (_reason, message) => message,
+        detailsRegion: (label) => `Wybrana wartość w ${label}`,
+        path: "Ścieżka",
+        type: "Typ",
+        value: "Wartość",
+        typeName: (_kind, name) => name,
+        shownCharacters: (shown, total) =>
+          `${String(shown)} z ${String(total)}`,
+        copyPath: "Kopiuj ścieżkę",
+        copyValue: "Kopiuj wartość",
+        pathCopied: "Skopiowano ścieżkę",
+        valueCopied: "Skopiowano wartość",
+        pathPartCopied: "Skopiowano część ścieżki",
+        valuePartCopied: "Skopiowano część wartości",
+        copyFailed: "Nie udało się skopiować",
+      };
+      const screen = await render(
+        <ObjectInspector
+          label="Park"
+          value={park}
+          showDetails
+          labels={earlier}
+        />,
+      );
+
+      await expect
+        .element(screen.getByText("Select a row to see its details"))
+        .toBeVisible();
+    });
+  });
+
   describe("copy results", () => {
     const part = "Part of the value copied. It is too large to copy whole.";
     const list = Array.from({ length: 6000 }, (_, index) => index);
 
     it("announces a partial copy once, as partial", async () => {
-      resetAnnouncer();
+      await settleAnnouncer();
       vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
       const screen = await render(
         <ObjectInspector
@@ -344,7 +389,7 @@ describe("ObjectInspector contract", () => {
     });
 
     it("announces a failed copy once, with the advice", async () => {
-      resetAnnouncer();
+      await settleAnnouncer();
       vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(
         new Error("denied"),
       );
@@ -366,7 +411,7 @@ describe("ObjectInspector contract", () => {
     });
 
     it("keeps the partial warning of a value copy when the path is copied before it finishes", async () => {
-      resetAnnouncer();
+      await settleAnnouncer();
       const pending: (() => void)[] = [];
       vi.spyOn(navigator.clipboard, "writeText").mockImplementation(
         () =>
