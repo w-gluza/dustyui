@@ -164,6 +164,19 @@ describe("announce", () => {
       expect(announcements()).toEqual(["Saved"]);
     });
 
+    it("keeps messages in the order they were made when the region moves between them", () => {
+      announce("First");
+      vi.advanceTimersByTime(50);
+
+      openModal();
+      readyAnnouncer();
+      vi.advanceTimersByTime(10);
+      announce("Second");
+      vi.advanceTimersByTime(90);
+
+      expect(announcements()).toEqual(["First", "Second"]);
+    });
+
     it("uses the modal that holds focus, whatever the document order", () => {
       const later = document.createElement("dialog");
       later.append(document.createElement("button"));
@@ -178,6 +191,15 @@ describe("announce", () => {
 
       expect(later.querySelector("[data-dusty-announcer]")).not.toBeNull();
     });
+  });
+
+  it("drops the messages still waiting when the announcer element is removed", () => {
+    announce("Saved");
+    document.querySelector("[data-dusty-announcer]")?.remove();
+    announce("Deleted");
+    vi.advanceTimersByTime(100);
+
+    expect(announcements()).toEqual(["Deleted"]);
   });
 
   describe("cancelling", () => {

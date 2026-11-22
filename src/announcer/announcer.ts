@@ -58,6 +58,43 @@ export function readyAnnouncer(): void {
   }
 }
 
+interface QueuedMessage {
+  readonly message: string;
+  readonly politeness: Politeness;
+  readonly home: HTMLElement | undefined;
+  entry?: HTMLElement;
+  removal?: ReturnType<typeof setTimeout>;
+}
+
+const queue: QueuedMessage[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | undefined;
+
+function flush(): void {
+  flushTimer = undefined;
+  const waiting = queue
+    .splice(0)
+    .filter((queued) => queued.home?.parentElement);
+  if (waiting.length === 0) {
+    return;
+  }
+  queue.push(...waiting);
+  const live = ensureRegions();
+  const remaining = regionsReadyAt - performance.now();
+  if (remaining > 0) {
+    flushTimer = setTimeout(flush, remaining);
+    return;
+  }
+  for (const queued of queue.splice(0)) {
+    const added = document.createElement("div");
+    added.textContent = queued.message;
+    live[queued.politeness].append(added);
+    queued.entry = added;
+    queued.removal = setTimeout(() => {
+      added.remove();
+    }, MESSAGE_LIFETIME);
+  }
+}
+
 export function announce(
   message: string,
   politeness: Politeness = "polite",
@@ -67,31 +104,24 @@ export function announce(
   }
 
   ensureRegions();
-  const delay = Math.max(0, regionsReadyAt - performance.now());
-  let entry: HTMLElement | undefined;
-  let removal: ReturnType<typeof setTimeout> | undefined;
-
-  function insert(): void {
-    const region = ensureRegions()[politeness];
-    const remaining = regionsReadyAt - performance.now();
-    if (remaining > 0) {
-      timer = setTimeout(insert, remaining);
-      return;
-    }
-    const added = document.createElement("div");
-    added.textContent = message;
-    region.append(added);
-    entry = added;
-    removal = setTimeout(() => {
-      added.remove();
-    }, MESSAGE_LIFETIME);
-  }
-
-  let timer = setTimeout(insert, delay);
+  const queued: QueuedMessage = { message, politeness, home: container };
+  queue.push(queued);
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(
+    flush,
+    Math.max(0, regionsReadyAt - performance.now()),
+  );
 
   return () => {
-    clearTimeout(timer);
-    clearTimeout(removal);
-    entry?.remove();
+    const position = queue.indexOf(queued);
+    if (position !== -1) {
+      queue.splice(position, 1);
+    }
+    if (queue.length === 0) {
+      clearTimeout(flushTimer);
+      flushTimer = undefined;
+    }
+    clearTimeout(queued.removal);
+    queued.entry?.remove();
   };
 }
