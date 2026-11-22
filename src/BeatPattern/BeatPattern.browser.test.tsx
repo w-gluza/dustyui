@@ -389,6 +389,26 @@ describe("BeatPattern", () => {
     expect(new Set(tops).size).toBe(1);
   });
 
+  it("lays the beats in one row inside a parent that shrinks to its content", async () => {
+    const screen = await render(
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div>
+          <BeatPattern
+            label="Beats"
+            beats={BEATS}
+            onBeatChange={() => undefined}
+          />
+        </div>
+      </div>,
+    );
+    const tops = screen
+      .getByRole("button")
+      .elements()
+      .map((beat) => beat.getBoundingClientRect().top);
+
+    expect(new Set(tops).size).toBe(1);
+  });
+
   it("keeps the beats in columns when the pattern wraps", async () => {
     const screen = await render(
       <div style={{ inlineSize: "200px" }}>

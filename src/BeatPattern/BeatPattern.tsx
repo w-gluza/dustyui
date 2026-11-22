@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type ComponentProps } from "react";
+import {
+  useEffect,
+  useRef,
+  type ComponentProps,
+  type CSSProperties,
+} from "react";
 import clsx from "clsx";
 import { announce, readyAnnouncer } from "../announcer/announcer.js";
 import { nextBeatKind, type BeatKind } from "./beatKind.js";
@@ -50,6 +55,7 @@ export function BeatPattern({
   beatLabel = defaultBeatLabel,
   onBeatChange,
   className,
+  style,
   ...props
 }: BeatPatternProps) {
   const requested = useRef<BeatRequest>(null);
@@ -93,6 +99,12 @@ export function BeatPattern({
       {...props}
       role="list"
       className={clsx(styles.pattern, className)}
+      style={
+        {
+          "--dusty-beat-pattern-count": beats.length,
+          ...style,
+        } as CSSProperties
+      }
       aria-label={label}
     >
       {beats.map((kind, index) => (
