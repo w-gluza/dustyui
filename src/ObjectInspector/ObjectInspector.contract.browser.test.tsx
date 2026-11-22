@@ -198,7 +198,7 @@ describe("ObjectInspector contract", () => {
       await expect.element(screen.getByText("2 matches")).toBeVisible();
     });
 
-    it("does not announce again when only the value changes", async () => {
+    it("announces the new count when replaced data changes it", async () => {
       const screen = await render(
         <ObjectInspector label="Park" value={park} searchable />,
       );
@@ -213,6 +213,29 @@ describe("ObjectInspector contract", () => {
         />,
       );
       await expect.element(screen.getByText("3 matches")).toBeVisible();
+
+      await expect
+        .poll(() => announcements())
+        .toEqual(["2 matches", "3 matches"]);
+    });
+
+    it("does not announce again when replaced data leaves the count as it was", async () => {
+      const screen = await render(
+        <ObjectInspector label="Park" value={park} searchable />,
+      );
+      await screen.getByRole("searchbox").fill("chamois");
+      await expect.poll(() => announcements()).toEqual(["2 matches"]);
+
+      await screen.rerender(
+        <ObjectInspector
+          label="Park"
+          value={{ ...park, extra: "Ibex" }}
+          searchable
+        />,
+      );
+      await expect
+        .element(screen.getByRole("treeitem", { name: /^extra/u }))
+        .toBeVisible();
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       expect(announcements()).toEqual(["2 matches"]);

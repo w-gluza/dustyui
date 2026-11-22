@@ -170,7 +170,7 @@ export function ObjectInspector({
     }
     const timer = setTimeout(() => announceStatus(), ANNOUNCE_DELAY);
     return () => clearTimeout(timer);
-  }, [searched, current, propertiesRead]);
+  }, [searched, current, propertiesRead, status]);
 
   function announceEmpty(next: ReadonlySet<string>) {
     const [opened, ...others] = [...next].filter((id) => !expanded.has(id));
