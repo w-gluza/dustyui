@@ -1,6 +1,6 @@
 {
   "name": "dustyui",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "A minimalist, neutral-toned React UI component library styled with CSS Modules.",
   "keywords": [
     "react",
