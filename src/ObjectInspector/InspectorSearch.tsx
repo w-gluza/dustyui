@@ -1,12 +1,12 @@
 import { useId, type KeyboardEvent } from "react";
 import { IconButton } from "../IconButton/IconButton.js";
 import { NextMatchIcon, PreviousMatchIcon } from "./icons.js";
-import type { ObjectInspectorLabels } from "./labels.js";
+import type { ResolvedObjectInspectorLabels } from "./labels.js";
 import styles from "./InspectorSearch.module.css";
 
 interface InspectorSearchProps {
   label: string;
-  labels: ObjectInspectorLabels;
+  labels: ResolvedObjectInspectorLabels;
   query: string;
   status: string;
   hasMatches: boolean;

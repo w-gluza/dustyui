@@ -6,7 +6,7 @@ import { getCopyText } from "./getCopyText.js";
 import { getShownValue } from "./getShownValue.js";
 import { getTypeText } from "./getTypeText.js";
 import { getValueText, hasValueText } from "./getValueText.js";
-import type { ObjectInspectorLabels } from "./labels.js";
+import type { ResolvedObjectInspectorLabels } from "./labels.js";
 import { Highlighted } from "./search/Highlighted.js";
 import styles from "./InspectorDetails.module.css";
 
@@ -14,7 +14,7 @@ const FEEDBACK_DURATION = 5000;
 
 interface InspectorDetailsProps {
   label: string;
-  labels: ObjectInspectorLabels;
+  labels: ResolvedObjectInspectorLabels;
   node: InspectorNode | undefined;
   query: string;
 }
@@ -64,7 +64,7 @@ export function InspectorDetails({
 }
 
 interface SelectedDetailsProps {
-  labels: ObjectInspectorLabels;
+  labels: ResolvedObjectInspectorLabels;
   node: InspectorNode;
   query: string;
 }

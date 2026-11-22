@@ -29,7 +29,11 @@ import { getLabelText } from "./getLabelText.js";
 import { hasValueText } from "./getValueText.js";
 import { InspectorDetails } from "./InspectorDetails.js";
 import { InspectorSearch } from "./InspectorSearch.js";
-import { DEFAULT_LABELS, type ObjectInspectorLabels } from "./labels.js";
+import {
+  DEFAULT_LABELS,
+  type ObjectInspectorLabels,
+  type ResolvedObjectInspectorLabels,
+} from "./labels.js";
 import { getMatches, type Matches } from "./search/getMatches.js";
 import { getSearchStatus } from "./search/getSearchStatus.js";
 import { getShortPreview } from "./describe/getShortPreview.js";
@@ -91,7 +95,10 @@ export function ObjectInspector({
   ...props
 }: ObjectInspectorProps) {
   const labels = useMemo(
-    () => ({ ...DEFAULT_LABELS, ...givenLabels }),
+    (): ResolvedObjectInspectorLabels => ({
+      ...DEFAULT_LABELS,
+      ...givenLabels,
+    }),
     [givenLabels],
   );
   const root = useMemo(() => describeValue(value), [value]);

@@ -16,7 +16,7 @@ export interface ObjectInspectorLabels {
   noProperties: string;
   unreadable: (reason: string, message: string) => string;
   detailsRegion: (label: string) => string;
-  noSelection: string;
+  noSelection?: string;
   path: string;
   type: string;
   value: string;
@@ -29,14 +29,16 @@ export interface ObjectInspectorLabels {
   pathPartCopied: string;
   valuePartCopied: string;
   copyFailed: string;
-  copyFailedShort: string;
+  copyFailedShort?: string;
 }
+
+export type ResolvedObjectInspectorLabels = Required<ObjectInspectorLabels>;
 
 function count(value: number): string {
   return value.toLocaleString("en-GB");
 }
 
-export const DEFAULT_LABELS: ObjectInspectorLabels = {
+export const DEFAULT_LABELS: ResolvedObjectInspectorLabels = {
   search: "Search",
   searchRegion: (label) => `Search ${label}`,
   previousMatch: "Previous match",
