@@ -254,6 +254,35 @@ describe("RadioGroup", () => {
     expect(form.checkValidity()).toBe(true);
   });
 
+  it("still asks for a choice when the chosen option is switched off", async () => {
+    const options = [
+      { value: "3/4", label: "3/4", disabled: true },
+      { value: "4/4", label: "4/4" },
+    ];
+    const screen = await render(
+      <form data-testid="form">
+        <RadioGroup
+          legend="Time signature"
+          name="meter"
+          options={options}
+          defaultValue="3/4"
+          required
+        />
+      </form>,
+    );
+    const form = screen.getByTestId("form").element() as HTMLFormElement;
+
+    await expect
+      .element(screen.getByRole("radio", { name: "3/4" }))
+      .toBeChecked();
+    expect(new FormData(form).has("meter")).toBe(false);
+    expect(form.checkValidity()).toBe(false);
+
+    await screen.getByText("4/4").click();
+    expect(form.checkValidity()).toBe(true);
+    expect(new FormData(form).get("meter")).toBe("4/4");
+  });
+
   it("looks and acts switched off when the whole group is disabled", async () => {
     const onValueChange = vi.fn();
     const screen = await render(

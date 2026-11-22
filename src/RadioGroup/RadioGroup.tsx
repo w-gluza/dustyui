@@ -66,7 +66,11 @@ export function RadioGroup({
           <input
             className={visuallyHidden.visuallyHidden}
             type="radio"
-            name={name ?? generatedName}
+            name={
+              required && option.disabled && option.value === value
+                ? undefined
+                : (name ?? generatedName)
+            }
             form={form}
             required={required}
             disabled={option.disabled}
